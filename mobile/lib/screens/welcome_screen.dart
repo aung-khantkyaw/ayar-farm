@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -108,7 +109,7 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 24),
                   Text(
-                    'Ayar Farm Link',
+                    AppLocalizations.of(context)!.appTitle,
                     style: TextStyle(
                       color: textColor,
                       fontSize: 36,
@@ -120,7 +121,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Cultivate Knowledge.\nGrow Together.',
+                    AppLocalizations.of(context)!.welcomeSubtitle,
                     style: TextStyle(
                       color: textColor.withOpacity(0.7),
                       fontSize: 18,
@@ -147,9 +148,9 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         shadowColor: primaryColor.withOpacity(0.25),
                       ).copyWith(elevation: WidgetStateProperty.all(8)),
-                      child: const Text(
-                        'Create New Account',
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.createNewAccount,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -181,9 +182,9 @@ class WelcomeScreen extends StatelessWidget {
                                   : BorderSide.none,
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.login,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -205,17 +206,22 @@ class WelcomeScreen extends StatelessWidget {
                           fontFamily: theme.textTheme.bodyMedium?.fontFamily,
                         ),
                         children: [
-                          const TextSpan(text: 'By joining, you agree to our '),
                           TextSpan(
-                            text: 'Terms of Service',
+                            text:
+                                AppLocalizations.of(
+                                  context,
+                                )!.termsAgreementPrefix,
+                          ),
+                          TextSpan(
+                            text: AppLocalizations.of(context)!.termsOfService,
                             style: TextStyle(
                               decoration: TextDecoration.underline,
                               decorationColor: primaryColor.withOpacity(0.5),
                             ),
                           ),
-                          const TextSpan(text: ' and '),
+                          TextSpan(text: AppLocalizations.of(context)!.and),
                           TextSpan(
-                            text: 'Privacy Policy',
+                            text: AppLocalizations.of(context)!.privacyPolicy,
                             style: TextStyle(
                               decoration: TextDecoration.underline,
                               decorationColor: primaryColor.withOpacity(0.5),

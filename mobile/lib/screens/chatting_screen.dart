@@ -1,4 +1,6 @@
+import 'package:ayar_farm/widgets/common_header.dart';
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 
 class ChattingScreen extends StatefulWidget {
   const ChattingScreen({super.key});
@@ -35,6 +37,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
       backgroundColor: backgroundColor,
       body: Column(
         children: [
+          const CommonHeader(),
           // Search Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -55,7 +58,10 @@ class _ChattingScreenState extends State<ChattingScreen> {
                     child: TextField(
                       style: TextStyle(color: textMainColor),
                       decoration: InputDecoration(
-                        hintText: 'Search farmers or topics...',
+                        hintText:
+                            AppLocalizations.of(
+                              context,
+                            )!.searchFarmersPlaceholder,
                         hintStyle: TextStyle(color: textSubColor),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.only(bottom: 4),
@@ -82,6 +88,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
                 children: [
                   _buildSegmentButton(
                     'All',
+                    AppLocalizations.of(context)!.catAll,
                     isDark,
                     surfaceColor,
                     textMainColor,
@@ -89,6 +96,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
                   ),
                   _buildSegmentButton(
                     'Groups',
+                    AppLocalizations.of(context)!.groups,
                     isDark,
                     surfaceColor,
                     textMainColor,
@@ -96,6 +104,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
                   ),
                   _buildSegmentButton(
                     'Mentors',
+                    AppLocalizations.of(context)!.mentors,
                     isDark,
                     surfaceColor,
                     textMainColor,
@@ -140,7 +149,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
                   ),
                   _buildChatItem(
                     title: 'Maria (Agronomist)',
-                    message: 'Sent an image',
+                    message: AppLocalizations.of(context)!.sentAnImage,
                     time: 'Yesterday',
                     imageUrl:
                         'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Y7Iib7c6c7SC4NNJIzkfNDlrt8-vBHEW4-I1qD3QjdFGoLV8QrGrMmK8SOYoMnyc5zBSrE4FJoixNWvAqcfQhiElhtYdDVsmqG2aDX95m3pqrgXlBM2iFEfaQOZZhl8pcFfoLzIsC3iY20STtodXXd84yROigGFxNi-FdrQ8DLp8CtN7raVQWg7ZwD0a0229lSrpmma54mxuhiX6eSMwPWI7_mznB6QfmRO_KVXoMq-AY8rfN23Nwk4C5XLowPf1M_bq6iWRtAO',
@@ -222,18 +231,19 @@ class _ChattingScreenState extends State<ChattingScreen> {
   }
 
   Widget _buildSegmentButton(
+    String value,
     String label,
     bool isDark,
     Color activeBg,
     Color activeText,
     Color inactiveText,
   ) {
-    final isSelected = _selectedFilter == label;
+    final isSelected = _selectedFilter == value;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _selectedFilter = label;
+            _selectedFilter = value;
           });
         },
         child: Container(

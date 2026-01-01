@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
+import 'package:ayar_farm/l10n/app_localizations.dart';
+
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -21,8 +23,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _handleSendResetCode() async {
     if (_identifierController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email or phone number'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.enterEmailOrPhone),
         ),
       );
       return;
@@ -40,7 +42,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reset code sent successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.resetCodeSent)),
         );
         // Navigate to ResetPasswordScreen (which contains the OTP and New Password fields)
         Navigator.pushNamed(
@@ -52,7 +54,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send reset code: $e')),
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.failedToSendResetCode}$e',
+            ),
+          ),
         );
       }
     } finally {
@@ -140,7 +146,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         children: [
                           const SizedBox(height: 8),
                           Text(
-                            'Reset Password',
+                            AppLocalizations.of(context)!.resetPasswordTitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: textColor,
@@ -153,7 +159,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              "Don't worry, it happens. Please enter the address associated with your account.",
+                              AppLocalizations.of(
+                                context,
+                              )!.resetPasswordSubtitle,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: textSubColor,
@@ -179,7 +187,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Padding(
                             padding: const EdgeInsets.only(left: 4, bottom: 8),
                             child: Text(
-                              'Email or Phone Number',
+                              AppLocalizations.of(context)!.emailOrPhoneLabel,
                               style: TextStyle(
                                 color: textColor,
                                 fontSize: 16,
@@ -191,7 +199,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             controller: _identifierController,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
-                              hintText: 'john@example.com or +1 555...',
+                              hintText:
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.emailOrPhonePlaceholder,
                               hintStyle: TextStyle(color: placeholderColor),
                               filled: true,
                               fillColor: surfaceColor,
@@ -242,9 +253,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                  : const Text(
-                                    'Send Reset Code',
-                                    style: TextStyle(
+                                  : Text(
+                                    AppLocalizations.of(context)!.sendResetCode,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -262,7 +273,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Remember your password? ',
+                                AppLocalizations.of(context)!.rememberPassword,
                                 style: TextStyle(
                                   color: textSubColor,
                                   fontSize: 14,
@@ -271,7 +282,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               GestureDetector(
                                 onTap: () => Navigator.pop(context),
                                 child: Text(
-                                  'Log In',
+                                  AppLocalizations.of(context)!.logIn,
                                   style: TextStyle(
                                     color: textColor,
                                     fontSize: 14,
@@ -288,17 +299,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             },
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Text(
-                                  'Need more help?',
-                                  style: TextStyle(
+                                  AppLocalizations.of(context)!.needMoreHelp,
+                                  style: const TextStyle(
                                     color: primaryColor,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                SizedBox(width: 4),
-                                Icon(
+                                const SizedBox(width: 4),
+                                const Icon(
                                   Icons.open_in_new,
                                   size: 18,
                                   color: primaryColor,

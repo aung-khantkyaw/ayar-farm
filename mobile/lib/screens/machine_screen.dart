@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'document_screen.dart';
@@ -35,7 +36,7 @@ class _MachineScreenState extends State<MachineScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load machines: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadMachines}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -44,9 +45,13 @@ class _MachineScreenState extends State<MachineScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading machines: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.errorLoadingMachines}$e',
+          ),
+        ),
+      );
     }
   }
 
@@ -92,7 +97,7 @@ class _MachineScreenState extends State<MachineScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Machines',
+                    AppLocalizations.of(context)!.machines,
                     style: TextStyle(
                       color: textMainColor,
                       fontSize: 18,

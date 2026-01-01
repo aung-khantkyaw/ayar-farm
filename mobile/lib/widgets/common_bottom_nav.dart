@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 
 class CommonBottomNav extends StatelessWidget {
   final int selectedIndex;
@@ -39,7 +40,7 @@ class CommonBottomNav extends StatelessWidget {
           _buildNavItem(
             Icons.home,
             Icons.home_outlined,
-            'Home',
+            AppLocalizations.of(context)!.navHome,
             0,
             primaryColor,
             textSubColor,
@@ -47,7 +48,7 @@ class CommonBottomNav extends StatelessWidget {
           _buildNavItem(
             Icons.category,
             Icons.category_outlined,
-            'Category',
+            AppLocalizations.of(context)!.navCategory,
             1,
             primaryColor,
             textSubColor,
@@ -55,7 +56,7 @@ class CommonBottomNav extends StatelessWidget {
           _buildNavItem(
             Icons.chat_bubble,
             Icons.chat_bubble_outline,
-            'Chatting',
+            AppLocalizations.of(context)!.navChatting,
             2,
             primaryColor,
             textSubColor,
@@ -63,7 +64,7 @@ class CommonBottomNav extends StatelessWidget {
           _buildNavItem(
             Icons.settings,
             Icons.settings_outlined,
-            'Setting',
+            AppLocalizations.of(context)!.navSetting,
             3,
             primaryColor,
             textSubColor,

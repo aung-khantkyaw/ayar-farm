@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
@@ -37,15 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (response.token != null) {
         ApiService.setToken(response.token);
+        AuthService.currentUser = response.user;
 
         if (response.user != null) {
           SocketService().connect(response.token!, response.user!);
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Login successful!')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.loginSuccessful),
+            ),
+          );
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
@@ -57,9 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('An error occurred')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -150,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Welcome Back',
+                        AppLocalizations.of(context)!.welcomeBack,
                         style: TextStyle(
                           color: textMainColor,
                           fontSize: 30,
@@ -160,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Connect with the farming community.',
+                        AppLocalizations.of(context)!.connectWithCommunity,
                         style: TextStyle(color: textSubColor, fontSize: 16),
                       ),
                       const SizedBox(height: 24),
@@ -190,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Phone Number',
+                                    AppLocalizations.of(context)!.phoneNumber,
                                     style: TextStyle(
                                       color:
                                           _loginType == 'phone'
@@ -217,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'Email',
+                                    AppLocalizations.of(context)!.email,
                                     style: TextStyle(
                                       color:
                                           _loginType == 'email'
@@ -243,8 +247,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.only(left: 4, bottom: 8),
                             child: Text(
                               _loginType == 'phone'
-                                  ? 'Mobile Number'
-                                  : 'Email Address',
+                                  ? AppLocalizations.of(context)!.mobileNumber
+                                  : AppLocalizations.of(context)!.emailAddress,
                               style: TextStyle(
                                 color: textMainColor,
                                 fontSize: 14,
@@ -260,12 +264,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : TextInputType.emailAddress,
                             style: TextStyle(color: textMainColor),
                             validator:
-                                (v) => v?.isEmpty ?? true ? 'Required' : null,
+                                (v) =>
+                                    v?.isEmpty ?? true
+                                        ? AppLocalizations.of(context)!.required
+                                        : null,
                             decoration: InputDecoration(
                               hintText:
                                   _loginType == 'phone'
-                                      ? '(555) 000-0000'
-                                      : 'you@example.com',
+                                      ? AppLocalizations.of(
+                                        context,
+                                      )!.phonePlaceholder
+                                      : AppLocalizations.of(
+                                        context,
+                                      )!.emailPlaceholder,
                               hintStyle: TextStyle(
                                 color: textSubColor.withOpacity(0.7),
                               ),
@@ -343,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Password',
+                                  AppLocalizations.of(context)!.password,
                                   style: TextStyle(
                                     color: textMainColor,
                                     fontSize: 14,
@@ -358,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     );
                                   },
                                   child: Text(
-                                    'Forgot?',
+                                    AppLocalizations.of(context)!.forgot,
                                     style: TextStyle(
                                       color: primaryColor,
                                       fontSize: 14,
@@ -374,9 +385,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: _obscurePassword,
                             style: TextStyle(color: textMainColor),
                             validator:
-                                (v) => v?.isEmpty ?? true ? 'Required' : null,
+                                (v) =>
+                                    v?.isEmpty ?? true
+                                        ? AppLocalizations.of(context)!.required
+                                        : null,
                             decoration: InputDecoration(
-                              hintText: 'Enter your password',
+                              hintText:
+                                  AppLocalizations.of(context)!.enterPassword,
                               hintStyle: TextStyle(
                                 color: textSubColor.withOpacity(0.7),
                               ),
@@ -447,9 +462,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                   )
-                                  : const Text(
-                                    'Log In',
-                                    style: TextStyle(
+                                  : Text(
+                                    AppLocalizations.of(context)!.logIn,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -475,9 +490,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                             children: [
-                              const TextSpan(text: 'New here? '),
                               TextSpan(
-                                text: 'Create an Account',
+                                text: AppLocalizations.of(context)!.newHere,
+                              ),
+                              TextSpan(
+                                text:
+                                    AppLocalizations.of(context)!.createAccount,
                                 style: TextStyle(
                                   color: textMainColor,
                                   fontWeight: FontWeight.bold,

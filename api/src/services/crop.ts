@@ -32,7 +32,7 @@ export class CropService {
         try {
             const crops = await prisma.crops.findMany({
                 orderBy: { created_at: 'asc' },
-                include: { CropTypes: true }
+                include: { CropTypes: true , documents: true }
             })
 
             return { crops };

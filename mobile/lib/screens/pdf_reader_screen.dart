@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
@@ -57,13 +58,13 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = 'Cannot open PDF in browser';
+          _errorMessage = AppLocalizations.of(context)!.cannotOpenPdfInBrowser;
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to open PDF: $e';
+        _errorMessage = '${AppLocalizations.of(context)!.failedToOpenPdf}$e';
         _isLoading = false;
       });
     }
@@ -83,7 +84,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load PDF: $e';
+        _errorMessage = '${AppLocalizations.of(context)!.failedToLoadPdf}$e';
         _isLoading = false;
       });
     }
@@ -150,24 +151,24 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       ),
       body:
           _isWebPlatform()
-              ? const Center(
+              ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Opening PDF in browser...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(AppLocalizations.of(context)!.openingPdfInBrowser),
                   ],
                 ),
               )
               : _isLoading
-              ? const Center(
+              ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading PDF...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(AppLocalizations.of(context)!.loadingPdf),
                   ],
                 ),
               )
@@ -192,7 +193,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                         });
                         _initializePdf();
                       },
-                      child: const Text('Retry'),
+                      child: Text(AppLocalizations.of(context)!.retry),
                     ),
                   ],
                 ),

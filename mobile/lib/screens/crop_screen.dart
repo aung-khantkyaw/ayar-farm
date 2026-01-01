@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'document_screen.dart';
@@ -49,7 +50,7 @@ class _CropScreenState extends State<CropScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load crops: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadCrops}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -58,9 +59,11 @@ class _CropScreenState extends State<CropScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading crops: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppLocalizations.of(context)!.errorLoadingCrops}$e'),
+        ),
+      );
     }
   }
 
@@ -252,7 +255,7 @@ class _CropScreenState extends State<CropScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    crop['description'] ?? 'No description',
+                    '${crop['documents']?.length ?? 0} ${(crop['documents']?.length ?? 0) > 1 ? 'documents' : 'document'}',
                     style: TextStyle(color: textMutedColor, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

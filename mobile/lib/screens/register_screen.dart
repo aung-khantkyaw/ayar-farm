@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../constants/user_types.dart';
 import '../services/auth_service.dart';
 
@@ -34,9 +35,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordsDoNotMatch),
+        ),
+      );
       return;
     }
 
@@ -62,9 +65,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.registrationFailed}$e',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -117,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Expanded(
                     child: Text(
-                      'Create Account',
+                      AppLocalizations.of(context)!.createAccount,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: textColor,
@@ -205,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       // Headline
                       Text(
-                        'Join the Community',
+                        AppLocalizations.of(context)!.joinCommunity,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textColor,
@@ -216,7 +223,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Connect with farmers, experts, and traders worldwide.',
+                        AppLocalizations.of(context)!.connectWithFarmers,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textColor.withOpacity(0.7),
@@ -227,10 +234,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 24),
 
                       // Form Fields
-                      _buildLabel('Full Name', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.fullName,
+                        textColor,
+                      ),
                       _buildTextField(
                         controller: _nameController,
-                        hint: 'Enter your full name',
+                        hint: AppLocalizations.of(context)!.enterFullName,
                         icon: Icons.person,
                         surfaceColor: surfaceColor,
                         borderColor: borderColor,
@@ -238,14 +248,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         iconColor: iconColor,
                         primaryColor: primaryColor,
                         validator:
-                            (v) => v?.isEmpty ?? true ? 'Required' : null,
+                            (v) =>
+                                v?.isEmpty ?? true
+                                    ? AppLocalizations.of(context)!.required
+                                    : null,
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('Phone Number', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.phoneNumber,
+                        textColor,
+                      ),
                       _buildTextField(
                         controller: _phoneController,
-                        hint: '+1 (555) 000-0000',
+                        hint: AppLocalizations.of(context)!.phonePlaceholder,
                         icon: Icons.call,
                         keyboardType: TextInputType.phone,
                         surfaceColor: surfaceColor,
@@ -254,14 +270,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         iconColor: iconColor,
                         primaryColor: primaryColor,
                         validator:
-                            (v) => v?.isEmpty ?? true ? 'Required' : null,
+                            (v) =>
+                                v?.isEmpty ?? true
+                                    ? AppLocalizations.of(context)!.required
+                                    : null,
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('Email Address', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.emailAddress,
+                        textColor,
+                      ),
                       _buildTextField(
                         controller: _emailController,
-                        hint: 'you@example.com',
+                        hint: AppLocalizations.of(context)!.emailPlaceholder,
                         icon: Icons.mail,
                         keyboardType: TextInputType.emailAddress,
                         surfaceColor: surfaceColor,
@@ -272,7 +294,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('I am a...', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.iAmA,
+                        textColor,
+                      ),
                       _buildDropdown(
                         surfaceColor: surfaceColor,
                         borderColor: borderColor,
@@ -282,10 +307,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('Password', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.password,
+                        textColor,
+                      ),
                       _buildTextField(
                         controller: _passwordController,
-                        hint: '••••••••',
+                        hint: AppLocalizations.of(context)!.passwordPlaceholder,
                         icon: Icons.lock,
                         obscureText: _obscurePassword,
                         surfaceColor: surfaceColor,
@@ -306,14 +334,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                         ),
                         validator:
-                            (v) => v?.isEmpty ?? true ? 'Required' : null,
+                            (v) =>
+                                v?.isEmpty ?? true
+                                    ? AppLocalizations.of(context)!.required
+                                    : null,
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('Confirm Password', textColor),
+                      _buildLabel(
+                        AppLocalizations.of(context)!.confirmPassword,
+                        textColor,
+                      ),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hint: '••••••••',
+                        hint: AppLocalizations.of(context)!.passwordPlaceholder,
                         icon: Icons.lock_reset,
                         obscureText: true,
                         surfaceColor: surfaceColor,
@@ -322,9 +356,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         iconColor: iconColor,
                         primaryColor: primaryColor,
                         validator: (v) {
-                          if (v?.isEmpty ?? true) return 'Required';
+                          if (v?.isEmpty ?? true)
+                            return AppLocalizations.of(context)!.required;
                           if (v != _passwordController.text)
-                            return 'Passwords do not match';
+                            return AppLocalizations.of(
+                              context,
+                            )!.passwordsDoNotMatch;
                           return null;
                         },
                       ),
@@ -353,9 +390,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                  : const Text(
-                                    'Register',
-                                    style: TextStyle(
+                                  : Text(
+                                    AppLocalizations.of(context)!.register,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -380,11 +417,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 fontSize: 14,
                               ),
                               children: [
-                                const TextSpan(
-                                  text: 'Already have an account? ',
+                                TextSpan(
+                                  text:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.alreadyHaveAccount,
                                 ),
                                 TextSpan(
-                                  text: 'Log in',
+                                  text: AppLocalizations.of(context)!.logIn,
                                   style: const TextStyle(
                                     color: primaryColor,
                                     fontWeight: FontWeight.w600,

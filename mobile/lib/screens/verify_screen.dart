@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 
+import 'package:ayar_farm/l10n/app_localizations.dart';
+
 class VerifyScreen extends StatefulWidget {
   const VerifyScreen({super.key});
 
@@ -61,9 +63,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Verification failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.verificationFailed}$e',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -80,14 +86,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
       await AuthService.resendOTP(phoneNumber: phoneNumber, email: email);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP resent successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.otpResent)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to resend OTP: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.failedToResendOtp}$e',
+            ),
+          ),
+        );
       }
     }
   }
@@ -98,7 +108,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final identifier = args?['email'] ?? args?['phoneNumber'] ?? 'your account';
+    final identifier =
+        args?['email'] ??
+        args?['phoneNumber'] ??
+        AppLocalizations.of(context)!.yourAccount;
 
     // Colors
     const primaryColor = Color(0xFF2BEE5B);
@@ -210,7 +223,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
                     // Headline
                     Text(
-                      "Verify it's you",
+                      AppLocalizations.of(context)!.verifyItsYou,
                       style: TextStyle(
                         color: textColor,
                         fontSize: 28,
@@ -219,7 +232,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter the 6-digit code sent to',
+                      AppLocalizations.of(context)!.enterCodeSentTo,
                       style: TextStyle(
                         color: subTextColor,
                         fontSize: 16,
@@ -295,7 +308,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
                     // Resend
                     Text(
-                      "Didn't receive the code?",
+                      AppLocalizations.of(context)!.didntReceiveCode,
                       style: TextStyle(
                         color: subTextColor,
                         fontSize: 14,
@@ -309,7 +322,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Resend Code',
+                            AppLocalizations.of(context)!.resendCode,
                             style: TextStyle(
                               color:
                                   isDark
@@ -351,16 +364,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                 )
                                 : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
+                                  children: [
                                     Text(
-                                      'Confirm & Continue',
-                                      style: TextStyle(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.confirmAndContinue,
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward),
                                   ],
                                 ),
                       ),

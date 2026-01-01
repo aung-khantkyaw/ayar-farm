@@ -1,3 +1,4 @@
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../widgets/common_header.dart';
 import 'market_screen.dart';
@@ -42,7 +43,7 @@ class CategoryScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Knowledge Base',
+                      AppLocalizations.of(context)!.knowledgeBase,
                       style: TextStyle(
                         color: textMainColor,
                         fontSize: 20,
@@ -61,8 +62,8 @@ class CategoryScreen extends StatelessWidget {
                   childAspectRatio: 0.8,
                   children: [
                     _buildKnowledgeCard(
-                      'Crops & Pulses',
-                      'Farming guides',
+                      AppLocalizations.of(context)!.crops,
+                      AppLocalizations.of(context)!.farmingGuides,
                       'https://lh3.googleusercontent.com/aida-public/AB6AXuDR_WWrQ9f0s0cJHSHHRlYARq_M2JBR8RZzV3vmD8GGx4Wn83-weFP9Q4a8-oSP5JUKtq2CSDDZq0kiouIFyQU6hvzoLzsymxM3iLUMr0qnVrg1Oj659dwi-52SJraEGAbaEFo-Y4gIHSLEscOQ239tKywE1km3MDH_3nzBGPiaN3Kwa83Wo84zMqVEar_K8HxiiOrl_7I54wL20ql2dihYB__8V8JJxITd5JddDjAK-ucHHzoT0wWeSxEUkr2yfM-8ZMl9Ec3yzqyo',
                       surfaceColor,
                       textMainColor,
@@ -75,8 +76,8 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
-                      'Livestock',
-                      'Animal husbandry',
+                      AppLocalizations.of(context)!.livestocks,
+                      AppLocalizations.of(context)!.animalHusbandry,
                       'https://lh3.googleusercontent.com/aida-public/AB6AXuCb3WPmdk5HMEGEkYDQMMuX1zhC6AJU8cXbPDyrtqRD1vhQdAydQaHtUp8C6s7p_wLgEHj9yQ_YbwPuNnOPBYCP1MwzrTESf4qPWAN_n38CA4RJHgNmAp1Vooma40b9B6dX32W5TqQoEPUKE0D2z5qN4VLAjlPZT8X5b9B2R3olofAqJHs_rsrZZUI2Fd3LDPVxd3-KDm87a9hXBZJzUQiNjRd48uUThiXq6VhXT-l_i7AnnjpiVM28t3TmsPiZzGrIQUcPnlJ1kjsZ',
                       surfaceColor,
                       textMainColor,
@@ -89,8 +90,8 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
-                      'Fishery',
-                      'Aquaculture tips',
+                      AppLocalizations.of(context)!.fishery,
+                      AppLocalizations.of(context)!.aquacultureTips,
                       'https://lh3.googleusercontent.com/aida-public/AB6AXuBOM3vaCH19CeYdlgAEYBRW8f37OXhUqsVmuVSjsen8x2wI3fPGXMFH2Yps3BcFwFc9p-lwc_6Y19RulEjb4yxi7-9GldBvUQgti7oXK36tiAG4aRKUX5pqvsJwefxtJdwIT5jrSvV7cbFtLZuMsJyz3OHA7ZxT0DGMl7v3_3VTxIO-ni1wG701Oq5uamMJEnkOwJ9XGTAWskpcrPKlNwcmgLdb4ySiOuN9hdLj_RW-MIX2aANbwHDtd7qJYuJUg8MxmFWQXXkWo0Ga',
                       surfaceColor,
                       textMainColor,
@@ -103,8 +104,8 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
-                      'Agri Industry',
-                      'Industrial tech',
+                      AppLocalizations.of(context)!.agriIndustry,
+                      AppLocalizations.of(context)!.industrialTech,
                       'https://lh3.googleusercontent.com/aida-public/AB6AXuCPKmuPtRD9KWqoyJ_UI0EYN6xv5VqwmwwipVqN9nor_8T32J631B4j74AKY2jcSDw9XX0hmiW_fywsl9shMcu9qJpl64QX-xwyNHrgriARPMKI-J5cvYI244xoiVgsCjnq6xQ7WVT-NPIwVJzPnY-jcohi7yV3-n-e10BQO8_ab2vjn-p07UGPmMWNj5dfJ4dJ751Ll0ykiuCi2vuNXDhjJLpDIgnCaKvJmqKTZ-R8foIhcxOFe5Sxj220sJ6byr_CTB1Jx0h9ztNH',
                       surfaceColor,
                       textMainColor,
@@ -122,7 +123,7 @@ class CategoryScreen extends StatelessWidget {
 
                 // Section 2: Tools & Utilities
                 Text(
-                  'Tools & Utilities',
+                  AppLocalizations.of(context)!.toolsUtilities,
                   style: TextStyle(
                     color: textMainColor,
                     fontSize: 20,
@@ -131,8 +132,8 @@ class CategoryScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _buildToolCard(
-                  'Agri Calculator',
-                  'Calculate crop yields, fertilizer needs, and profits instantly.',
+                  AppLocalizations.of(context)!.agriCalculator,
+                  AppLocalizations.of(context)!.calculatorDesc,
                   'https://lh3.googleusercontent.com/aida-public/AB6AXuDMBgBNwGIqanLq_luP43546OYoPp-dhqOOfQ2oXLUxENTj7oggVnZsrCfBrrzBREvKTyy0JSNKwX8U1Y32CJmAx9qNRNMguu3wqi_72dA31UxBUVOWLMxh9wD_sD8tVI7cMTvpLTMu0Ymyywqjq123SOjRbFShBcLRvH7dELARJteSwYNexvDNDrWjs_ts7DXgVwqv_WQG7jZzo9Osb2QwXwayiopxg4zE1kDu48bRkLXTLpR3rxZ4Q4k8WFkEduNXHBxP3YSYhoxK',
                   surfaceColor,
                   textMainColor,
@@ -152,7 +153,7 @@ class CategoryScreen extends StatelessWidget {
 
                 // Section 3: Daily Insights
                 Text(
-                  'Daily Insights',
+                  AppLocalizations.of(context)!.dailyInsights,
                   style: TextStyle(
                     color: textMainColor,
                     fontSize: 20,
@@ -164,7 +165,7 @@ class CategoryScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildInsightCard(
-                        'Weather',
+                        AppLocalizations.of(context)!.weather,
                         '28°C',
                         'Sunny, Chance of rain 10%',
                         Icons.wb_sunny,
@@ -188,7 +189,7 @@ class CategoryScreen extends StatelessWidget {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildInsightCard(
-                        'Market Price',
+                        AppLocalizations.of(context)!.marketPrice,
                         'High',
                         'Wheat up by 2.4% today',
                         Icons.payments_outlined,

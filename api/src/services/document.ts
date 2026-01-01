@@ -57,7 +57,7 @@ export class DocumentService {
                     },
                     orderBy: { created_at: 'asc' }
                 });
-            } else if (type === "fishery") {
+            } else if (type === "fish") {
                 documents = await prisma.documents.findMany({
                     where: {
                         fish_id: { not: null }
@@ -138,7 +138,7 @@ export class DocumentService {
                     },
                     orderBy: { created_at: 'asc' }
                 }));
-            } else if (type === "fishery") {
+            } else if (type === "fish") {
                 documents = type_id ? (await prisma.documents.findMany({
                     where: {
                         fish_id: type_id

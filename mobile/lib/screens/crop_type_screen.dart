@@ -1,3 +1,4 @@
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
@@ -37,7 +38,7 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load crop types: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadCropTypes}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -47,9 +48,13 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading crop types: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.errorLoadingCropTypes}$e',
+          ),
+        ),
+      );
     }
   }
 
@@ -96,7 +101,7 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Crop Types',
+                    AppLocalizations.of(context)!.crops,
                     style: TextStyle(
                       color: textMainColor,
                       fontSize: 18,
@@ -112,7 +117,9 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _cropTypes.isEmpty
-                    ? const Center(child: Text('No crop types available'))
+                    ? Center(
+                      child: Text(AppLocalizations.of(context)!.noCropTypes),
+                    )
                     : RefreshIndicator(
                       onRefresh: _fetchCropTypes,
                       color: primaryColor,
@@ -127,7 +134,7 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
                             _cropTypes.map((cropType) {
                               return _buildCropTypeCard(
                                 cropType['name'] ?? 'Unknown',
-                                cropType['description'] ?? 'No description',
+                                '${cropType['crops']?.length ?? 0} ${(cropType['crops']?.length ?? 0) > 1 ? AppLocalizations.of(context)!.subcategories : AppLocalizations.of(context)!.subcategory}',
                                 cropType['image_urls'] != null &&
                                         cropType['image_urls'].isNotEmpty
                                     ? cropType['image_urls'][0]

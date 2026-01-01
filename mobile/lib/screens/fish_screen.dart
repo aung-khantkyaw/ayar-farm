@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'document_screen.dart';
@@ -35,7 +36,7 @@ class _FishScreenState extends State<FishScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load fish: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadFish}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -44,9 +45,11 @@ class _FishScreenState extends State<FishScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading fish: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppLocalizations.of(context)!.errorLoadingFish}$e'),
+        ),
+      );
     }
   }
 
@@ -92,7 +95,7 @@ class _FishScreenState extends State<FishScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Fish',
+                    AppLocalizations.of(context)!.fish,
                     style: TextStyle(
                       color: textMainColor,
                       fontSize: 18,

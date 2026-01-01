@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'machine_screen.dart';
@@ -37,7 +38,7 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load machine types: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadMachineTypes}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -48,7 +49,11 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading machine types: $e')),
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.errorLoadingMachineTypes}$e',
+          ),
+        ),
       );
     }
   }
@@ -96,7 +101,7 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Machine Types',
+                    AppLocalizations.of(context)!.machineTypes,
                     style: TextStyle(
                       color: textMainColor,
                       fontSize: 18,

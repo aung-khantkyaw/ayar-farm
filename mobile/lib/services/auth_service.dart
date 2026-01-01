@@ -3,6 +3,8 @@ import '../models/user.dart';
 import 'api_service.dart';
 
 class AuthService {
+  static User? currentUser;
+
   static Future<AuthResponse> register({
     required String name,
     required String phoneNumber,

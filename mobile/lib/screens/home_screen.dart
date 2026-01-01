@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_header.dart';
 import 'weather_screen.dart';
 
@@ -32,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _locationError = 'Location services are disabled.';
+          _locationError = AppLocalizations.of(context)!.locationDisabled;
           _isLoadingWeather = false;
         });
         return;
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() {
-            _locationError = 'Location permissions are denied';
+            _locationError = AppLocalizations.of(context)!.locationDenied;
             _isLoadingWeather = false;
           });
           return;
@@ -53,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (permission == LocationPermission.deniedForever) {
         setState(() {
           _locationError =
-              'Location permissions are permanently denied, we cannot request permissions.';
+              AppLocalizations.of(context)!.locationPermanentlyDenied;
           _isLoadingWeather = false;
         });
         return;
@@ -73,13 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } else {
         setState(() {
-          _locationError = 'Failed to load weather data';
+          _locationError = AppLocalizations.of(context)!.weatherLoadFailed;
           _isLoadingWeather = false;
         });
       }
     } catch (e) {
       setState(() {
-        _locationError = 'Error getting location or weather: $e';
+        _locationError = '${AppLocalizations.of(context)!.weatherError}$e';
         _isLoadingWeather = false;
       });
     }
@@ -165,7 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Text(
                                           _locationError.isNotEmpty
                                               ? _locationError
-                                              : 'Weather unavailable',
+                                              : AppLocalizations.of(
+                                                context,
+                                              )!.weatherUnavailable,
                                           style: TextStyle(color: textSubColor),
                                         ),
                                       )
@@ -184,7 +187,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    'Current Location', // API doesn't seem to return city name in the snippet provided
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.currentLocation, // API doesn't seem to return city name in the snippet provided
                                                     style: TextStyle(
                                                       color: textSubColor,
                                                       fontSize: 14,
@@ -204,7 +209,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                   Text(
                                                     _weather!['current']['status'] ??
-                                                        'Unknown',
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.unknown,
                                                     style: TextStyle(
                                                       color: textMainColor,
                                                       fontWeight:
@@ -271,44 +278,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 12),
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: primaryColor.withOpacity(
-                                                0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.lightbulb_outline,
-                                                  size: 18,
-                                                  color:
-                                                      isDark
-                                                          ? primaryColor
-                                                          : primaryContentColor,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Good day for sowing wheat.',
-                                                    style: TextStyle(
-                                                      color:
-                                                          isDark
-                                                              ? primaryColor
-                                                              : primaryContentColor,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
                                         ],
                                       ),
                             ),
@@ -323,7 +292,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     TextField(
                       style: TextStyle(color: textMainColor),
                       decoration: InputDecoration(
-                        hintText: 'Search crops, pests, advice...',
+                        hintText:
+                            AppLocalizations.of(context)!.searchPlaceholder,
                         hintStyle: TextStyle(color: textSubColor),
                         filled: true,
                         fillColor: surfaceColor,
@@ -358,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           _buildCategoryChip(
-                            'All',
+                            AppLocalizations.of(context)!.catAll,
                             true,
                             primaryColor,
                             primaryContentColor,
@@ -368,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 12),
                           _buildCategoryChip(
-                            'Pest Control',
+                            AppLocalizations.of(context)!.catPestControl,
                             false,
                             primaryColor,
                             primaryContentColor,
@@ -378,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 12),
                           _buildCategoryChip(
-                            'Irrigation',
+                            AppLocalizations.of(context)!.catIrrigation,
                             false,
                             primaryColor,
                             primaryContentColor,
@@ -388,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 12),
                           _buildCategoryChip(
-                            'Organic',
+                            AppLocalizations.of(context)!.catOrganic,
                             false,
                             primaryColor,
                             primaryContentColor,
@@ -398,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 12),
                           _buildCategoryChip(
-                            'Livestock',
+                            AppLocalizations.of(context)!.catLivestock,
                             false,
                             primaryColor,
                             primaryContentColor,
@@ -414,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Community Feed
                     Text(
-                      'Community Feed',
+                      AppLocalizations.of(context)!.communityFeed,
                       style: TextStyle(
                         color: textMainColor,
                         fontSize: 18,
@@ -438,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       imageUrl:
                           'https://lh3.googleusercontent.com/aida-public/AB6AXuDC0TDG_GOaM8D4epOu6jd93DwAaf1VAXEmC_oMU-jcRPx9pOIyodHBiDjMfzn4DYQCez656aEW2pk625HwPqc_2gB2PjuQt0NsS4cosGE_1BWoslHL0-SsKzsteQ3MPtHJUMoZrYpNEwiVrCCiRXZh3rqpQ-9ucw68qK4HiZ26gRoEorLeeUvXrd1ADGDwYwFoEVxy7ydcyjK-IdRS7AVtu_9TwRLDjU1d1Nj_KQGd1xAHgujmLK9ZPva0fFdJAKu2bE2Mg9rlLjyn',
                       likes: '124',
-                      comments: '45 Comments',
+                      comments: '45 ${AppLocalizations.of(context)!.comments}',
                     ),
                     const SizedBox(height: 16),
 
@@ -456,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       "Remember to rotate your crops every season. Planting the same crop in the same spot encourages pest buildup and depletes specific nutrients. Try legumes after corn! 🌽➡️🫘",
                       tag: 'SOIL HEALTH',
                       likes: '856',
-                      comments: '12 Comments',
+                      comments: '12 ${AppLocalizations.of(context)!.comments}',
                     ),
                     const SizedBox(height: 16),
 
@@ -475,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       imageUrl:
                           'https://lh3.googleusercontent.com/aida-public/AB6AXuAKr3T-T6YWnnuCIovWlpEstig0AQfE9DDAoOUdvq5zo7reuDzSHCu_1iO1iR9h1DcpD7rEwojXfDtNGHgGJAQCGJCfHc2kwnmyCy0tzfh96JP5ioS4JnMnM_0L9EcrgYNj1k42W4E07nth9KqnclcTHDinOp47Wl-aVOT8xxYoR59ixGgGhFPFsche4OJDxrjwZ4La1wzTCGFT5m4HDEOUTH2QdWzO84spBzbodIce-PlUQSeW5Qt2sUvEEv-4jf9Qz68Cd5lvzMh9',
                       likes: '2.1k',
-                      comments: '89 Comments',
+                      comments: '89 ${AppLocalizations.of(context)!.comments}',
                     ),
                   ],
                 ),

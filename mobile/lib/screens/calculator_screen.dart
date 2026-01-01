@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:math_expressions/math_expressions.dart' hide Stack;
 
 class CalculatorScreen extends StatefulWidget {
@@ -224,6 +225,50 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     });
   }
 
+  String _getLocalized(BuildContext context, String key) {
+    final loc = AppLocalizations.of(context)!;
+    switch (key) {
+      case 'Area':
+        return loc.area;
+      case 'Weight':
+        return loc.weight;
+      case 'Temperature':
+        return loc.temperature;
+      case 'Liquid':
+        return loc.liquid;
+      case 'Hectare':
+        return loc.hectare;
+      case 'Acre':
+        return loc.acre;
+      case 'Sq Meter':
+        return loc.sqMeter;
+      case 'Sq Foot':
+        return loc.sqFoot;
+      case 'Kg':
+        return loc.kg;
+      case 'Lb':
+        return loc.lb;
+      case 'Ton':
+        return loc.ton;
+      case 'Gram':
+        return loc.gram;
+      case 'Celsius':
+        return loc.celsius;
+      case 'Fahrenheit':
+        return loc.fahrenheit;
+      case 'Kelvin':
+        return loc.kelvin;
+      case 'Liter':
+        return loc.liter;
+      case 'Gallon':
+        return loc.gallon;
+      case 'Milliliter':
+        return loc.milliliter;
+      default:
+        return key;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -242,7 +287,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Agri Calculator',
+          AppLocalizations.of(context)!.agriCalculator,
           style: TextStyle(
             color: textMain,
             fontWeight: FontWeight.bold,
@@ -409,7 +454,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Unit Converter',
+                  AppLocalizations.of(context)!.unitConverter,
                   style: TextStyle(
                     color: textMain,
                     fontSize: 18,
@@ -423,8 +468,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       _convert();
                     });
                   },
-                  child: const Text(
-                    'Reset',
+                  child: Text(
+                    AppLocalizations.of(context)!.reset,
                     style: TextStyle(
                       color: primaryColor,
                       fontWeight: FontWeight.bold,
@@ -472,7 +517,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    category,
+                                    _getLocalized(context, category),
                                     style: TextStyle(
                                       color:
                                           isSelected ? Colors.black : textMuted,
@@ -499,7 +544,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'FROM',
+                                AppLocalizations.of(context)!.from,
                                 style: TextStyle(
                                   color: textMuted,
                                   fontSize: 12,
@@ -564,7 +609,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                                 return DropdownMenuItem<String>(
                                                   value: value,
                                                   child: Text(
-                                                    value,
+                                                    _getLocalized(
+                                                      context,
+                                                      value,
+                                                    ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   ),
@@ -590,7 +638,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'TO',
+                                AppLocalizations.of(context)!.to,
                                 style: TextStyle(
                                   color: textMuted,
                                   fontSize: 12,
@@ -657,7 +705,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                                 return DropdownMenuItem<String>(
                                                   value: value,
                                                   child: Text(
-                                                    value,
+                                                    _getLocalized(
+                                                      context,
+                                                      value,
+                                                    ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   ),

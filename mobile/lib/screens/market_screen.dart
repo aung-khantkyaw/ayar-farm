@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -187,7 +188,7 @@ class _MarketScreenState extends State<MarketScreen> {
         });
       } else {
         setState(() {
-          _error = 'Failed to load market data';
+          _error = AppLocalizations.of(context)!.failedToLoadMarketData;
           _isLoading = false;
         });
       }
@@ -253,9 +254,9 @@ class _MarketScreenState extends State<MarketScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Search Market Prices',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.searchMarketPrices,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -271,7 +272,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   // State Selection
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
-                      labelText: 'Select Region',
+                      labelText: AppLocalizations.of(context)!.selectRegion,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -282,9 +283,9 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                     value: tempStateId,
                     items: [
-                      const DropdownMenuItem<int>(
+                      DropdownMenuItem<int>(
                         value: null,
-                        child: Text('All Regions'),
+                        child: Text(AppLocalizations.of(context)!.allRegions),
                       ),
                       ..._states.map((state) {
                         return DropdownMenuItem<int>(
@@ -306,7 +307,8 @@ class _MarketScreenState extends State<MarketScreen> {
                   // Production Selection
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
-                      labelText: 'Select Product Type',
+                      labelText:
+                          AppLocalizations.of(context)!.selectProductType,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -317,9 +319,11 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                     value: tempProductionId,
                     items: [
-                      const DropdownMenuItem<int>(
+                      DropdownMenuItem<int>(
                         value: null,
-                        child: Text('All Product Types'),
+                        child: Text(
+                          AppLocalizations.of(context)!.allProductTypes,
+                        ),
                       ),
                       ..._productions.map((production) {
                         return DropdownMenuItem<int>(
@@ -342,7 +346,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   if (tempMarkets.isNotEmpty)
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: 'Select Market',
+                        labelText: AppLocalizations.of(context)!.selectMarket,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -353,9 +357,9 @@ class _MarketScreenState extends State<MarketScreen> {
                       ),
                       value: tempMarketName,
                       items: [
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem<String>(
                           value: null,
-                          child: Text('All Markets'),
+                          child: Text(AppLocalizations.of(context)!.allMarkets),
                         ),
                         ...tempMarkets.map((market) {
                           final marketName =
@@ -392,7 +396,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     },
                     child: InputDecorator(
                       decoration: InputDecoration(
-                        labelText: 'Select Date',
+                        labelText: AppLocalizations.of(context)!.selectDate,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -405,7 +409,7 @@ class _MarketScreenState extends State<MarketScreen> {
                       child: Text(
                         tempDate != null
                             ? DateFormat('yyyy-MM-dd').format(tempDate!)
-                            : 'Today',
+                            : AppLocalizations.of(context)!.today,
                         style: TextStyle(
                           color: tempDate != null ? null : Colors.grey,
                         ),
@@ -434,9 +438,9 @@ class _MarketScreenState extends State<MarketScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Search',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.search,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -470,7 +474,7 @@ class _MarketScreenState extends State<MarketScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Market Prices',
+          AppLocalizations.of(context)!.marketPrices,
           style: TextStyle(
             color: textMain,
             fontWeight: FontWeight.bold,
@@ -509,26 +513,26 @@ class _MarketScreenState extends State<MarketScreen> {
             Navigator.pop(context);
           }
         },
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            activeIcon: Icon(Icons.grid_view),
-            label: 'Categories',
+            icon: const Icon(Icons.grid_view),
+            activeIcon: const Icon(Icons.grid_view),
+            label: AppLocalizations.of(context)!.navCategory,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.groups_outlined),
-            activeIcon: Icon(Icons.groups),
-            label: 'Community',
+            icon: const Icon(Icons.groups_outlined),
+            activeIcon: const Icon(Icons.groups),
+            label: AppLocalizations.of(context)!.navChatting,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            activeIcon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.navSetting,
           ),
         ],
       ),
@@ -563,8 +567,8 @@ class _MarketScreenState extends State<MarketScreen> {
                           const SizedBox(width: 8),
                           Text(
                             _selectedDate != null
-                                ? 'Prices for '
-                                : 'Prices for Today, ',
+                                ? AppLocalizations.of(context)!.pricesFor
+                                : AppLocalizations.of(context)!.pricesForToday,
                             style: TextStyle(
                               color: textMain,
                               fontSize: 14,
@@ -602,7 +606,7 @@ class _MarketScreenState extends State<MarketScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No Market Data Found',
+                              AppLocalizations.of(context)!.noMarketDataFound,
                               style: TextStyle(
                                 color: textMain,
                                 fontSize: 18,
@@ -611,7 +615,9 @@ class _MarketScreenState extends State<MarketScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Try selecting a different region or product type to see available prices.',
+                              AppLocalizations.of(
+                                context,
+                              )!.marketDataEmptyMessage,
                               style: TextStyle(color: textMuted, fontSize: 14),
                               textAlign: TextAlign.center,
                             ),
@@ -660,7 +666,7 @@ class _MarketScreenState extends State<MarketScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Data Disclaimer',
+                                  AppLocalizations.of(context)!.dataDisclaimer,
                                   style: TextStyle(
                                     color:
                                         isDark
@@ -672,7 +678,9 @@ class _MarketScreenState extends State<MarketScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Prices are updated daily. Actual transaction prices may vary slightly.',
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.marketDisclaimerText,
                                   style: TextStyle(
                                     color:
                                         isDark
@@ -738,7 +746,7 @@ class _MarketScreenState extends State<MarketScreen> {
             child: Icon(marketIcon, color: iconColor, size: 20),
           ),
           title: Text(
-            market['market'] ?? 'Unknown Market',
+            market['market'] ?? AppLocalizations.of(context)!.unknownMarket,
             style: TextStyle(
               color: textMain,
               fontWeight: FontWeight.bold,
@@ -746,7 +754,9 @@ class _MarketScreenState extends State<MarketScreen> {
             ),
           ),
           subtitle: Text(
-            'Market Region', // API doesn't seem to have region, using placeholder
+            AppLocalizations.of(
+              context,
+            )!.marketRegion, // API doesn't seem to have region, using placeholder
             style: TextStyle(color: textMuted, fontSize: 12),
           ),
           children: [
@@ -759,7 +769,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   Expanded(
                     flex: 5,
                     child: Text(
-                      'PRODUCT',
+                      AppLocalizations.of(context)!.productHeader,
                       style: TextStyle(
                         color: textMuted,
                         fontSize: 10,
@@ -771,7 +781,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   Expanded(
                     flex: 3,
                     child: Text(
-                      'UNIT',
+                      AppLocalizations.of(context)!.unitHeader,
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         color: textMuted,
@@ -784,7 +794,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      'PRICE (MMK)',
+                      AppLocalizations.of(context)!.priceHeader,
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         color: textMuted,
@@ -871,7 +881,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 ),
                 child: Center(
                   child: Text(
-                    'View all ${items.length} items',
+                    AppLocalizations.of(context)!.viewAllItems(items.length),
                     style: const TextStyle(
                       color: primaryColor,
                       fontSize: 14,

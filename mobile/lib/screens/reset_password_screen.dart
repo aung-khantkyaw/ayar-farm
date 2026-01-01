@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 
+import 'package:ayar_farm/l10n/app_localizations.dart';
+
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
 
@@ -67,13 +69,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reset code resent successfully')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.resetCodeResent),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to resend reset code: $e')),
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.failedToResendResetCode}$e',
+            ),
+          ),
         );
       }
     } finally {
@@ -86,20 +94,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     String otp = _otpControllers.map((c) => c.text).join();
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the 6-digit code')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.enterSixDigitCode),
+        ),
       );
       return;
     }
     if (_newPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a new password')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.enterNewPassword)),
       );
       return;
     }
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordsDoNotMatch),
+        ),
+      );
       return;
     }
 
@@ -114,7 +126,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.passwordUpdated),
+          ),
         );
         // Navigate back to login
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
@@ -122,7 +136,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update password: $e')),
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.failedToUpdatePassword}$e',
+            ),
+          ),
         );
       }
     } finally {
@@ -189,7 +207,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 48),
                       child: Text(
-                        'Reset Password',
+                        AppLocalizations.of(context)!.resetPasswordTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: textColor,
@@ -215,7 +233,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Verify & Reset',
+                            AppLocalizations.of(context)!.verifyAndReset,
                             style: TextStyle(
                               color: textColor,
                               fontSize: 28,
@@ -225,7 +243,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "Enter the code sent to ${_identifier ?? 'your contact info'} and set a new password.",
+                            AppLocalizations.of(
+                              context,
+                            )!.verifyAndResetSubtitle(
+                              _identifier ?? 'your contact info',
+                            ),
                             style: TextStyle(
                               color: textSubColor,
                               fontSize: 16,
@@ -250,7 +272,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Verification Code',
+                                AppLocalizations.of(context)!.verificationCode,
                                 style: TextStyle(
                                   color: textColor,
                                   fontSize: 14,
@@ -260,8 +282,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               GestureDetector(
                                 onTap: _isLoading ? null : _handleResendCode,
                                 child: Text(
-                                  'Resend Code',
-                                  style: TextStyle(
+                                  AppLocalizations.of(context)!.resendCode,
+                                  style: const TextStyle(
                                     color: primaryColor,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -325,7 +347,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Enter the 6-digit code sent to your phone.',
+                            AppLocalizations.of(
+                              context,
+                            )!.enterSixDigitCodeSubtitle,
                             style: TextStyle(color: textSubColor, fontSize: 12),
                           ),
 
@@ -333,7 +357,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                           // New Password Input
                           Text(
-                            'New Password',
+                            AppLocalizations.of(context)!.newPassword,
                             style: TextStyle(
                               color: textColor,
                               fontSize: 14,
@@ -349,7 +373,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 obscureText: _obscurePassword,
                                 style: TextStyle(color: textColor),
                                 decoration: InputDecoration(
-                                  hintText: 'Must be at least 8 characters',
+                                  hintText:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.passwordMinLength,
                                   hintStyle: TextStyle(color: placeholderColor),
                                   filled: true,
                                   fillColor: surfaceColor,
@@ -396,7 +423,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                           // Confirm Password Input
                           Text(
-                            'Confirm New Password',
+                            AppLocalizations.of(context)!.confirmNewPassword,
                             style: TextStyle(
                               color: textColor,
                               fontSize: 14,
@@ -412,7 +439,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 obscureText: _obscureConfirmPassword,
                                 style: TextStyle(color: textColor),
                                 decoration: InputDecoration(
-                                  hintText: 'Re-enter your password',
+                                  hintText:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.reEnterPassword,
                                   hintStyle: TextStyle(color: placeholderColor),
                                   filled: true,
                                   fillColor: surfaceColor,
@@ -493,9 +523,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   ),
                                 ),
                               )
-                              : const Text(
-                                'Update Password',
-                                style: TextStyle(
+                              : Text(
+                                AppLocalizations.of(context)!.updatePassword,
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.015,
@@ -512,7 +542,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Need help? Contact Support',
+                          AppLocalizations.of(context)!.contactSupport,
                           style: TextStyle(
                             color: textSubColor,
                             fontSize: 14,

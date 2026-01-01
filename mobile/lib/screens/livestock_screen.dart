@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'document_screen.dart';
@@ -35,7 +36,7 @@ class _LivestockScreenState extends State<LivestockScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to load livestock: ${response['message'] ?? 'Unknown error'}',
+              '${AppLocalizations.of(context)!.failedToLoadLivestock}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
             ),
           ),
         );
@@ -44,9 +45,13 @@ class _LivestockScreenState extends State<LivestockScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading livestock: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.errorLoadingLivestock}$e',
+          ),
+        ),
+      );
     }
   }
 
@@ -92,7 +97,7 @@ class _LivestockScreenState extends State<LivestockScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Livestock',
+                    AppLocalizations.of(context)!.livestocks,
                     style: TextStyle(
                       color: textMainColor,
                       fontSize: 18,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'pdf_reader_screen.dart';
@@ -50,18 +51,18 @@ class _DocumentScreenState extends State<DocumentScreen> {
     }
   }
 
-  String _getTitle() {
+  String _getTitle(BuildContext context) {
     switch (widget.type) {
       case 'crop':
-        return 'Crop Documents';
+        return AppLocalizations.of(context)!.cropDocuments;
       case 'fish':
-        return 'Fish Documents';
+        return AppLocalizations.of(context)!.fishDocuments;
       case 'livestock':
-        return 'Livestock Documents';
+        return AppLocalizations.of(context)!.livestockDocuments;
       case 'machine':
-        return 'Machine Documents';
+        return AppLocalizations.of(context)!.machineDocuments;
       default:
-        return 'Documents';
+        return AppLocalizations.of(context)!.documents;
     }
   }
 
@@ -104,7 +105,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      _getTitle(),
+                      _getTitle(context),
                       style: TextStyle(
                         color: textMainColor,
                         fontSize: 18,
@@ -124,7 +125,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
                       : _documents.isEmpty
                       ? Center(
                         child: Text(
-                          'No documents available',
+                          AppLocalizations.of(context)!.noDocumentsAvailable,
                           style: TextStyle(color: textMutedColor),
                         ),
                       )
@@ -138,6 +139,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
                           itemBuilder: (context, index) {
                             final doc = _documents[index];
                             return _buildDocumentCard(
+                              context,
                               doc,
                               surfaceColor,
                               textMainColor,
@@ -156,6 +158,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
   }
 
   Widget _buildDocumentCard(
+    BuildContext context,
     Map<String, dynamic> doc,
     Color surfaceColor,
     Color textMainColor,
@@ -163,15 +166,15 @@ class _DocumentScreenState extends State<DocumentScreen> {
     Color backgroundColor,
     bool isDark,
   ) {
-    final title = doc['title'] ?? 'Unknown';
-    final author = doc['author'] ?? 'Anonymous';
+    final title = doc['title'] ?? AppLocalizations.of(context)!.unknown;
+    final author = doc['author'] ?? AppLocalizations.of(context)!.anonymous;
     final fileUrls = doc['file_urls'] as List?;
     final fileUrl = fileUrls != null && fileUrls.isNotEmpty ? fileUrls[0] : '';
     final sizeInBits = doc['size'];
     final sizeInMB =
         sizeInBits != null
             ? (sizeInBits / 1000000).toStringAsFixed(1)
-            : 'Unknown';
+            : AppLocalizations.of(context)!.unknown;
 
     // Determine icon and color based on file type
     final isPdf = fileUrl.toLowerCase().contains('.pdf');

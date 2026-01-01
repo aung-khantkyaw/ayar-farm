@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -42,7 +43,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _error = 'Location services are disabled.';
+          _error = AppLocalizations.of(context)!.locationDisabled;
           _isLoading = false;
         });
         return;
@@ -53,7 +54,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() {
-            _error = 'Location permissions are denied';
+            _error = AppLocalizations.of(context)!.locationDenied;
             _isLoading = false;
           });
           return;
@@ -62,7 +63,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
       if (permission == LocationPermission.deniedForever) {
         setState(() {
-          _error = 'Location permissions are permanently denied.';
+          _error = AppLocalizations.of(context)!.locationPermanentlyDenied;
           _isLoading = false;
         });
         return;
@@ -82,13 +83,13 @@ class _WeatherScreenState extends State<WeatherScreen> {
         });
       } else {
         setState(() {
-          _error = 'Failed to load weather data';
+          _error = AppLocalizations.of(context)!.weatherLoadFailed;
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error: $e';
+        _error = '${AppLocalizations.of(context)!.weatherError}$e';
         _isLoading = false;
       });
     }
@@ -247,26 +248,26 @@ class _WeatherScreenState extends State<WeatherScreen> {
             Navigator.pop(context);
           }
         },
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            activeIcon: Icon(Icons.grid_view),
-            label: 'Categories',
+            icon: const Icon(Icons.grid_view),
+            activeIcon: const Icon(Icons.grid_view),
+            label: AppLocalizations.of(context)!.navCategory,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.groups_outlined),
-            activeIcon: Icon(Icons.groups),
-            label: 'Community',
+            icon: const Icon(Icons.groups_outlined),
+            activeIcon: const Icon(Icons.groups),
+            label: AppLocalizations.of(context)!.navCommunity,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            activeIcon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -286,7 +287,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     textMain,
                   ),
                   Text(
-                    'Weather Forecast',
+                    AppLocalizations.of(context)!.weatherForecast,
                     style: TextStyle(
                       color: textMain,
                       fontSize: 18,

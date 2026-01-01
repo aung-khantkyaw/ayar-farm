@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -6,6 +8,10 @@ import 'screens/verify_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/main_screen.dart';
+
+final ValueNotifier<Locale> appLocaleNotifier = ValueNotifier(
+  const Locale('my'),
+);
 
 void main() {
   runApp(const MyApp());
@@ -17,26 +23,42 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ayar Farm',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF41BE02), // Primary seed
-          primary: const Color(0xFF41BE02),
-          secondary: const Color(0xFFF1B84F),
-          background: const Color(0xFFFFE4AD),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFFFE4AD),
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const WelcomeScreen(),
-      routes: {
-        '/home': (context) => const MainScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/verify': (context) => const VerifyScreen(),
-        '/forgot-password': (context) => const ForgotPasswordScreen(),
-        '/reset-password': (context) => const ResetPasswordScreen(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: appLocaleNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp(
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF41BE02), // Primary seed
+              primary: const Color(0xFF41BE02),
+              secondary: const Color(0xFFF1B84F),
+              background: const Color(0xFFFFE4AD),
+            ),
+            scaffoldBackgroundColor: const Color(0xFFFFE4AD),
+          ),
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'), // English
+            Locale('my'), // Myanmar
+          ],
+          locale: locale,
+          home: const WelcomeScreen(),
+          routes: {
+            '/home': (context) => const MainScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/verify': (context) => const VerifyScreen(),
+            '/forgot-password': (context) => const ForgotPasswordScreen(),
+            '/reset-password': (context) => const ResetPasswordScreen(),
+          },
+        );
       },
     );
   }
@@ -71,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+            Text(AppLocalizations.of(context)!.pushedButtonMessage),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -81,7 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        tooltip: AppLocalizations.of(context)!.increment,
         child: const Icon(Icons.add),
       ),
     );

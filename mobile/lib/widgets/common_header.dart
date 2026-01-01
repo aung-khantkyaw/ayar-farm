@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 
 class CommonHeader extends StatelessWidget {
   const CommonHeader({super.key});
@@ -39,7 +40,7 @@ class CommonHeader extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'AyarFarm',
+                AppLocalizations.of(context)!.appTitle,
                 style: TextStyle(
                   color: textMainColor,
                   fontSize: 20,

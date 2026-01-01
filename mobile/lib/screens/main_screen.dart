@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_bottom_nav.dart';
 import 'home_screen.dart';
 import 'category_navigator.dart';
 import 'chatting_screen.dart';
+import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,12 +16,18 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const CategoryNavigator(),
-    const ChattingScreen(),
-    const Center(child: Text('Setting Screen')), // Placeholder
-  ];
+  List<Widget> _screens = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _screens = [
+      const HomeScreen(),
+      const CategoryNavigator(),
+      const ChattingScreen(),
+      const SettingsScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
