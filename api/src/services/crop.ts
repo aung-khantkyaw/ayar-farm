@@ -5,7 +5,7 @@ export class CropService {
     public static async getAllCropTypes(): Promise<{ cropTypes: any}> {
         try {
             const cropTypes = await prisma.cropTypes.findMany({
-                orderBy: { created_at: 'desc' },
+                orderBy: { created_at: 'asc' },
                 include: { crops: true },
             })
 
@@ -31,7 +31,7 @@ export class CropService {
     public static async getAllCrops(): Promise<{crops: any}> {
         try {
             const crops = await prisma.crops.findMany({
-                orderBy: { created_at: 'desc' },
+                orderBy: { created_at: 'asc' },
                 include: { CropTypes: true }
             })
 

@@ -6,7 +6,7 @@ export class ResourceService {
     public static async getAllResources(): Promise<{ resources: any }> {
         try {
             const resources = await prisma.resources.findMany({
-                orderBy: { created_at: 'desc' }
+                orderBy: { created_at: 'asc' }
             })
 
             return { resources }
@@ -24,7 +24,7 @@ export class ResourceService {
                 )
                 resources = await prisma.resources.findFirst({
                     where: { type, is_active },
-                    orderBy: { created_at: 'desc' }
+                    orderBy: { created_at: 'asc' }
                 })
             } else {
                 console.log(
@@ -32,7 +32,7 @@ export class ResourceService {
                 )
                 resources = await prisma.resources.findMany({
                     where: { type },
-                    orderBy: { created_at: 'desc' }
+                    orderBy: { created_at: 'asc' }
                 })  
             }
             
@@ -98,7 +98,6 @@ export class ResourceService {
                     is_active,
                 }
             })
-
             return { resource }
         } catch (error) {
             throw new Error(`Database query failed: ${String(error)}`);

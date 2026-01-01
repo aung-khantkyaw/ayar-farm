@@ -324,7 +324,10 @@ const FisheriesManagement = () => {
     }
 
     const formData = new FormData();
-    if (documentFormData.fish_id && documentFormData.fish_id !== "none") {
+    if (
+      documentFormData.fish_id &&
+      documentFormData.fish_id !== "none"
+    ) {
       formData.append("fish_id", documentFormData.fish_id);
     }
     formData.append("title", documentFormData.title);
@@ -868,14 +871,14 @@ const FisheriesManagement = () => {
           </div>
         </TabsContent>
 
-        {/* IFS DOCUMENTS TAB */}
-        <TabsContent value="ifs-documents" className="space-y-4">
+        {/* DocumentS TAB */}
+        <TabsContent value="documents" className="space-y-4">
           <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-between w-full">
             <div className="flex flex-wrap gap-2 items-center min-w-0 w-full md:w-auto">
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search IFS documents..."
+                  placeholder="Search documents..."
                   value={documentSearchTerm}
                   onChange={(e) => setDocumentSearchTerm(e.target.value)}
                   className="pl-8 w-full sm:w-[250px]"
@@ -906,26 +909,24 @@ const FisheriesManagement = () => {
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingDocument(null)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add IFS Document
+                    Add Document
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>
-                      {editingDocument
-                        ? "Edit IFS Document"
-                        : "Add New IFS Document"}
+                      {editingDocument ? "Edit Document" : "Add New Document"}
                     </DialogTitle>
                     <DialogDescription>
                       {editingDocument
-                        ? "Update IFS document information"
-                        : "Create a new IFS document"}
+                        ? "Update Document information"
+                        : "Create a new Document"}
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleDocumentSubmit}>
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="ifsFishery" className="text-right">
+                        <Label htmlFor="Fishery" className="text-right">
                           Fishery
                         </Label>
                         <Select
@@ -951,11 +952,11 @@ const FisheriesManagement = () => {
                         </Select>
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="ifsTitle" className="text-right">
+                        <Label htmlFor="Title" className="text-right">
                           Title
                         </Label>
                         <Input
-                          id="ifsTitle"
+                          id="Title"
                           value={documentFormData.title}
                           onChange={(e) =>
                             setDocumentFormData({
@@ -969,11 +970,11 @@ const FisheriesManagement = () => {
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="ifsAuthor" className="text-right">
+                        <Label htmlFor="Author" className="text-right">
                           Author
                         </Label>
                         <Input
-                          id="ifsAuthor"
+                          id="Author"
                           value={documentFormData.author}
                           onChange={(e) =>
                             setDocumentFormData({
@@ -987,11 +988,11 @@ const FisheriesManagement = () => {
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="ifsPdf" className="text-right">
+                        <Label htmlFor="Pdf" className="text-right">
                           PDF File
                         </Label>
                         <Input
-                          id="ifsPdf"
+                          id="Pdf"
                           type="file"
                           accept="application/pdf"
                           onChange={(e) => {
@@ -1080,7 +1081,7 @@ const FisheriesManagement = () => {
                 {paginatedDocuments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-sm">
-                      No IFS documents found.
+                      No documents found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -1142,7 +1143,7 @@ const FisheriesManagement = () => {
             </Table>
           </div>
 
-          {/* IFS Pagination */}
+          {/*  Pagination */}
           <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-between px-2 w-full">
             <div className="flex flex-wrap gap-2 items-center min-w-0 w-full md:w-auto">
               <div className="text-sm text-muted-foreground w-full sm:w-auto">
@@ -1250,8 +1251,8 @@ const FisheriesManagement = () => {
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this IFS document? This action
-              cannot be undone.
+              Are you sure you want to delete this Document? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

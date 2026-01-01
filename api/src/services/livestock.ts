@@ -5,7 +5,7 @@ export class LivestockService {
     public static async getAllLivestockTypes(): Promise<{ livestockTypes: any}> {
         try {
             const livestockTypes = await prisma.livestockTypes.findMany({
-                orderBy: { created_at: 'desc' },
+                orderBy: { created_at: 'asc' },
                 include: { livestocks: true },
             })
 
@@ -31,7 +31,7 @@ export class LivestockService {
     public static async getAllLivestocks(): Promise<{livestocks: any}> {
         try {
             const livestocks = await prisma.livestocks.findMany({
-                orderBy: { created_at: 'desc' }
+                orderBy: { created_at: 'asc' }
             })
 
             return { livestocks };

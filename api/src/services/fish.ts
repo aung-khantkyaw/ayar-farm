@@ -5,7 +5,7 @@ export class FishService {
     public static async getAllFishs(): Promise<{fishs: any}> {
         try {
             const fishs = await prisma.fishs.findMany({
-                orderBy: { created_at: 'desc' }
+                orderBy: { created_at: 'asc' }
             })
 
             return { fishs };
