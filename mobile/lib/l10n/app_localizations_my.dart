@@ -625,9 +625,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get settingsTitle => 'ဆက်တင်များ';
 
   @override
-  String get editProfile => 'ပြင်ဆင်ရန်';
-
-  @override
   String get accountSection => 'အကောင့်';
 
   @override
@@ -665,4 +662,83 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get appVersion => 'AgriConnect v1.0.4';
+
+  @override
+  String get editProfile => 'ပရိုဖိုင် ပြင်ဆင်ခြင်း';
+
+  @override
+  String get changeProfilePhoto => 'ပရိုဖိုင်ပုံပြောင်းရန်';
+
+  @override
+  String get enterPhoneNumber => 'ဖုန်းနံပါတ်ရိုက်ထည့်ပါ';
+
+  @override
+  String get gender => 'ကျား/မ';
+
+  @override
+  String get selectGender => 'ကျား/မ ရွေးချယ်ပါ';
+
+  @override
+  String get male => 'ကျား';
+
+  @override
+  String get female => 'မ';
+
+  @override
+  String get other => 'အခြား';
+
+  @override
+  String get userType => 'အသုံးပြုသူအမျိုးအစား';
+
+  @override
+  String get selectUserType => 'အသုံးပြုသူအမျိုးအစား ရွေးချယ်ပါ';
+
+  @override
+  String get location => 'တည်နေရာ';
+
+  @override
+  String get selectState => 'တိုင်းဒေသကြီး/ပြည်နယ် ရွေးချယ်ပါ';
+
+  @override
+  String get selectTownship => 'မြို့နယ် ရွေးချယ်ပါ';
+
+  @override
+  String get enterAddress => 'လိပ်စာရိုက်ထည့်ပါ';
+
+  @override
+  String get saveChanges => 'သိမ်းဆည်းမည်';
+
+  @override
+  String get changesSaved => 'ပြောင်းလဲမှုများကို သိမ်းဆည်းပြီးပါပြီ!';
+
+  @override
+  String get errorLoadingTownships =>
+      'မြို့နယ်များ ရယူရာတွင် အမှားအယွင်းရှိပါသည်: ';
+
+  @override
+  String get enterEmailAddress => 'အီးမေးလ်လိပ်စာ ရိုက်ထည့်ပါ';
+
+  @override
+  String get userTypeFarmer => 'လယ်သမား';
+
+  @override
+  String get userTypeAgriSpecialist => 'စိုက်ပျိုးရေးကျွမ်းကျင်သူ';
+
+  @override
+  String get userTypeAgriEquipShop => 'စိုက်ပျိုးရေးကိရိယာဆိုင်';
+
+  @override
+  String get userTypeTrader => 'ကုန်သည်/ရောင်းချသူ';
+
+  @override
+  String get userTypeLivestockBreeder => 'မွေးမြူရေးလုပ်ငန်းရှင်';
+
+  @override
+  String get userTypeLivestockSpecialist => 'မွေးမြူရေးကျွမ်းကျင်သူ';
+
+  @override
+  String get userTypeOthers => 'အခြား';
+
+  @override
+  String get loadingTownships => 'မြို့နယ်များ ရယူနေပါသည်...';
 }

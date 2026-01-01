@@ -612,9 +612,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get editProfile => 'Edit';
-
-  @override
   String get accountSection => 'Account';
 
   @override
@@ -652,4 +649,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appVersion => 'AgriConnect v1.0.4';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
+  String get changeProfilePhoto => 'Change Profile Photo';
+
+  @override
+  String get enterPhoneNumber => 'Enter your phone number';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get selectGender => 'Select Gender';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get userType => 'User Type';
+
+  @override
+  String get selectUserType => 'Select User Type';
+
+  @override
+  String get location => 'Location';
+
+  @override
+  String get selectState => 'Select State';
+
+  @override
+  String get selectTownship => 'Select Township';
+
+  @override
+  String get enterAddress => 'Enter your address';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get changesSaved => 'Changes saved!';
+
+  @override
+  String get errorLoadingTownships => 'Error loading townships: ';
+
+  @override
+  String get enterEmailAddress => 'Enter your email address';
+
+  @override
+  String get userTypeFarmer => 'Farmer';
+
+  @override
+  String get userTypeAgriSpecialist => 'Agricultural Specialist';
+
+  @override
+  String get userTypeAgriEquipShop => 'Agricultural Equipment Shop';
+
+  @override
+  String get userTypeTrader => 'Trader/Vendor';
+
+  @override
+  String get userTypeLivestockBreeder => 'Livestock Breeder';
+
+  @override
+  String get userTypeLivestockSpecialist => 'Livestock Specialist';
+
+  @override
+  String get userTypeOthers => 'Others';
+
+  @override
+  String get loadingTownships => 'Loading Townships...';
 }

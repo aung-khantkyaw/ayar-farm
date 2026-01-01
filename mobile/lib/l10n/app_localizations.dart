@@ -1280,12 +1280,6 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
-  /// No description provided for @editProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit'**
-  String get editProfile;
-
   /// No description provided for @accountSection.
   ///
   /// In en, this message translates to:
@@ -1363,6 +1357,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AgriConnect v1.0.4'**
   String get appVersion;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProfile;
+
+  /// No description provided for @changeProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Profile Photo'**
+  String get changeProfilePhoto;
+
+  /// No description provided for @enterPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number'**
+  String get enterPhoneNumber;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @selectGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Gender'**
+  String get selectGender;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @userType.
+  ///
+  /// In en, this message translates to:
+  /// **'User Type'**
+  String get userType;
+
+  /// No description provided for @selectUserType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select User Type'**
+  String get selectUserType;
+
+  /// No description provided for @location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// No description provided for @selectState.
+  ///
+  /// In en, this message translates to:
+  /// **'Select State'**
+  String get selectState;
+
+  /// No description provided for @selectTownship.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Township'**
+  String get selectTownship;
+
+  /// No description provided for @enterAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your address'**
+  String get enterAddress;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @changesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved!'**
+  String get changesSaved;
+
+  /// No description provided for @errorLoadingTownships.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading townships: '**
+  String get errorLoadingTownships;
+
+  /// No description provided for @enterEmailAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address'**
+  String get enterEmailAddress;
+
+  /// No description provided for @userTypeFarmer.
+  ///
+  /// In en, this message translates to:
+  /// **'Farmer'**
+  String get userTypeFarmer;
+
+  /// No description provided for @userTypeAgriSpecialist.
+  ///
+  /// In en, this message translates to:
+  /// **'Agricultural Specialist'**
+  String get userTypeAgriSpecialist;
+
+  /// No description provided for @userTypeAgriEquipShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Agricultural Equipment Shop'**
+  String get userTypeAgriEquipShop;
+
+  /// No description provided for @userTypeTrader.
+  ///
+  /// In en, this message translates to:
+  /// **'Trader/Vendor'**
+  String get userTypeTrader;
+
+  /// No description provided for @userTypeLivestockBreeder.
+  ///
+  /// In en, this message translates to:
+  /// **'Livestock Breeder'**
+  String get userTypeLivestockBreeder;
+
+  /// No description provided for @userTypeLivestockSpecialist.
+  ///
+  /// In en, this message translates to:
+  /// **'Livestock Specialist'**
+  String get userTypeLivestockSpecialist;
+
+  /// No description provided for @userTypeOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get userTypeOthers;
+
+  /// No description provided for @loadingTownships.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Townships...'**
+  String get loadingTownships;
 }
 
 class _AppLocalizationsDelegate

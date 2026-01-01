@@ -5,6 +5,7 @@ import '../main.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
+import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -109,21 +110,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      backgroundColor: iconBgColor,
-                      foregroundColor: iconColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(l10n.editProfile),
-                  ),
                 ],
               ),
             ),
@@ -138,7 +124,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               textColor: textColor,
               iconBgColor: iconBgColor,
               iconColor: iconColor,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EditProfileScreen(),
+                  ),
+                );
+              },
             ),
             _buildDivider(borderColor),
             _buildListTile(

@@ -78,8 +78,23 @@ class AuthService {
     return await ApiService.post(ApiConstants.resetPassword, data);
   }
 
-  static Future<AuthResponse> updateAccount(Map<String, dynamic> data) async {
-    final response = await ApiService.put(ApiConstants.updateAccount, data);
+  static Future<AuthResponse> updateAccount(
+    Map<String, dynamic> data, {
+    String? profilePicturePath,
+  }) async {
+    Map<String, dynamic> response;
+    if (profilePicturePath != null) {
+      final fields = data.map(
+        (key, value) => MapEntry(key, value?.toString() ?? ''),
+      );
+      response = await ApiService.putMultipart(
+        ApiConstants.updateAccount,
+        fields,
+        files: {'profile_picture': profilePicturePath},
+      );
+    } else {
+      response = await ApiService.put(ApiConstants.updateAccount, data);
+    }
     return AuthResponse.fromJson(response);
   }
 
