@@ -9,27 +9,39 @@ services:
       - "3000:3000"
     env_file:
       - ./api/.env
-    restart: always
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "5173:4173"
+      - "5173:5173"
     env_file:
       - ./web/.env
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    command: npm run dev -- --host
     depends_on:
       - api
-    restart: always
+    restart: unless-stopped
 
   mobile:
     build:
       context: .
       dockerfile: Dockerfile.mobile
+      target: dev
     ports:
-      - "8080:80"
-    restart: always
+      - "8080:8080"
+    volumes:
+      - ./mobile:/app
+    command: /bin/bash -c "flutter pub get && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
+    restart: unless-stopped
 
   database:
     build:
@@ -39,7 +51,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
+    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -14,7 +14,8 @@ ayar-farm/
 ├── api/            # Node.js REST API (Express + Prisma)
 ├── web/            # React web application (Vite + TypeScript)
 ├── mobile/         # Flutter mobile application
-└── docker-compose.yml
+├── docker-compose.dev.yml # Development Docker Compose
+└── docker-compose.yml     # Production Docker Compose
 ```
 
 ## Tech Stack
@@ -61,11 +62,15 @@ ayar-farm/
 
 ### Using Docker
 
-The easiest way to run the entire stack (API, Web, Database, and Mobile Web) is using Docker Compose.
+You can run the project in either Development mode (with hot-reload) or Production mode.
+
+#### Development Mode
+
+Use this for local development. Changes to the code will automatically reload the services.
 
 ```bash
-# Start all services
-docker-compose up --build
+# Start services in development mode
+docker-compose -f docker-compose.dev.yml up --build
 
 # Services will be available at:
 # API: http://localhost:3000
@@ -73,6 +78,35 @@ docker-compose up --build
 # Mobile (Web): http://localhost:8080
 # Database: localhost:5432
 ```
+
+#### Production Mode
+
+Use this to simulate a production environment. This uses the built artifacts and does not support hot-reload.
+
+```bash
+# Start services in production mode
+docker-compose up -d --build
+
+# Services will be available at:
+# API: http://localhost:3000
+# Web: http://localhost:5173
+# Mobile (Web): http://localhost:8080
+# Database: localhost:5432
+```
+
+#### Understanding Run Modes
+
+- **With `-d` (Detached Mode):**
+  - Runs containers in the background.
+  - Terminal is free for other commands.
+  - Use `docker-compose logs -f` to view logs.
+  - Stop with `docker-compose down`.
+
+- **Without `-d` (Foreground Mode):**
+  - Runs containers in the current terminal.
+  - Shows live logs from all services.
+  - Useful for debugging and seeing immediate errors.
+  - Stop with `Ctrl+C`.
 
 **Note:** The mobile service builds Flutter for web and serves it via nginx. For native mobile development, see the Mobile Setup section below.
 
