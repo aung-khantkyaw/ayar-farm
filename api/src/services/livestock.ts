@@ -5,7 +5,8 @@ export class LivestockService {
     public static async getAllLivestocks(): Promise<{livestocks: any}> {
         try {
             const livestocks = await prisma.livestocks.findMany({
-                orderBy: { created_at: 'asc' }
+                orderBy: { created_at: 'asc' },
+                include: { documents: true }
             })
 
             return { livestocks };
@@ -17,7 +18,8 @@ export class LivestockService {
     public static async getLivestockById(id: string): Promise<{ livestock: any }> {
         try {
             const livestock = await prisma.livestocks.findUnique({
-                where: { id }
+                where: { id },
+                include: { documents: true }
             });
 
             return { livestock };

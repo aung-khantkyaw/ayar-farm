@@ -5,7 +5,8 @@ export class FishService {
     public static async getAllFishs(): Promise<{fishs: any}> {
         try {
             const fishs = await prisma.fishs.findMany({
-                orderBy: { created_at: 'asc' }
+                orderBy: { created_at: 'asc' },
+                include: { documents: true }
             })
 
             return { fishs };
@@ -17,7 +18,8 @@ export class FishService {
     public static async getFishById(id: string): Promise<{ fish: any }> {
         try {
             const fish = await prisma.fishs.findUnique({
-                where: { id }
+                where: { id },
+                include: { documents: true }
             });
 
             return { fish };

@@ -32,7 +32,7 @@ export class MachineService {
         try {
             const machines = await prisma.machines.findMany({
                 orderBy: { created_at: 'asc' },
-                include: { MachineTypes: true }
+                include: { MachineTypes: true, documents: true }
             })
 
             return { machines };
@@ -45,7 +45,7 @@ export class MachineService {
         try {
             const machine = await prisma.machines.findUnique({
                 where: { id },
-                include: { MachineTypes: true }
+                include: { MachineTypes: true, documents: true }
             });
 
             return { machine };
