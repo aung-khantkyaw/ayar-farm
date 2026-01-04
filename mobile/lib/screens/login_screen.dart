@@ -137,19 +137,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 96,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                              'https://lh3.googleusercontent.com/aida-public/AB6AXuB0GK_vl0t_bliHSr8pqcAXOONpV0Rom1g0ThKZr0qirGawKJ7EInm04SEQ89zpRiX_S4ODlBn5j81g0aQV6knbwwy1bqVmrK6wiRoS0rmOLpr-KcglpClAnCuhQZWGFBiBRS9WRS2VbK6GTOeNzk9uEv_cINBuGbAVrhWyWI90ZmCXw4hYYK16WKiX9uyegksCjkuOn8R7NJGzhR97qE-q_NqMKVt_bno92Yb4S6qVW0YTYn1WOB7NyuRxsZWm0o630x4DoiVK-ngm',
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
                               color: Colors.black12,
                               blurRadius: 4,
                               offset: Offset(0, 2),
                             ),
                           ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            'assets/logo.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),

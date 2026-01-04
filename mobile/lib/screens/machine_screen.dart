@@ -212,7 +212,7 @@ class _MachineScreenState extends State<MachineScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    machine['description'] ?? 'No description',
+                    '${machine['documents']?.length ?? 0} ${(machine['documents']?.length ?? 0) > 1 ? 'documents' : 'document'}',
                     style: TextStyle(color: textMutedColor, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

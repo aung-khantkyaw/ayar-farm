@@ -132,7 +132,7 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
                             _machineTypes.map((machineType) {
                               return _buildMachineTypeCard(
                                 machineType['name'] ?? 'Unknown',
-                                machineType['description'] ?? 'No description',
+                                '${machineType['machines']?.length ?? 0} ${(machineType['machines']?.length ?? 0) > 1 ? AppLocalizations.of(context)!.subcategories : AppLocalizations.of(context)!.subcategory}',
                                 machineType['image_urls'] != null &&
                                         machineType['image_urls'].isNotEmpty
                                     ? machineType['image_urls'][0]

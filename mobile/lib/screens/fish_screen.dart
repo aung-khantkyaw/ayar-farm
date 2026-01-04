@@ -209,7 +209,7 @@ class _FishScreenState extends State<FishScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    fish['description'] ?? 'No description',
+                    '${fish['documents']?.length ?? 0} ${(fish['documents']?.length ?? 0) > 1 ? 'documents' : 'document'}',
                     style: TextStyle(color: textMutedColor, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

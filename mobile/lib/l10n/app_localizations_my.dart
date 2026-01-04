@@ -12,7 +12,7 @@ class AppLocalizationsMy extends AppLocalizations {
   String get helloWorld => 'မင်္ဂလာပါ';
 
   @override
-  String get appTitle => 'ဧရာလယ်ယာ';
+  String get appTitle => 'Ayar Farm Link';
 
   @override
   String get pushedButtonMessage =>

@@ -88,10 +88,14 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.spa,
-                        size: 40,
-                        color: Color(0xFF111813),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),

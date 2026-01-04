@@ -8,6 +8,7 @@ import 'screens/verify_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/main_screen.dart';
+import 'widgets/auth_guard.dart';
 
 final ValueNotifier<Locale> appLocaleNotifier = ValueNotifier(
   const Locale('my'),
@@ -49,12 +50,12 @@ class MyApp extends StatelessWidget {
             Locale('my'), // Myanmar
           ],
           locale: locale,
-          home: const WelcomeScreen(),
+          home: const AuthGuard(child: WelcomeScreen()),
           routes: {
             '/home': (context) => const MainScreen(),
-            '/login': (context) => const LoginScreen(),
-            '/register': (context) => const RegisterScreen(),
-            '/verify': (context) => const VerifyScreen(),
+            '/login': (context) => const AuthGuard(child: LoginScreen()),
+            '/register': (context) => const AuthGuard(child: RegisterScreen()),
+            '/verify': (context) => const AuthGuard(child: VerifyScreen()),
             '/forgot-password': (context) => const ForgotPasswordScreen(),
             '/reset-password': (context) => const ResetPasswordScreen(),
           },

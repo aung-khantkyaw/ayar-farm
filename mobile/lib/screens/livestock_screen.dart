@@ -212,7 +212,7 @@ class _LivestockScreenState extends State<LivestockScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    livestock['description'] ?? 'No description',
+                    '${livestock['documents']?.length ?? 0} ${(livestock['documents']?.length ?? 0) > 1 ? 'documents' : 'document'}',
                     style: TextStyle(color: textMutedColor, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
