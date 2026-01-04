@@ -82,20 +82,6 @@ model CropTypes {
   documents Documents[] @relation("CropTypeToDocuments")
 }
 
-model LivestockTypes {
-  id          String   @id @unique @default(uuid())
-  name        String
-  description String?
-  image_urls  String[]
-  category    Category @default(LIVESTOCK_INDUSTRY)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  livestocks Livestocks[] @relation("LivestockTypeToLivestock")
-  documents  Documents[]  @relation("LivestockTypeToDocuments")
-}
-
 model MachineTypes {
   id          String   @id @unique @default(uuid())
   name        String
@@ -129,7 +115,6 @@ model Crops {
 
 model Livestocks {
   id                String   @id @unique @default(uuid())
-  livestock_type_id String
   name              String
   description       String?
   image_urls        String[]
@@ -138,10 +123,6 @@ model Livestocks {
   updated_at DateTime @updatedAt
 
   documents Documents[] @relation("LivestockToDocuments")
-
-  LivestockTypes LivestockTypes? @relation("LivestockTypeToLivestock", fields: [livestock_type_id], references: [id])
-
-  @@index([livestock_type_id])
 }
 
 model Machines {
@@ -184,7 +165,6 @@ model Documents {
   updated_at DateTime @updatedAt
 
   crop_type_id      String?
-  livestock_type_id String?
   machine_type_id   String?
   crop_id           String?
   livestock_id      String?
@@ -192,7 +172,6 @@ model Documents {
   fish_id           String?
 
   CropTypes      CropTypes?      @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
-  LivestockTypes LivestockTypes? @relation("LivestockTypeToDocuments", fields: [livestock_type_id], references: [id])
   MachineTypes   MachineTypes?   @relation("MachineTypeToDocuments", fields: [machine_type_id], references: [id])
   Crops          Crops?          @relation("CropToDocuments", fields: [crop_id], references: [id])
   Livestocks     Livestocks?     @relation("LivestockToDocuments", fields: [livestock_id], references: [id])
@@ -200,7 +179,6 @@ model Documents {
   Fishs          Fishs?          @relation("FishToDocuments", fields: [fish_id], references: [id])
 
   @@index([crop_type_id])
-  @@index([livestock_type_id])
   @@index([machine_type_id])
   @@index([crop_id])
   @@index([livestock_id])

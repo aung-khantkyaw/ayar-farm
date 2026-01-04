@@ -46,13 +46,9 @@ export class DocumentService {
             } else if (type === "livestock") {
                 documents = await prisma.documents.findMany({
                     where: {
-                        OR: [
-                            { livestock_type_id: { not: null } },
-                            { livestock_id: { not: null } }
-                        ]
+                        livestock_id: { not: null }
                     },
                     include: {
-                        LivestockTypes: true,
                         Livestocks: true
                     },
                     orderBy: { created_at: 'asc' }
@@ -121,19 +117,14 @@ export class DocumentService {
                         livestock_id: type_id
                     },
                     include: {
-                        LivestockTypes: true,
                         Livestocks: true
                     },
                     orderBy: { created_at: 'asc' }
                 })) : (await prisma.documents.findMany({
                     where: {
-                        OR: [
-                            { livestock_type_id: { not: null } },
-                            { livestock_id: { not: null } }
-                        ]
+                        livestock_id: { not: null } 
                     },
                     include: {
-                        LivestockTypes: true,
                         Livestocks: true
                     },
                     orderBy: { created_at: 'asc' }
@@ -196,7 +187,6 @@ export class DocumentService {
                     file_urls,
                     size,
                     crop_type_id: crop_type_id || null,
-                    livestock_type_id: livestock_type_id || null,
                     machine_type_id: machine_type_id || null,
                     crop_id: crop_id || null,
                     livestock_id: livestock_id || null,
@@ -220,7 +210,6 @@ export class DocumentService {
                     author,
                     file_urls,
                     crop_type_id: crop_type_id || null,
-                    livestock_type_id: livestock_type_id || null,
                     machine_type_id: machine_type_id || null,
                     crop_id: crop_id || null,
                     livestock_id: livestock_id || null,
