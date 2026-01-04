@@ -39,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.token != null) {
         ApiService.setToken(response.token);
         AuthService.currentUser = response.user;
+        await AuthService.saveSession(response.token!, response.user!);
 
         if (response.user != null) {
           SocketService().connect(response.token!, response.user!);

@@ -1,9 +1,40 @@
 import '../constants/api_constants.dart';
 import '../models/user.dart';
 import 'api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AuthService {
   static User? currentUser;
+  static const _tokenKey = 'auth_token';
+  static const _userKey = 'user_data';
+
+  static Future<void> saveSession(String token, User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+  }
+
+  static Future<bool> loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final userData = prefs.getString(_userKey);
+    
+    if (token != null && userData != null) {
+      ApiService.setToken(token);
+      currentUser = User.fromJson(jsonDecode(userData));
+      return true;
+    }
+    return false;
+  }
+
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
+    currentUser = null;
+    ApiService.setToken(null);
+  }
 
   static Future<AuthResponse> register({
     required String name,

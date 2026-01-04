@@ -9,12 +9,15 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/main_screen.dart';
 import 'widgets/auth_guard.dart';
+import 'services/auth_service.dart';
 
 final ValueNotifier<Locale> appLocaleNotifier = ValueNotifier(
   const Locale('my'),
 );
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthService.loadSession();
   runApp(const MyApp());
 }
 
@@ -50,7 +53,7 @@ class MyApp extends StatelessWidget {
             Locale('my'), // Myanmar
           ],
           locale: locale,
-          home: const AuthGuard(child: WelcomeScreen()),
+          home: AuthService.currentUser != null ? const MainScreen() : const AuthGuard(child: WelcomeScreen()),
           routes: {
             '/home': (context) => const MainScreen(),
             '/login': (context) => const AuthGuard(child: LoginScreen()),
