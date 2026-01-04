@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: Dockerfile.mobile
     ports:
-      - "8080:80"
+      - "5174:80"
     restart: always
 
   database:
