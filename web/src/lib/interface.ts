@@ -48,6 +48,7 @@ export interface MachineType {
   image_urls: string;
   created_at: string;
   updated_at: string;
+  machines: Machine[];
   _count: {
     machines: number;
   };
@@ -56,12 +57,11 @@ export interface MachineType {
 export interface Machine {
   id: string;
   name: string;
-  model_number: string;
   image_urls: string;
   type_id: string;
   created_at: string;
   updated_at: string;
-  type: MachineType;
+  type?: MachineType;
 }
 
 export interface Document {

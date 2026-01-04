@@ -100,7 +100,6 @@ const MachinesManagement = () => {
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
   const [machineFormData, setMachineFormData] = useState({
     name: "",
-    model_number: "",
     type_id: "",
     image: null as File | null,
   });
@@ -173,13 +172,9 @@ const MachinesManagement = () => {
   // Filter and sort functions for Machines
   const filteredAndSortedMachines = machines
     .filter((machine) => {
-      const matchesSearch =
-        (machine.name || "")
-          .toLowerCase()
-          .includes(machineSearchTerm.toLowerCase()) ||
-        (machine.model_number || "")
-          .toLowerCase()
-          .includes(machineSearchTerm.toLowerCase());
+      const matchesSearch = (machine.name || "")
+        .toLowerCase()
+        .includes(machineSearchTerm.toLowerCase());
       const matchesType =
         selectedMachineType === "" ||
         selectedMachineType === "all" ||
@@ -195,9 +190,6 @@ const MachinesManagement = () => {
       if (sortBy === "name") {
         aValue = a.name || "";
         bValue = b.name || "";
-      } else if (sortBy === "model_number") {
-        aValue = a.model_number || "";
-        bValue = b.model_number || "";
       } else if (sortBy === "type") {
         aValue = a.type?.name || "";
         bValue = b.type?.name || "";
@@ -351,18 +343,13 @@ const MachinesManagement = () => {
   const handleMachineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !machineFormData.name ||
-      !machineFormData.model_number ||
-      !machineFormData.type_id
-    ) {
+    if (!machineFormData.name || !machineFormData.type_id) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const formData = new FormData();
     formData.append("name", machineFormData.name);
-    formData.append("model_number", machineFormData.model_number);
     formData.append("machine_type_id", machineFormData.type_id);
     if (machineFormData.image) {
       formData.append("image_urls", machineFormData.image);
@@ -466,7 +453,6 @@ const MachinesManagement = () => {
   const resetMachineForm = () => {
     setMachineFormData({
       name: "",
-      model_number: "",
       type_id: "",
       image: null,
     });
@@ -494,7 +480,6 @@ const MachinesManagement = () => {
     setEditingMachine(machine);
     setMachineFormData({
       name: machine.name ?? "",
-      model_number: machine.model_number ?? "",
       type_id: machine.type_id ?? "",
       image: null,
     });
@@ -638,6 +623,10 @@ const MachinesManagement = () => {
     setSelectedDocumentMachine(""); // Reset machine selection when machine type changes
   };
 
+  paginatedMachines.map((machine) => (
+    console.log(machine)
+  ))
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
       {/* Header */}
@@ -696,7 +685,7 @@ const MachinesManagement = () => {
                       machineTypes
                         .filter(
                           (type) =>
-                            type._count?.machines && type._count.machines > 0
+                            type.machines.length && type.machines.length > 0
                         )
                         .map((type) => type.id)
                     ).size
@@ -1024,7 +1013,7 @@ const MachinesManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {machineType._count?.machines || 0} machines
+                          {machineType.machines.length} machines
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1217,24 +1206,6 @@ const MachinesManagement = () => {
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-                        <Label htmlFor="machineModel" className="text-right">
-                          Model No.
-                        </Label>
-                        <Input
-                          id="machineModel"
-                          value={machineFormData.model_number}
-                          onChange={(e) =>
-                            setMachineFormData({
-                              ...machineFormData,
-                              model_number: e.target.value,
-                            })
-                          }
-                          className="sm:col-span-3"
-                          placeholder="Enter model number"
-                          required={!editingMachine}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
                         <Label htmlFor="machineType" className="text-right">
                           Type
                         </Label>
@@ -1344,15 +1315,6 @@ const MachinesManagement = () => {
                   </TableHead>
                   <TableHead
                     className="cursor-pointer"
-                    onClick={() => handleSort("model_number")}
-                  >
-                    <div className="flex items-center">
-                      Model Number
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer"
                     onClick={() => handleSort("type")}
                   >
                     <div className="flex items-center">
@@ -1411,14 +1373,13 @@ const MachinesManagement = () => {
                       <TableCell className="font-medium">
                         {machine.name}
                       </TableCell>
-                      <TableCell>{machine.model_number}</TableCell>
                       <TableCell>
                         <Badge
                           variant="secondary"
                           className="bg-green-600/10 text-green-600"
                         >
                           <Tag className="h-4 w-4 mr-1" />
-                          {machine.type?.name || "Unknown"}
+                          {machine.type?.name}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(machine.created_at)}</TableCell>
@@ -1672,7 +1633,8 @@ const MachinesManagement = () => {
                               ).values()
                             ).map((machine) => (
                               <SelectItem key={machine.id} value={machine.id}>
-                                {machine.name} ({machine.type?.name || "Unknown"})
+                                {machine.name} (
+                                {machine.type?.name || "Unknown"})
                               </SelectItem>
                             ))}
                           </SelectContent>

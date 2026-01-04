@@ -57,11 +57,25 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const data = response.data;
 
       if (Array.isArray(data)) {
-        setMachines(data);
-        return data;
+        const fetchedMachines = data.map((machine: any) => ({
+          ...machine,
+          type: machine.MachineTypes,
+          type_id: machine.machine_type_id,
+        }))
+        setMachines(fetchedMachines);
+        return fetchedMachines;
+        // setMachines(data);
+        // return data;
       } else if (data && data.machines) {
-        setMachines(data.machines);
-        return data.machines;
+        const fetchedMachines = data.crops.map((machine: any) => ({
+          ...machine,
+          type: machine.MachineTypes,
+          type_id: machine.machine_type_id,
+        }));
+        setMachines(fetchedMachines);
+        return fetchedMachines;
+        // setMachines(data.machines);
+        // return data.machines;
       } else {
         if (!data) {
           setMachines([]);
