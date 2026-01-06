@@ -12,8 +12,18 @@ import machine from "./routes/machine";
 import fish from "./routes/fish";
 import document from "./routes/document";
 import resource from "./routes/resource";
+import chat from "./routes/chat";
 
 const app = express();
+
+app.set('trust proxy', 1);
+
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    res.status(408).send('Request timeout');
+  });
+  next();
+});
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -40,5 +50,6 @@ app.use("/api/fishery", fish)
 app.use("/api/agriindustry", machine)
 app.use("/api/document", document)
 app.use("/api/resources", resource);
+app.use("/api/chat", chat);
 
 export default app;

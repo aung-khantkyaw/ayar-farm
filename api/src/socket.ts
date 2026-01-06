@@ -6,6 +6,9 @@ let io: IOServer | null = null;
 export function initSocket(server: http.Server) {
   if (io) return io;
   io = new IOServer(server, {
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    maxHttpBufferSize: 1e6,
     cors: { 
       origin: process.env.CLIENT_URL || 'http://localhost:5173',
       credentials: true 

@@ -58,6 +58,14 @@ export function registerSocketHandlers(io: Server) {
       socket.leave(room);
     });
 
+    // Chat: join conversation rooms
+    socket.on("chat:join", (conversationId: string) => {
+      socket.join(`conversation:${conversationId}`);
+    });
+    socket.on("chat:leave", (conversationId: string) => {
+      socket.leave(`conversation:${conversationId}`);
+    });
+
     socket.on("admin:notify", (payload: any, cb?: (r: any) => void) => {
       const user = socket.data.user;
       if (!user || user.user_type !== "ADMIN") {

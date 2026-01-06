@@ -17,3 +17,7 @@ registerSocketHandlers(io);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
+
+server.keepAliveTimeout = 65000; // 65 seconds
+server.headersTimeout = 66000; // Slightly more than keepAliveTimeout
+server.timeout = 120000; // 2 minutes for long-running requests
