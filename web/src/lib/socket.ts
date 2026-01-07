@@ -3,14 +3,18 @@ import { io, Socket } from 'socket.io-client';
 const getSocketUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   
+  // If VITE_API_URL is set (e.g. from .env or build time env var), use it
   if (envUrl && envUrl.startsWith('http')) {
      return envUrl.replace('/api', '').replace(/\/$/, '');
   }
   
-  if (window.location.hostname === 'ayarfarmlink.onrender.com' || window.location.hostname.includes('onrender')) {
+  const hostname = window.location.hostname;
+
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return 'https://ayarfarmlink-api.onrender.com';
   }
 
+  // Fallback for local development
   return 'http://localhost:3000';
 };
 
