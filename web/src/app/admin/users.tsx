@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { API_URL } from "@/lib/config";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Navigate } from "@tanstack/react-router";
@@ -162,7 +163,7 @@ const UsersManagement = () => {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/admin/create-user`,
+        `${API_URL}/admin/create-user`,
         {
           method: "POST",
           body: formData,
@@ -204,7 +205,7 @@ const UsersManagement = () => {
     if (profilePicture.startsWith("http")) {
       return profilePicture;
     }
-    return `${import.meta.env.VITE_API_URL}${profilePicture}`;
+    return `${API_URL}${profilePicture}`;
   };
 
   const getUserTypeColor = (userType: string) => {

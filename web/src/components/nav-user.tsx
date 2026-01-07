@@ -6,6 +6,7 @@ import {
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { API_URL } from "@/lib/config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +41,7 @@ export function NavUser({
     if (profilePicture.startsWith("http")) {
       return profilePicture;
     }
-    return `${import.meta.env.VITE_API_URL}${profilePicture}`;
+    return `${API_URL}${profilePicture}`;
   };
 
   return (
