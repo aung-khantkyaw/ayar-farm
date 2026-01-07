@@ -4,7 +4,7 @@ import { getIO } from "../socket";
 
 export class ChatService {
     public static async getUserConversations(userId: string) {
-        return await prisma.conversation.findMany({
+        const conversations = await prisma.conversation.findMany({
             where: {
                 participants: {
                     some: { userId }
@@ -33,7 +33,35 @@ export class ChatService {
             },
             orderBy: { lastMessageTime: 'desc' }
         });
+
+        // Calculate unread count for each conversation
+        const payload = await Promise.all(conversations.map(async (conv) => {
+            const participant = conv.participants.find(p => p.userId === userId);
+            let unreadCount = 0;
+            if (participant && participant.lastReadAt) {
+                unreadCount = await prisma.message.count({
+                    where: {
+                        conversationId: conv.id,
+                        createdAt: { gt: participant.lastReadAt }
+                    }
+                });
+            }
+            return {
+                ...conv,
+                unreadCount
+            };
+        }));
+
+        return payload;
     }
+
+    public static async markAsRead(conversationId: string, userId: string) {
+        await prisma.conversationParticipant.updateMany({
+            where: { conversationId, userId },
+            data: { lastReadAt: new Date() }
+        });
+    }
+
 
     public static async getConversationById(conversationId: string, userId: string) {
         const conversation = await prisma.conversation.findFirst({

@@ -118,4 +118,17 @@ export class ChatController {
             res.status(500).json({ message: `Error leaving conversation: ${error}` });
         }
     }
+
+    public async markAsRead(req: Request, res: Response): Promise<void> {
+        try {
+            const { conversationId } = req.params;
+            const userId = (req as any).user.id;
+            
+            await ChatService.markAsRead(conversationId, userId);
+            res.status(200).json({ message: "Conversation marked as read" });
+        } catch (error) {
+            res.status(500).json({ message: `Error marking conversation as read: ${error}` });
+        }
+    }
 }
+

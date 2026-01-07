@@ -22,5 +22,6 @@ chat.post("/conversations/:conversationId/messages", authenticate, uploadFile.si
 chat.post("/conversations/:conversationId/participants", authenticate, (req, res) => chatController.addParticipants(req, res));
 chat.delete("/conversations/:conversationId/participants/:participantId", authenticate, (req, res) => chatController.removeParticipant(req, res));
 chat.post("/conversations/:conversationId/leave", authenticate, (req, res) => chatController.leaveConversation(req, res));
+chat.post("/conversations/:conversationId/read", authenticate, (req, res) => chatController.markAsRead(req, res));
 
 export default chat;

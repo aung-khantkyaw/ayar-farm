@@ -252,6 +252,7 @@ model ConversationParticipant {
   conversationId String
   userId         String
   joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         Users        @relation("ConversationParticipants", fields: [userId], references: [id])
