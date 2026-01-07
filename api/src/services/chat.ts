@@ -268,9 +268,20 @@ export class ChatService {
             }
         });
 
-        // Emit to conversation room
+        // Emit to conversation room AND all participants
         try {
-            getIO().to(`conversation:${conversationId}`).emit("message:new", message);
+            const io = getIO();
+            io.to(`conversation:${conversationId}`).emit("message:new", message);
+            
+            // Get all participants and emit to their user rooms
+            const participants = await prisma.conversationParticipant.findMany({
+                where: { conversationId },
+                select: { userId: true }
+            });
+            
+            participants.forEach(p => {
+                io.to(`user:${p.userId}`).emit("message:new", message);
+            });
         } catch (e) {
             console.warn("Socket emit failed", e);
         }

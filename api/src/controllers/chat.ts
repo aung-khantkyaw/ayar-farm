@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ChatService } from "../services/chat";
+import { prisma } from "../prisma/client";
 
 export class ChatController {
     public async getConversations(req: Request, res: Response): Promise<void> {
@@ -9,6 +10,43 @@ export class ChatController {
             res.status(200).json({ message: "Get conversations successful", data: conversations });
         } catch (error) {
             res.status(500).json({ message: `Error fetching conversations: ${error}` });
+        }
+    }
+
+    public async searchGroups(req: Request, res: Response): Promise<void> {
+        try {
+            const { q } = req.query;
+            const query = String(q || '').trim();
+            
+            if (!query) {
+                res.status(200).json({ data: [] });
+                return;
+            }
+
+            const groups = await prisma.conversation.findMany({
+                where: {
+                    type: 'GROUP',
+                    name: { contains: query, mode: 'insensitive' },
+                },
+                include: {
+                    participants: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    profile_picture: true,
+                                },
+                            },
+                        },
+                    },
+                },
+                take: 20,
+            });
+            
+            res.status(200).json({ data: groups });
+        } catch (error) {
+            res.status(500).json({ message: `Error searching groups: ${error}` });
         }
     }
 

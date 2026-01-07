@@ -43,4 +43,37 @@ export class UsersController {
       res.status(500).json({ message: 'Failed to fetch users', error: String(error) });
     }
   }
+
+  public async search(req: Request, res: Response): Promise<void> {
+    try {
+      const { q } = req.query;
+      const query = String(q || '').trim();
+      
+      if (!query) {
+        res.status(200).json({ data: [] });
+        return;
+      }
+
+      const users = await prisma.users.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { email: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          profile_picture: true,
+          user_type: true,
+        },
+        take: 20,
+      });
+      
+      res.status(200).json({ data: users });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to search users', error: String(error) });
+    }
+  }
 }

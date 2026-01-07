@@ -8,6 +8,9 @@ const chatController = new ChatController();
 
 chat.get("/", (_req, res) => res.json({ ok: true, message: "Chat API is running" }));
 
+// Search
+chat.get("/groups/search", authenticate, (req, res) => chatController.searchGroups(req, res));
+
 // Conversations
 chat.get("/conversations", authenticate, (req, res) => chatController.getConversations(req, res));
 chat.get("/conversations/:id", authenticate, (req, res) => chatController.getConversation(req, res));
