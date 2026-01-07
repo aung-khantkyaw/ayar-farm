@@ -727,4 +727,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadingTownships => 'Loading Townships...';
+
+  @override
+  String get searchConversations => 'Search conversations...';
 }

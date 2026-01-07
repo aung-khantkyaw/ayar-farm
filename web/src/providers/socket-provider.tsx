@@ -54,20 +54,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   useEffect(() => {
     if (user) {
       // Create socket connection
-      const newSocket = io(
-        SOCKET_URL,
-        {
-          auth: {
-            token: user.access_token,
-            userId: user.id,
-            userEmail: user.email,
-            userName: user.name,
-            userUsername: user.username,
-            userType: user.user_type,
-          },
-          transports: ["websocket", "polling"],
-        }
-      );
+      const newSocket = io(SOCKET_URL, {
+        auth: {
+          token: user.access_token,
+          userId: user.id,
+          userEmail: user.email,
+          userName: user.name,
+          userUsername: user.username,
+          userType: user.user_type,
+        },
+        transports: ["websocket", "polling"],
+      });
 
       newSocket.on("connect", () => {
         // Send authentication data after connection

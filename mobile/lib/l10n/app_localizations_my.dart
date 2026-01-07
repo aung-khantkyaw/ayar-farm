@@ -741,4 +741,7 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get loadingTownships => 'မြို့နယ်များ ရယူနေပါသည်...';
+
+  @override
+  String get searchConversations => 'စကားပြောမှုများ ရှာဖွေရန်...';
 }

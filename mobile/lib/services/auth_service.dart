@@ -3,6 +3,7 @@ import '../models/user.dart';
 import 'api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'socket_service.dart';
 
 class AuthService {
   static User? currentUser;
@@ -13,17 +14,29 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_userKey, jsonEncode(user.toJson()));
+
+    // Update local state
+    currentUser = user;
+    ApiService.setToken(token);
+    SocketService().connect(token, user);
   }
 
   static Future<bool> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(_tokenKey);
     final userData = prefs.getString(_userKey);
-    
+
     if (token != null && userData != null) {
-      ApiService.setToken(token);
-      currentUser = User.fromJson(jsonDecode(userData));
-      return true;
+      try {
+        ApiService.setToken(token);
+        currentUser = User.fromJson(jsonDecode(userData));
+        SocketService().connect(token, currentUser!);
+        return true;
+      } catch (e) {
+        print('Error loading session: $e');
+        await clearSession();
+        return false;
+      }
     }
     return false;
   }
@@ -34,6 +47,7 @@ class AuthService {
     await prefs.remove(_userKey);
     currentUser = null;
     ApiService.setToken(null);
+    SocketService().disconnect();
   }
 
   static Future<AuthResponse> register({

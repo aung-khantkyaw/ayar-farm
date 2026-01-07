@@ -1513,6 +1513,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading Townships...'**
   String get loadingTownships;
+
+  /// No description provided for @searchConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Search conversations...'**
+  String get searchConversations;
 }
 
 class _AppLocalizationsDelegate

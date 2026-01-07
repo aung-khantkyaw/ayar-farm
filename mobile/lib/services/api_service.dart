@@ -58,6 +58,37 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
+  static Future<Map<String, dynamic>> postMultipart(
+    String endpoint,
+    Map<String, String> fields, {
+    Map<String, String>? files,
+  }) async {
+    final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    final request = http.MultipartRequest('POST', url);
+
+    final headers = _getHeaders();
+    headers.remove('Content-Type');
+    request.headers.addAll(headers);
+
+    fields.forEach((key, value) {
+      request.fields[key] = value;
+    });
+
+    if (files != null) {
+      for (var entry in files.entries) {
+        if (entry.value.isNotEmpty) {
+          request.files.add(
+            await http.MultipartFile.fromPath(entry.key, entry.value),
+          );
+        }
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return jsonDecode(response.body);
+  }
+
   static Future<Map<String, dynamic>> putMultipart(
     String endpoint,
     Map<String, String> fields, {

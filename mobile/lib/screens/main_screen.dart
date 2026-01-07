@@ -5,6 +5,10 @@ import 'home_screen.dart';
 import 'category_navigator.dart';
 import 'chatting_screen.dart';
 import 'settings_screen.dart';
+import '../services/socket_service.dart';
+import '../services/notification_service.dart';
+import '../models/chat_models.dart';
+import 'chat_room_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,8 +19,39 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  final SocketService _socketService = SocketService();
+  final NotificationService _notificationService = NotificationService();
 
   List<Widget> _screens = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService.init();
+    _setupSocketListeners();
+  }
+
+  void _setupSocketListeners() {
+    _socketService.onNewMessage((data) {
+      if (!mounted) return;
+      
+      try {
+        final message = Message.fromJson(data);
+        
+        // Only show notification if user is not in the active conversation
+        if (SocketService.activeConversationId != message.conversationId) {
+          _notificationService.showNotification(
+            id: message.hashCode,
+            title: message.user?.name ?? "New Message",
+            body: message.content ?? (message.type == MessageType.IMAGE ? "Image" : "File"),
+            payload: message.conversationId,
+          );
+        }
+      } catch (e) {
+        // Silently ignore parsing errors
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {

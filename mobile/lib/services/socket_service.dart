@@ -6,6 +6,7 @@ class SocketService {
   static final SocketService _instance = SocketService._internal();
   IO.Socket? _socket;
   bool _isConnected = false;
+  static String? activeConversationId; // Track current active chat room
 
   factory SocketService() {
     return _instance;
@@ -71,5 +72,25 @@ class SocketService {
       _socket = null;
       _isConnected = false;
     }
+  }
+
+  void joinConversation(String conversationId) {
+    activeConversationId = conversationId;
+    _socket?.emit('chat:join', conversationId);
+  }
+
+  void leaveConversation(String conversationId) {
+    if (activeConversationId == conversationId) {
+      activeConversationId = null;
+    }
+    _socket?.emit('chat:leave', conversationId);
+  }
+
+  void onNewMessage(Function(dynamic) callback) {
+    _socket?.on('message:new', callback);
+  }
+
+  void offNewMessage(Function(dynamic) callback) {
+    _socket?.off('message:new', callback);
   }
 }

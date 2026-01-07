@@ -234,5 +234,6 @@
   "userTypeLivestockBreeder": "မွေးမြူရေးလုပ်ငန်းရှင်",
   "userTypeLivestockSpecialist": "မွေးမြူရေးကျွမ်းကျင်သူ",
   "userTypeOthers": "အခြား",
-  "loadingTownships": "မြို့နယ်များ ရယူနေပါသည်..."
+  "loadingTownships": "မြို့နယ်များ ရယူနေပါသည်...",
+  "searchConversations": "စကားပြောမှုများ ရှာဖွေရန်..."
 }
