@@ -1,10 +1,19 @@
 import { io, Socket } from 'socket.io-client';
 
 const getSocketUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  // Remove /api and ensure no trailing slash
-  return apiUrl.replace('/api', '').replace(/\/$/, '');
+  const envUrl = import.meta.env.VITE_API_URL;
+  
+  if (envUrl && envUrl.startsWith('http')) {
+     return envUrl.replace('/api', '').replace(/\/$/, '');
+  }
+  
+  if (window.location.hostname === 'ayarfarmlink.onrender.com' || window.location.hostname.includes('onrender')) {
+      return 'https://ayarfarmlink-api.onrender.com';
+  }
+
+  return 'http://localhost:3000';
 };
+
 
 
 let socket: Socket | null = null;
