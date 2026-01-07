@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./auth-provider";
+import { SOCKET_URL } from "@/lib/config";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -54,8 +55,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (user) {
       // Create socket connection
       const newSocket = io(
-        import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") ||
-          "http://localhost:3000",
+        SOCKET_URL,
         {
           auth: {
             token: user.access_token,

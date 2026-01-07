@@ -162,13 +162,10 @@ const UsersManagement = () => {
         formData.append("image", selectedFile);
       }
 
-      const response = await fetch(
-        `${API_URL}/admin/create-user`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_URL}/admin/create-user`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (response.ok) {
         toast.success("User created successfully!");
