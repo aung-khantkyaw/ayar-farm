@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { API_URL } from "@/lib/config";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -47,16 +48,22 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { useSocket } from "@/providers/socket-provider";
+import { api } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Navigate } from "@tanstack/react-router";
 import AdminProvider from "@/providers/admin-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import type { ChatGroup, ChatMessage, CreateGroupForm } from "@/lib/interface";
+import type {
+  ChatGroup,
+  ChatMessage,
+  CreateGroupForm,
+  User,
+} from "@/lib/interface";
 
 export function ChatRoomManagement() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const {
     socket,
     isConnected,
@@ -72,7 +79,6 @@ export function ChatRoomManagement() {
   const [groups, setGroups] = useState<ChatGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<ChatGroup | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -81,48 +87,49 @@ export function ChatRoomManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [chatDialogOpen, setChatDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
-  const [createForm, setCreateForm] = useState<CreateGroupForm>({
+  const [createForm, setCreateForm] = useState({
     name: "",
-    type: "CROPS",
     description: "",
-    imageFile: null,
+    imageFile: null as File | null,
   });
-  const [editForm, setEditForm] = useState<CreateGroupForm>({
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    []
+  );
+  const [editForm, setEditForm] = useState({
     name: "",
-    type: "CROPS",
     description: "",
-    imageFile: null,
+    imageFile: null as File | null,
   });
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [isTyping, setIsTyping] = useState(false);
+  const [moderatorDialogOpen, setModeratorDialogOpen] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const withLoading = async (
+    name: string,
+    fn: () => Promise<any> | any
+  ): Promise<void> => {
+    try {
+      setActionLoading(name);
+      await fn();
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const API_BASE_URL = API_URL;
+
+  const getToken = () => localStorage.getItem("token") || undefined;
 
   // Fetch chat groups
   const fetchGroups = async () => {
     console.log("Fetching groups with user:", user);
     try {
-      const response = await fetch(`${API_BASE_URL}/chat/groups`, {
-        headers: {
-          Authorization: `Bearer ${user?.access_token}`,
-          "x-user-id": user?.id || "",
-          "x-user-email": user?.email || "",
-          "x-user-name": user?.name || "",
-          "x-user-username": user?.username || "",
-          "x-user-type": user?.user_type || "",
-        },
-      });
-
-      console.log("Groups fetch response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Groups fetch error:", errorData);
-        throw new Error(`Failed to fetch groups: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const token = getToken();
+      const result = await api.get("/chat/conversations", token);
       console.log("Groups fetch result:", result);
       console.log("Groups data:", result.data);
       setGroups(result.data || []);
@@ -139,39 +146,28 @@ export function ChatRoomManagement() {
     try {
       const formData = new FormData();
       formData.append("name", createForm.name);
-      formData.append("type", createForm.type);
       formData.append("description", createForm.description);
+      formData.append("participantIds", JSON.stringify(selectedParticipants));
 
       if (createForm.imageFile) {
         formData.append("file", createForm.imageFile);
       }
 
-      const response = await fetch(`${API_BASE_URL}/chat/groups`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${user?.access_token}`,
-          "x-user-id": user?.id || "",
-          "x-user-email": user?.email || "",
-          "x-user-name": user?.name || "",
-          "x-user-username": user?.username || "",
-          "x-user-type": user?.user_type || "",
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create group");
-      }
-
-      await response.json();
+      const token = getToken();
+      const result = await api.post(
+        "/chat/conversations/group",
+        formData,
+        token
+      );
+      console.log("Create group result:", result);
       toast.success("Chat group created successfully");
       setCreateDialogOpen(false);
       setCreateForm({
         name: "",
-        type: "CROPS",
         description: "",
         imageFile: null,
       });
+      setSelectedParticipants([]);
       fetchGroups();
     } catch (error) {
       console.error("Error creating group:", error);
@@ -183,40 +179,21 @@ export function ChatRoomManagement() {
   const updateGroup = async () => {
     if (!selectedGroup) return;
 
-    // TODO: Implement update endpoint with file upload support on backend
-    toast.error("Group editing with file uploads is not yet implemented");
-    return;
-
     try {
       const formData = new FormData();
       formData.append("name", editForm.name);
-      formData.append("type", editForm.type);
       formData.append("description", editForm.description);
 
       if (editForm.imageFile) {
         formData.append("file", editForm.imageFile!);
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${selectedGroup!.id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-          body: formData,
-        }
+      const token = getToken();
+      await api.put(
+        `/chat/conversations/${selectedGroup!.id}`,
+        formData,
+        token
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to update group");
-      }
-
       toast.success("Chat group updated successfully");
       setEditDialogOpen(false);
       setSelectedGroup(null);
@@ -232,25 +209,8 @@ export function ChatRoomManagement() {
     if (!groupToDelete) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${groupToDelete}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete group");
-      }
-
+      const token = getToken();
+      await api.delete(`/chat/conversations/${groupToDelete}`, token);
       toast.success("Chat group deleted successfully");
       fetchGroups();
 
@@ -273,31 +233,13 @@ export function ChatRoomManagement() {
     console.log("Fetching messages for group:", groupId);
     setMessagesLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${groupId}/messages?page=1&limit=50`,
-        {
-          headers: {
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-        }
+      const token = getToken();
+      const result = await api.get(
+        `/chat/conversations/${groupId}/messages?page=1&limit=50`,
+        token
       );
-
-      console.log("Fetch messages response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Fetch messages error:", errorData);
-        throw new Error("Failed to fetch messages");
-      }
-
-      const data = await response.json();
-      console.log("Fetched messages:", data);
-      setMessages(data.data?.messages || []);
+      console.log("Fetched messages:", result);
+      setMessages(result.data?.messages || []);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast.error("Failed to fetch messages");
@@ -309,31 +251,14 @@ export function ChatRoomManagement() {
   // Join group (become member)
   const joinGroupMembership = async (groupId: string) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${groupId}/join`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-        }
+      const token = getToken();
+      const result = await api.post(
+        `/chat/conversations/${groupId}/participants`,
+        {},
+        token
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `Failed to join group: ${response.status}`
-        );
-      }
-
-      const result = await response.json();
+      console.log("Join group result:", result);
       toast.success(`Successfully joined ${result.data.group.name}`);
-
       // Refresh groups to update membership status
       fetchGroups();
     } catch (error) {
@@ -344,34 +269,67 @@ export function ChatRoomManagement() {
     }
   };
 
+  // Fetch available users for adding as moderators
+  const fetchAvailableUsers = async () => {
+    try {
+      const token = getToken();
+      const result = await api.get(`/users`, token);
+      setAvailableUsers(result.data || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users");
+    }
+  };
+
+  // Add moderator to group
+  const addModerator = async () => {
+    if (!selectedGroup || !selectedUserId) return;
+
+    try {
+      const token = getToken();
+      await api.post(
+        `/chat/groups/${selectedGroup.id}/moderators`,
+        { userId: selectedUserId },
+        token
+      );
+      toast.success("Moderator added successfully");
+      setSelectedUserId("");
+      fetchGroups();
+    } catch (error) {
+      console.error("Error adding moderator:", error);
+      toast.error("Failed to add moderator");
+    }
+  };
+
+  // Remove moderator from group
+  const removeModerator = async (moderatorId: string) => {
+    if (!selectedGroup) return;
+
+    try {
+      const token = getToken();
+      await api.delete(
+        `/chat/groups/${selectedGroup.id}/moderators/${moderatorId}`,
+        token
+      );
+      toast.success("Moderator removed successfully");
+      fetchGroups();
+    } catch (error) {
+      console.error("Error removing moderator:", error);
+      toast.error("Failed to remove moderator");
+    }
+  };
+
   // Leave group (remove membership)
   const leaveGroupMembership = async (groupId: string) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${groupId}/leave`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-        }
+      const token = getToken();
+      const result = await api.post(
+        `/chat/conversations/${groupId}/leave`,
+        {},
+        token
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `Failed to leave group: ${response.status}`
-        );
-      }
-
-      await response.json();
+      console.log("Leave group result:", result);
       toast.success("Successfully left the group");
-
       // Refresh groups to update membership status
       fetchGroups();
     } catch (error) {
@@ -401,26 +359,8 @@ export function ChatRoomManagement() {
         toast.success("Message deleted");
       } else {
         // HTTP fallback
-        const response = await fetch(
-          `${API_BASE_URL}/chat/messages/${messageId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${user?.access_token}`,
-              "x-user-id": user?.id || "",
-              "x-user-email": user?.email || "",
-              "x-user-name": user?.name || "",
-              "x-user-username": user?.username || "",
-              "x-user-type": user?.user_type || "",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to delete message");
-        }
-
+        const token = getToken();
+        await api.delete(`/chat/messages/${messageId}`, token);
         toast.success("Message deleted");
         // Refresh messages to show the change
         if (selectedGroup) {
@@ -466,44 +406,27 @@ export function ChatRoomManagement() {
 
     // HTTP fallback
     try {
-      console.log(
-        "Sending message via HTTP to:",
-        `${API_BASE_URL}/chat/groups/${selectedGroup.id}/messages`
-      );
-
-      const response = await fetch(
-        `${API_BASE_URL}/chat/groups/${selectedGroup.id}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.access_token}`,
-            "x-user-id": user?.id || "",
-            "x-user-email": user?.email || "",
-            "x-user-name": user?.name || "",
-            "x-user-username": user?.username || "",
-            "x-user-type": user?.user_type || "",
-          },
-          body: JSON.stringify({ content: newMessage.trim() }),
-        }
-      );
-
-      console.log("HTTP Response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("HTTP Error response:", errorData);
-        throw new Error(
-          `HTTP ${response.status}: ${errorData.error || "Failed to send message"}`
+      try {
+        console.log(
+          "Sending message via HTTP to:",
+          `${API_BASE_URL}/chat/conversations/${selectedGroup.id}/messages`
+        );
+        const token = getToken();
+        const result = await api.post(
+          `/chat/conversations/${selectedGroup.id}/messages`,
+          { content: newMessage.trim() },
+          token
+        );
+        console.log("Message sent successfully:", result);
+        setNewMessage("");
+        fetchMessages(selectedGroup.id);
+        toast.success("Message sent successfully");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        toast.error(
+          `Failed to send message: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
-
-      const result = await response.json();
-      console.log("Message sent successfully:", result);
-
-      setNewMessage("");
-      fetchMessages(selectedGroup.id);
-      toast.success("Message sent successfully");
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(
@@ -590,11 +513,29 @@ export function ChatRoomManagement() {
   ]);
 
   const filteredGroups = groups.filter((group) => {
-    const matchesSearch =
-      group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "all" || group.type === filterType;
-    return matchesSearch && matchesType;
+    const name = (group.name ?? "").toLowerCase();
+    const description = (group.description ?? "").toLowerCase();
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = name.includes(term) || description.includes(term);
+
+    // Determine whether this conversation represents a group.
+    const isGroupFlag = Boolean(
+      (group as any).isGroup ??
+        (group as any).is_group ??
+        (group as any).is_group_chat
+    );
+    const hasModerators =
+      Array.isArray(group.moderators) && group.moderators.length > 0;
+    const hasMembersCount = !!(
+      group._count && typeof group._count.members === "number"
+    );
+    const typeIndicatesGroup =
+      typeof group.type === "string" && group.type.toLowerCase() !== "direct";
+
+    const isGroup =
+      isGroupFlag || hasModerators || hasMembersCount || typeIndicatesGroup;
+
+    return matchesSearch && isGroup;
   });
 
   const getTypeColor = (type: string) => {
@@ -677,7 +618,10 @@ export function ChatRoomManagement() {
 
                   <Dialog
                     open={createDialogOpen}
-                    onOpenChange={setCreateDialogOpen}
+                    onOpenChange={(open) => {
+                      setCreateDialogOpen(open);
+                      if (open) fetchAvailableUsers();
+                    }}
                   >
                     <DialogTrigger asChild>
                       <Button className="flex items-center gap-2">
@@ -685,7 +629,7 @@ export function ChatRoomManagement() {
                         Create Group
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[500px]">
                       <DialogHeader>
                         <DialogTitle>Create New Chat Group</DialogTitle>
                       </DialogHeader>
@@ -703,29 +647,6 @@ export function ChatRoomManagement() {
                             }
                             placeholder="Enter group name"
                           />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="type">Group Type</Label>
-                          <Select
-                            value={createForm.type}
-                            onValueChange={(value: any) =>
-                              setCreateForm({ ...createForm, type: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="CROPS">Crops</SelectItem>
-                              <SelectItem value="LIVESTOCK">
-                                Livestock
-                              </SelectItem>
-                              <SelectItem value="FISHERIES">
-                                Fisheries
-                              </SelectItem>
-                              <SelectItem value="MACHINE">Machine</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="description">Description</Label>
@@ -752,10 +673,7 @@ export function ChatRoomManagement() {
                             accept="image/*"
                             onChange={(e) => {
                               const file = e.target.files?.[0] || null;
-                              setCreateForm({
-                                ...createForm,
-                                imageFile: file,
-                              });
+                              setCreateForm({ ...createForm, imageFile: file });
                             }}
                             className="cursor-pointer"
                           />
@@ -763,6 +681,64 @@ export function ChatRoomManagement() {
                             <p className="text-sm text-muted-foreground">
                               Selected: {createForm.imageFile.name}
                             </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Add Participants (Optional)</Label>
+                          <Select
+                            onValueChange={(value) => {
+                              if (!selectedParticipants.includes(value)) {
+                                setSelectedParticipants([
+                                  ...selectedParticipants,
+                                  value,
+                                ]);
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select users" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableUsers
+                                .filter(
+                                  (u) => !selectedParticipants.includes(u.id)
+                                )
+                                .map((user) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.name} ({user.user_type})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedParticipants.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {selectedParticipants.map((userId) => {
+                                const user = availableUsers.find(
+                                  (u) => u.id === userId
+                                );
+                                return (
+                                  <Badge
+                                    key={userId}
+                                    variant="secondary"
+                                    className="flex items-center gap-1"
+                                  >
+                                    {user?.name}
+                                    <button
+                                      onClick={() =>
+                                        setSelectedParticipants(
+                                          selectedParticipants.filter(
+                                            (id) => id !== userId
+                                          )
+                                        )
+                                      }
+                                      className="ml-1 hover:text-red-600"
+                                    >
+                                      ×
+                                    </button>
+                                  </Badge>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
@@ -773,9 +749,14 @@ export function ChatRoomManagement() {
                             Cancel
                           </Button>
                           <Button
-                            onClick={createGroup}
-                            disabled={!createForm.name.trim()}
+                            onClick={() => withLoading("create", createGroup)}
+                            disabled={
+                              !createForm.name.trim() || actionLoading !== null
+                            }
                           >
+                            {actionLoading === "create" && (
+                              <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                            )}
                             Create Group
                           </Button>
                         </div>
@@ -784,7 +765,7 @@ export function ChatRoomManagement() {
                   </Dialog>
                 </div>
 
-                {/* Search and Filter */}
+                {/* Search */}
                 <div className="flex gap-4 items-center">
                   <div className="relative flex-1">
                     <IconSearch
@@ -797,21 +778,6 @@ export function ChatRoomManagement() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconFilter size={16} className="text-gray-400" />
-                    <Select value={filterType} onValueChange={setFilterType}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="CROPS">Crops</SelectItem>
-                        <SelectItem value="LIVESTOCK">Livestock</SelectItem>
-                        <SelectItem value="FISHERIES">Fisheries</SelectItem>
-                        <SelectItem value="MACHINE">Machine</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -828,11 +794,13 @@ export function ChatRoomManagement() {
                             <Avatar className="h-12 w-12">
                               <AvatarImage
                                 src={
-                                  group.imageUrl || group.owner.profilePicture
+                                  group.imageUrl ||
+                                  group.owner?.profilePicture ||
+                                  ""
                                 }
                               />
                               <AvatarFallback>
-                                {group.name.charAt(0).toUpperCase()}
+                                {(group.name?.charAt(0) ?? "").toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -867,6 +835,20 @@ export function ChatRoomManagement() {
                             </div>
                           </div>
                           <div className="flex gap-1">
+                            {group.ownerId === user?.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  setModeratorDialogOpen(true);
+                                  fetchAvailableUsers();
+                                }}
+                                title="Manage Moderators"
+                              >
+                                <IconUsers size={16} />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -874,9 +856,8 @@ export function ChatRoomManagement() {
                                 setSelectedGroup(group);
                                 setEditForm({
                                   name: group.name,
-                                  type: group.type,
                                   description: group.description || "",
-                                  imageFile: null, // Can't pre-populate file input
+                                  imageFile: null,
                                 });
                                 setEditDialogOpen(true);
                               }}
@@ -914,10 +895,16 @@ export function ChatRoomManagement() {
                                     <AlertDialogAction
                                       onClick={() => {
                                         setGroupToDelete(group.id);
-                                        confirmDeleteGroup();
+                                        withLoading(
+                                          "delete",
+                                          confirmDeleteGroup
+                                        );
                                       }}
                                       className="bg-red-500 hover:bg-red-600"
                                     >
+                                      {actionLoading === "delete" && (
+                                        <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                      )}
                                       Delete Group
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -934,11 +921,11 @@ export function ChatRoomManagement() {
                         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                           <span className="flex items-center gap-1">
                             <IconUsers size={14} />
-                            {group._count.members} members
+                            {group._count?.members ?? 0} members
                           </span>
                           <span className="flex items-center gap-1">
                             <IconMessage size={14} />
-                            {group._count.messages} messages
+                            {group._count?.messages ?? 0} messages
                           </span>
                         </div>
                         <Separator className="mb-4" />
@@ -964,9 +951,17 @@ export function ChatRoomManagement() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => leaveGroupMembership(group.id)}
+                                onClick={() =>
+                                  withLoading("leave", () =>
+                                    leaveGroupMembership(group.id)
+                                  )
+                                }
                                 className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                                disabled={actionLoading !== null}
                               >
+                                {actionLoading === "leave" && (
+                                  <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                )}
                                 Leave
                               </Button>
                             </>
@@ -974,9 +969,17 @@ export function ChatRoomManagement() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => joinGroupMembership(group.id)}
+                              onClick={() =>
+                                withLoading("join", () =>
+                                  joinGroupMembership(group.id)
+                                )
+                              }
                               className="flex items-center gap-1"
+                              disabled={actionLoading !== null}
                             >
+                              {actionLoading === "join" && (
+                                <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                              )}
                               Join Group
                             </Button>
                           )}
@@ -1003,25 +1006,6 @@ export function ChatRoomManagement() {
                           }
                           placeholder="Enter group name"
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-type">Group Type</Label>
-                        <Select
-                          value={editForm.type}
-                          onValueChange={(value: any) =>
-                            setEditForm({ ...editForm, type: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CROPS">Crops</SelectItem>
-                            <SelectItem value="LIVESTOCK">Livestock</SelectItem>
-                            <SelectItem value="FISHERIES">Fisheries</SelectItem>
-                            <SelectItem value="MACHINE">Machine</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-description">Description</Label>
@@ -1069,9 +1053,161 @@ export function ChatRoomManagement() {
                           Cancel
                         </Button>
                         <Button
-                          onClick={updateGroup}
-                          disabled={!editForm.name.trim()}
+                          onClick={() => withLoading("update", updateGroup)}
+                          disabled={
+                            !editForm.name.trim() || actionLoading !== null
+                          }
                         >
+                          {actionLoading === "update" && (
+                            <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          )}
+                          Update Group
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Moderator Management Dialog */}
+                <Dialog
+                  open={moderatorDialogOpen}
+                  onOpenChange={setModeratorDialogOpen}
+                >
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>
+                        Manage Moderators - {selectedGroup?.name}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Current Moderators</Label>
+                        <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                          {selectedGroup?.moderators &&
+                          selectedGroup.moderators.length > 0 ? (
+                            selectedGroup.moderators.map((mod) => (
+                              <div
+                                key={mod.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage
+                                      src={mod.user?.profilePicture || ""}
+                                    />
+                                    <AvatarFallback>
+                                      {(
+                                        mod.user?.name?.charAt(0) ?? ""
+                                      ).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm font-medium">
+                                    {mod.user.name}
+                                  </span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    withLoading("removeModerator", () =>
+                                      removeModerator(mod.userId)
+                                    )
+                                  }
+                                  className="text-red-600 hover:text-red-700"
+                                  disabled={actionLoading !== null}
+                                >
+                                  {actionLoading === "removeModerator" ? (
+                                    <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                  ) : (
+                                    <IconTrash size={14} />
+                                  )}
+                                </Button>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              No moderators yet
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <Label>Add Moderator</Label>
+                        <div className="flex gap-2">
+                          <Select
+                            value={selectedUserId}
+                            onValueChange={setSelectedUserId}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select user" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableUsers
+                                .filter(
+                                  (u) =>
+                                    u.id !== selectedGroup?.ownerId &&
+                                    !selectedGroup?.moderators?.some(
+                                      (m) => m.userId === u.id
+                                    )
+                                )
+                                .map((user) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.name} ({user.user_type})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            onClick={() =>
+                              withLoading("addModerator", addModerator)
+                            }
+                            disabled={!selectedUserId || actionLoading !== null}
+                          >
+                            {actionLoading === "addModerator" ? (
+                              <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                            ) : (
+                              <IconPlus size={16} />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setModeratorDialogOpen(false);
+                            setSelectedUserId("");
+                          }}
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogContent>
+                    <div>
+                      <div>
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => withLoading("update", updateGroup)}
+                          disabled={
+                            !editForm.name.trim() || actionLoading !== null
+                          }
+                        >
+                          {actionLoading === "update" && (
+                            <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          )}
                           Update Group
                         </Button>
                       </div>
@@ -1098,17 +1234,20 @@ export function ChatRoomManagement() {
                             <AvatarImage
                               src={
                                 selectedGroup?.imageUrl ||
-                                selectedGroup?.owner.profilePicture
+                                selectedGroup?.owner?.profilePicture ||
+                                ""
                               }
                             />
                             <AvatarFallback>
-                              {selectedGroup?.name.charAt(0).toUpperCase()}
+                              {(
+                                selectedGroup?.name?.charAt(0) ?? ""
+                              ).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <DialogTitle>{selectedGroup?.name}</DialogTitle>
                             <p className="text-sm text-gray-500">
-                              {selectedGroup?._count.members} members
+                              {selectedGroup?._count?.members ?? 0} members
                             </p>
                           </div>
                         </div>
@@ -1143,12 +1282,14 @@ export function ChatRoomManagement() {
                                     {!isOwnMessage && (
                                       <Avatar className="h-8 w-8 flex-shrink-0">
                                         <AvatarImage
-                                          src={message.user.profilePicture}
+                                          src={
+                                            message.user?.profilePicture || ""
+                                          }
                                         />
                                         <AvatarFallback className="bg-gray-500 text-white text-xs">
-                                          {message.user.name
-                                            .charAt(0)
-                                            .toUpperCase()}
+                                          {(
+                                            message.user?.name?.charAt(0) ?? ""
+                                          ).toUpperCase()}
                                         </AvatarFallback>
                                       </Avatar>
                                     )}
@@ -1277,11 +1418,17 @@ export function ChatRoomManagement() {
                           onBlur={() => handleTyping(false)}
                         />
                         <Button
-                          onClick={sendMessage}
-                          disabled={!newMessage.trim()}
+                          onClick={() => withLoading("send", sendMessage)}
+                          disabled={
+                            !newMessage.trim() || actionLoading !== null
+                          }
                           className="self-end"
                         >
-                          <IconSend size={16} />
+                          {actionLoading === "send" ? (
+                            <span className="inline-block w-4 h-4 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          ) : (
+                            <IconSend size={16} />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -1298,20 +1445,6 @@ export function ChatRoomManagement() {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       No chat groups found
                     </h3>
-                    <p className="text-gray-600 mb-4">
-                      {searchTerm || filterType !== "all"
-                        ? "Try adjusting your search or filter criteria"
-                        : "Create your first chat group to get started"}
-                    </p>
-                    {!searchTerm && filterType === "all" && (
-                      <Button
-                        onClick={() => setCreateDialogOpen(true)}
-                        className="flex items-center gap-2 mx-auto"
-                      >
-                        <IconPlus size={16} />
-                        Create Your First Group
-                      </Button>
-                    )}
                   </div>
                 )}
               </div>

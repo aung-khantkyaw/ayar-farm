@@ -136,9 +136,20 @@ export interface ChatGroup {
     profilePicture: string;
     user_type: string;
   };
+  moderators?: {
+    id: string;
+    userId: string;
+    user: {
+      id: string;
+      name: string;
+      username: string;
+      profilePicture: string;
+    };
+  }[];
   _count: {
     members: number;
     messages: number;
+    moderators?: number;
   };
 }
 
