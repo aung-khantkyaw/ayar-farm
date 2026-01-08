@@ -168,5 +168,64 @@ export class ChatController {
             res.status(500).json({ message: `Error marking conversation as read: ${error}` });
         }
     }
+
+    public async addModerator(req: Request, res: Response): Promise<void> {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
+            const currentUserId = (req as any).user.id;
+
+            // Check if current user is owner
+            const group = await prisma.conversation.findUnique({
+                where: { id: groupId },
+            });
+
+            if (!group || group.ownerId !== currentUserId) {
+                res.status(403).json({ message: "Only group owner can add moderators" });
+                return;
+            }
+
+            // Add moderator
+            await prisma.conversationModerator.create({
+                data: {
+                    conversationId: groupId,
+                    userId,
+                },
+            });
+
+            res.status(200).json({ message: "Moderator added successfully" });
+        } catch (error) {
+            res.status(500).json({ message: `Error adding moderator: ${error}` });
+        }
+    }
+
+    public async removeModerator(req: Request, res: Response): Promise<void> {
+        try {
+            const { groupId, userId } = req.params;
+            const currentUserId = (req as any).user.id;
+
+            // Check if current user is owner
+            const group = await prisma.conversation.findUnique({
+                where: { id: groupId },
+            });
+
+            if (!group || group.ownerId !== currentUserId) {
+                res.status(403).json({ message: "Only group owner can remove moderators" });
+                return;
+            }
+
+            // Remove moderator
+            await prisma.conversationModerator.deleteMany({
+                where: {
+                    conversationId: groupId,
+                    userId,
+                },
+            });
+
+            res.status(200).json({ message: "Moderator removed successfully" });
+        } catch (error) {
+            res.status(500).json({ message: `Error removing moderator: ${error}` });
+        }
+    }
 }
 
