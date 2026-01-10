@@ -5,6 +5,27 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
+const decodeJwtPayload = (token: string) => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    // Base64url decode per RFC 7515
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = atob(padded);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+};
+
+const isTokenExpired = (token: string) => {
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return true;
+  return payload.exp * 1000 <= Date.now();
+};
+
 type AuthContextType = {
   user: any;
   session: any;
@@ -28,6 +49,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
 
+      if (storedToken && isTokenExpired(storedToken)) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+        setSession(null);
+        router.navigate({ to: "/login" });
+        setIsLoading(false);
+        return;
+      }
+
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
@@ -37,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initAuth();
-  }, []);
+  }, [router]);
 
   const signIn = async (identifier: string, password: string) => {
     setIsLoading(true);
