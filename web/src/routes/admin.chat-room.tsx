@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChatRoomManagement } from "@/app/admin/chat-room";
+import ChatRoomManagement from "@/app/admin/chat-room";
 
 export const Route = createFileRoute("/admin/chat-room")({
   component: RouteComponent,
