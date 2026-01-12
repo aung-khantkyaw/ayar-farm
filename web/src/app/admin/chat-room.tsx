@@ -167,7 +167,7 @@ export default function ChatRoomManagement() {
       const token = getToken();
       await api.post(
         `/chat/conversations/${selectedConv.id}/participants`,
-        { participantId: participantUserName.trim() },
+        { participantIds: [participantUserName.trim()] },
         token
       );
       setParticipantUserName("");
