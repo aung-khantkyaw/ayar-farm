@@ -56,6 +56,25 @@ enum MessageType {
   FILE
 }
 
+enum PostVisibility {
+  PUBLIC
+  COMMUNITY
+  PRIVATE
+}
+
+enum ReactionType {
+  LIKE
+  UNLIKE
+  SUPPORT
+  CARE
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
+  FILE
+}
+
 model Users {
   id           String   @id @unique @default(uuid())
   name         String
@@ -82,6 +101,9 @@ model Users {
   conversationParticipants ConversationParticipant[] @relation("ConversationParticipants")
   conversationModerators   ConversationModerator[]   @relation("ConversationModerators")
   messages                 Message[]                 @relation("Messages")
+  posts                    Post[]                    @relation("UserPosts")
+  postReactions            PostReaction[]            @relation("UserPostReactions")
+  postComments             PostComment[]             @relation("UserPostComments")
 }
 
 model CropTypes {
@@ -289,4 +311,72 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([userId])
+}
+
+model Post {
+  id            String         @id @default(uuid())
+  authorId      String
+  content       String?
+  visibility    PostVisibility @default(PUBLIC)
+  tags          String[]       @default([])
+  reactionCount Int            @default(0)
+  commentCount  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  author    Users          @relation("UserPosts", fields: [authorId], references: [id])
+  media     PostMedia[]
+  reactions PostReaction[]
+  comments  PostComment[]
+
+  @@index([authorId])
+  @@index([visibility])
+}
+
+model PostMedia {
+  id        String        @id @default(uuid())
+  postId    String
+  type      PostMediaType @default(IMAGE)
+  url       String
+  thumbnail String?
+  metadata  Json?
+  createdAt DateTime      @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model PostReaction {
+  id        String       @id @default(uuid())
+  postId    String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user Users @relation("UserPostReactions", fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model PostComment {
+  id              String   @id @default(uuid())
+  postId          String
+  userId          String
+  content         String
+  parentCommentId String?
+  isEdited        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        Users         @relation("UserPostComments", fields: [userId], references: [id])
+  parentComment PostComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies       PostComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@index([parentCommentId])
 }

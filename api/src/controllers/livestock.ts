@@ -82,4 +82,22 @@ export class LivestockController {
             console.error("Error deleting livestock(s):", error)
         }
     }
+
+    public async bulkDeleteLivestocks(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids)) {
+                res.status(400).json({ message: 'Invalid ids provided' });
+                return;
+            }
+
+            await LivestockService.deleteLivestocks(ids);
+            
+            res.status(200).json({ message: 'Livestocks deleted successfully' });
+            return;
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting livestocks: ${error}` })
+            console.error("Error deleting livestocks:", error)
+        }
+    }
 }

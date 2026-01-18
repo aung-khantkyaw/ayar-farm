@@ -14,6 +14,8 @@ livestock.post('/livestocks', authenticate, isAdmin, uploadImage.array('image_ur
 
 livestock.put('/livestocks/:id', authenticate, isAdmin, uploadImage.array('image_urls'), (req, res) => livestockController.editLivestock(req, res));  
 
+livestock.delete('/livestocks', authenticate, isAdmin, (req, res) => livestockController.bulkDeleteLivestocks(req, res));
+
 livestock.delete('/livestocks/:id', authenticate, isAdmin, (req, res) => livestockController.deleteLivestock(req, res));
 
 export default livestock;

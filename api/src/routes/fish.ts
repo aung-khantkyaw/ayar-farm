@@ -14,6 +14,8 @@ fish.post('/fishs', authenticate, isAdmin, uploadImage.array('image_urls'), (req
 
 fish.put('/fishs/:id', authenticate, isAdmin, uploadImage.array('image_urls'), (req, res) => fishController.editFish(req, res));  
 
+fish.delete('/fishs', authenticate, isAdmin, (req, res) => fishController.bulkDeleteFishes(req, res));
+
 fish.delete('/fishs/:id', authenticate, isAdmin, (req, res) => fishController.deleteFish(req, res));
 
 export default fish;

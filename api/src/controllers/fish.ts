@@ -82,4 +82,22 @@ export class FishController {
             console.error("Error deleting fish(s):", error)
         }
     }
+
+    public async bulkDeleteFishes(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids)) {
+                res.status(400).json({ message: 'Invalid ids provided' });
+                return;
+            }
+
+            await FishService.deleteFishs(ids);
+            
+            res.status(200).json({ message: 'Fishes deleted successfully' });
+            return;
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting fishes: ${error}` })
+            console.error("Error deleting fishes:", error)
+        }
+    }
 }

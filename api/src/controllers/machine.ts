@@ -162,4 +162,40 @@ export class MachineController {
             console.error("Error deleting machine(s):", error)
         }
     }
+
+    public async bulkDeleteMachineTypes(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids)) {
+                res.status(400).json({ message: 'Invalid ids provided' });
+                return;
+            }
+
+            await MachineService.deleteMachineTypes(ids);
+            
+            res.status(200).json({ message: 'Machine types deleted successfully' });
+            return;
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting Machine types: ${error}` })
+            console.error("Error deleting Machine types:", error)
+        }
+    }
+
+    public async bulkDeleteMachines(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids)) {
+                res.status(400).json({ message: 'Invalid ids provided' });
+                return;
+            }
+
+            await MachineService.deleteMachines(ids);
+            
+            res.status(200).json({ message: 'Machine(s)  deleted successfully' });
+            return;
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting Machine(s) : ${error}` })
+            console.error("Error deleting Machine(s) :", error)
+        }
+    }
 }
