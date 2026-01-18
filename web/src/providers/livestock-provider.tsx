@@ -67,11 +67,11 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
       } else if (failures.length === results.length) {
         toast.error(
-          "Failed to fetch all data - server or database may be offline"
+          "Failed to fetch all data - server or database may be offline",
         );
       } else {
         toast.warning(
-          `Partially fetched - ${failures.length} of ${results.length} requests failed`
+          `Partially fetched - ${failures.length} of ${results.length} requests failed`,
         );
       }
     } catch (error) {
@@ -91,21 +91,21 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.post(
           "/livestockindustry/livestocks",
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Livestock created successfully!");
         setLivestocks((prev) => [response.data, ...prev]);
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateLivestock = useCallback(
@@ -116,23 +116,23 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.put(
           `/livestockindustry/livestocks/${id}`,
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Livestock updated successfully!");
         setLivestocks((prev) =>
-          prev.map((item) => (item.id === id ? response.data : item))
+          prev.map((item) => (item.id === id ? response.data : item)),
         );
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteLivestock = useCallback(async (id: string): Promise<boolean> => {
@@ -140,14 +140,14 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       const token = localStorage.getItem("token");
       await api.delete(
         `/livestockindustry/livestocks/${id}`,
-        token || undefined
+        token || undefined,
       );
       toast.success("Livestock deleted successfully!");
       setLivestocks((prev) => prev.filter((item) => item.id !== id));
       return true;
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || err.message || "Unknown error"
+        err.response?.data?.message || err.message || "Unknown error",
       );
       return false;
     }
@@ -158,21 +158,20 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       try {
         const token = localStorage.getItem("token");
         await api.post(
-          "/livestockindustry/livestocks/bulk-delete",
-          { ids },
-          token || undefined
+          `/livestockindustry/livestocks/${ids}`,
+          token || undefined,
         );
         toast.success("Selected livestock deleted successfully!");
         setLivestocks((prev) => prev.filter((item) => !ids.includes(item.id)));
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       }
     },
-    []
+    [],
   );
 
   // CRUD operations for Documents
@@ -184,21 +183,21 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.post(
           "/document/documents",
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Document created successfully!");
         setDocuments((prev) => [response.data, ...prev]);
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateDocument = useCallback(
@@ -209,23 +208,23 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.put(
           `/document/documents/${id}`,
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Document updated successfully!");
         setDocuments((prev) =>
-          prev.map((item) => (item.id === id ? response.data : item))
+          prev.map((item) => (item.id === id ? response.data : item)),
         );
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteDocument = useCallback(async (id: string): Promise<boolean> => {
@@ -237,7 +236,7 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       return true;
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || err.message || "Unknown error"
+        err.response?.data?.message || err.message || "Unknown error",
       );
       return false;
     }
@@ -245,21 +244,21 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const getLivestockById = useCallback(
     (id: string) => livestocks.find((l) => l.id === id),
-    [livestocks]
+    [livestocks],
   );
 
   const getDocumentById = useCallback(
     (id: string) => documents.find((d) => d.id === id),
-    [documents]
+    [documents],
   );
 
   const getTotalLivestockCount = useCallback(
     () => livestocks.length,
-    [livestocks]
+    [livestocks],
   );
   const getTotalDocumentsCount = useCallback(
     () => documents.length,
-    [documents]
+    [documents],
   );
 
   useEffect(() => {
@@ -309,7 +308,7 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       getDocumentById,
       getTotalLivestockCount,
       getTotalDocumentsCount,
-    ]
+    ],
   );
 
   return (

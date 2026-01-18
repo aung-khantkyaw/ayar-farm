@@ -55,7 +55,7 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
 
       const failures = results.filter((result) => result.status === "rejected");
       const successes = results.filter(
-        (result) => result.status === "fulfilled"
+        (result) => result.status === "fulfilled",
       );
 
       let totalDataCount = 0;
@@ -73,11 +73,11 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
         }
       } else if (failures.length === results.length) {
         toast.error(
-          "Failed to fetch all data - server or database may be offline"
+          "Failed to fetch all data - server or database may be offline",
         );
       } else {
         toast.warning(
-          `Partially fetched - ${failures.length} of ${results.length} requests failed`
+          `Partially fetched - ${failures.length} of ${results.length} requests failed`,
         );
       }
     } catch (error) {
@@ -97,21 +97,21 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
         const response = await api.post(
           "/fishery/fishs",
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Fishery created successfully");
         setFisheries((prev) => [response.data, ...prev]);
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateFishery = useCallback(
@@ -122,23 +122,23 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
         const response = await api.put(
           `/fishery/fishs/${id}`,
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Fishery updated successfully");
         setFisheries((prev) =>
-          prev.map((item) => (item.id === id ? response.data : item))
+          prev.map((item) => (item.id === id ? response.data : item)),
         );
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteFishery = useCallback(async (id: string): Promise<boolean> => {
@@ -150,7 +150,7 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
       return true;
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || err.message || "Unknown error"
+        err.response?.data?.message || err.message || "Unknown error",
       );
       return false;
     }
@@ -160,29 +160,25 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
     async (ids: string[]): Promise<boolean> => {
       try {
         const token = localStorage.getItem("token");
-        await api.post(
-          "/fishery/fishs/bulk-delete",
-          { ids },
-          token || undefined
-        );
+        await api.delete(`/fishery/fishs/${ids}`, token || undefined);
         toast.success("Fishery deleted successfully!");
         setFisheries((prev) => prev.filter((item) => !ids.includes(item.id)));
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       }
     },
-    []
+    [],
   );
 
   const getFisheryById = useCallback(
     (id: string): Fishery | undefined => {
       return fisheries.find((fishery) => fishery.id === id);
     },
-    [fisheries]
+    [fisheries],
   );
 
   const getTotalFisheriesCount = useCallback((): number => {
@@ -197,21 +193,21 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
         const response = await api.post(
           "/document/documents",
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Document created successfully!");
         setDocuments((prev) => [response.data, ...prev]);
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateDocument = useCallback(
@@ -222,23 +218,23 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
         const response = await api.put(
           `/document/documents/${id}`,
           data,
-          token || undefined
+          token || undefined,
         );
         toast.success("Document updated successfully!");
         setDocuments((prev) =>
-          prev.map((item) => (item.id === id ? response.data : item))
+          prev.map((item) => (item.id === id ? response.data : item)),
         );
         return true;
       } catch (err: any) {
         toast.error(
-          err.response?.data?.message || err.message || "Unknown error"
+          err.response?.data?.message || err.message || "Unknown error",
         );
         return false;
       } finally {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteDocument = useCallback(async (id: string): Promise<boolean> => {
@@ -250,7 +246,7 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
       return true;
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || err.message || "Unknown error"
+        err.response?.data?.message || err.message || "Unknown error",
       );
       return false;
     }
@@ -260,7 +256,7 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
     (id: string): Document | undefined => {
       return documents.find((doc) => doc.id === id);
     },
-    [documents]
+    [documents],
   );
 
   const getTotalDocumentsCount = useCallback((): number => {
@@ -319,7 +315,7 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
       getDocumentById,
       getTotalFisheriesCount,
       getTotalDocumentsCount,
-    ]
+    ],
   );
 
   return (

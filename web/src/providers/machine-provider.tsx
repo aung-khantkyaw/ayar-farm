@@ -61,7 +61,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
           ...machine,
           type: machine.MachineTypes,
           type_id: machine.machine_type_id,
-        }))
+        }));
         setMachines(fetchedMachines);
         return fetchedMachines;
         // setMachines(data);
@@ -141,7 +141,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
         toast.error("Failed to fetch data - server or database may be offline");
       } else {
         toast.warning(
-          `Partially fetched - ${failures.length} of ${results.length} requests failed`
+          `Partially fetched - ${failures.length} of ${results.length} requests failed`,
         );
       }
     } catch (error) {
@@ -159,7 +159,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.post(
         "/agriindustry/machinetypes",
         data,
-        token || undefined
+        token || undefined,
       );
 
       const result = response.data;
@@ -186,7 +186,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const updateMachineType = async (
     id: string,
-    data: FormData
+    data: FormData,
   ): Promise<boolean> => {
     try {
       setIsUploadingFile(true);
@@ -194,13 +194,13 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.put(
         `/agriindustry/machinetypes/${id}`,
         data,
-        token || undefined
+        token || undefined,
       );
 
       const result = response.data;
       if (result) {
         setMachineTypes((prev) =>
-          prev.map((type) => (type.id === id ? result : type))
+          prev.map((type) => (type.id === id ? result : type)),
         );
         toast.success("Machine type updated successfully");
         return true;
@@ -247,9 +247,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       const token = localStorage.getItem("token");
-      await api.delete("/agriindustry/machinetypes", token || undefined, {
-        ids,
-      });
+      await api.delete(`/agriindustry/machinetypes/${ids}`, token || undefined);
 
       setMachineTypes((prev) => prev.filter((type) => !ids.includes(type.id)));
       toast.success(`${ids.length} machine types deleted successfully`);
@@ -273,7 +271,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.post(
         "/agriindustry/machines",
         data,
-        token || undefined
+        token || undefined,
       );
 
       const result = response.data;
@@ -298,7 +296,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const updateMachine = async (
     id: string,
-    data: FormData
+    data: FormData,
   ): Promise<boolean> => {
     try {
       setIsUploadingFile(true);
@@ -306,13 +304,13 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.put(
         `/agriindustry/machines/${id}`,
         data,
-        token || undefined
+        token || undefined,
       );
 
       const result = response.data;
       if (result) {
         setMachines((prev) =>
-          prev.map((machine) => (machine.id === id ? result : machine))
+          prev.map((machine) => (machine.id === id ? result : machine)),
         );
         toast.success("Machine updated successfully");
         return true;
@@ -376,7 +374,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.post(
         "/document/documents",
         formData,
-        token || undefined
+        token || undefined,
       );
 
       if (response && !response.error) {
@@ -398,7 +396,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const updateDocument = async (
     id: string,
-    formData: FormData
+    formData: FormData,
   ): Promise<boolean> => {
     try {
       setIsUploadingFile(true);
@@ -406,7 +404,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.put(
         `/document/documents/${id}`,
         formData,
-        token || undefined
+        token || undefined,
       );
 
       if (response && !response.error) {
@@ -431,7 +429,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const token = localStorage.getItem("token");
       const response = await api.delete(
         `/document/documents/${id}`,
-        token || undefined
+        token || undefined,
       );
       if (response && !response.error) {
         toast.success("Document deleted successfully");
@@ -474,7 +472,7 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const getTotalDocumentsCount = (): number => {
     const machineDocuments = documents.filter(
-      (doc) => doc.machine_id || doc.machine_type_id
+      (doc) => doc.machine_id || doc.machine_type_id,
     );
     return machineDocuments.length;
   };
