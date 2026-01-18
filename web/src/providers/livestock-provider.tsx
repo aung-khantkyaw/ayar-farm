@@ -156,22 +156,32 @@ const LivestockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const bulkDeleteLivestock = useCallback(
     async (ids: string[]): Promise<boolean> => {
       try {
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+          throw new Error("Invalid request: IDs array is required");
+        }
+
         const token = localStorage.getItem("token");
-        await api.post(
-          `/livestockindustry/livestocks/${ids}`,
+        const response = await api.delete(
+          "/livestockindustry/livestocks/",
           token || undefined,
+          { ids },
         );
-        toast.success("Selected livestock deleted successfully!");
-        setLivestocks((prev) => prev.filter((item) => !ids.includes(item.id)));
-        return true;
+
+        if (response && !response.error) {
+          toast.success(`${ids.length} livestocks deleted successfully`);
+          await fetchLivestock();
+          return true;
+        } else {
+          throw new Error(response.error || "Failed to delete livestocks");
+        }
       } catch (err: any) {
-        toast.error(
-          err.response?.data?.message || err.message || "Unknown error",
-        );
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete Livestock";
+        toast.error(errorMessage);
         return false;
       }
     },
-    [],
+    [fetchLivestock],
   );
 
   // CRUD operations for Documents

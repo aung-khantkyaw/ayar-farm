@@ -123,7 +123,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
       const failures = results.filter((result) => result.status === "rejected");
       const successes = results.filter(
-        (result) => result.status === "fulfilled"
+        (result) => result.status === "fulfilled",
       );
 
       // Check the actual fetched data from successful promises
@@ -144,7 +144,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         toast.error("Failed to fetch data - server or database may be offline");
       } else {
         toast.warning(
-          `Partially fetched - ${failures.length} of ${results.length} requests failed`
+          `Partially fetched - ${failures.length} of ${results.length} requests failed`,
         );
       }
     } catch (err) {
@@ -163,7 +163,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.post(
           "/cropsandpulses/croptypes",
           formData,
-          token || undefined
+          token || undefined,
         );
 
         const result = response.data;
@@ -183,7 +183,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateCropType = useCallback(
@@ -194,13 +194,13 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.put(
           `/cropsandpulses/croptypes/${id}`,
           formData,
-          token || undefined
+          token || undefined,
         );
 
         const result = response.data;
         if (result) {
           setCropTypes((prev) =>
-            prev.map((type) => (type.id === id ? result : type))
+            prev.map((type) => (type.id === id ? result : type)),
           );
           toast.success("Crop type updated successfully");
           return true;
@@ -216,7 +216,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteCropType = useCallback(async (id: string): Promise<boolean> => {
@@ -242,7 +242,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.delete(
           "/cropsandpulses/croptypes",
           token || undefined,
-          { ids }
+          { ids },
         );
 
         if (response && !response.error) {
@@ -259,7 +259,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         return false;
       }
     },
-    [fetchCropTypes, fetchCrops]
+    [fetchCropTypes, fetchCrops],
   );
 
   const createCrop = useCallback(
@@ -270,7 +270,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.post(
           "/cropsandpulses/crops",
           formData,
-          token || undefined
+          token || undefined,
         );
 
         const result = response.data;
@@ -295,7 +295,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const updateCrop = useCallback(
@@ -306,7 +306,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.put(
           `/cropsandpulses/crops/${id}`,
           formData,
-          token || undefined
+          token || undefined,
         );
 
         const result = response.data;
@@ -317,7 +317,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             type_id: result.crop_type_id,
           };
           setCrops((prev) =>
-            prev.map((crop) => (crop.id === id ? updatedCrop : crop))
+            prev.map((crop) => (crop.id === id ? updatedCrop : crop)),
           );
           toast.success("Crop updated successfully");
           return true;
@@ -333,7 +333,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    []
+    [],
   );
 
   const deleteCrop = useCallback(async (id: string): Promise<boolean> => {
@@ -362,7 +362,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.delete(
           "/cropsandpulses/crops",
           token || undefined,
-          { ids }
+          { ids },
         );
 
         if (response && !response.error) {
@@ -379,7 +379,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         return false;
       }
     },
-    [fetchCrops]
+    [fetchCrops],
   );
 
   // Document CRUD operations
@@ -391,7 +391,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.post(
           "/document/documents",
           formData,
-          token || undefined
+          token || undefined,
         );
 
         if (response && !response.error) {
@@ -410,7 +410,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    [fetchDocuments]
+    [fetchDocuments],
   );
 
   const updateDocument = useCallback(
@@ -421,7 +421,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const response = await api.put(
           `/document/documents/${id}`,
           formData,
-          token || undefined
+          token || undefined,
         );
 
         if (response && !response.error) {
@@ -440,7 +440,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setIsUploadingFile(false);
       }
     },
-    [fetchDocuments]
+    [fetchDocuments],
   );
 
   const deleteDocument = useCallback(
@@ -449,7 +449,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const token = localStorage.getItem("token");
         const response = await api.delete(
           `/document/documents/${id}`,
-          token || undefined
+          token || undefined,
         );
         if (response && !response.error) {
           toast.success("Document deleted successfully");
@@ -465,7 +465,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         return false;
       }
     },
-    [fetchDocuments]
+    [fetchDocuments],
   );
 
   // Utility functions
@@ -473,42 +473,42 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     (id: string): CropType | undefined => {
       return cropTypes.find((type) => type.id === id);
     },
-    [cropTypes]
+    [cropTypes],
   );
 
   const getCropById = useCallback(
     (id: string): Crop | undefined => {
       return crops.find((crop) => crop.id === id);
     },
-    [crops]
+    [crops],
   );
 
   const getCropsByType = useCallback(
     (typeId: string): Crop[] => {
       return crops.filter((crop) => crop.type_id === typeId);
     },
-    [crops]
+    [crops],
   );
 
   const getDocumentById = useCallback(
     (id: string): Document | undefined => {
       return documents.find((doc) => doc.id === id);
     },
-    [documents]
+    [documents],
   );
 
   const getDocumentsByCropType = useCallback(
     (typeId: string): Document[] => {
       return documents.filter((doc) => doc.crop_type_id === typeId);
     },
-    [documents]
+    [documents],
   );
 
   const getDocumentsByCrop = useCallback(
     (cropId: string): Document[] => {
       return documents.filter((doc) => doc.crop_id === cropId);
     },
-    [documents]
+    [documents],
   );
 
   const getTotalCropTypes = useCallback((): number => {
@@ -598,7 +598,7 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       // But `fetchCropTypes` is a NEW function every render.
       // So `value` will be new every render if I include functions in deps.
       // So I MUST wrap functions in useCallback.
-    ]
+    ],
   );
 
   return <CropContext.Provider value={value}>{children}</CropContext.Provider>;

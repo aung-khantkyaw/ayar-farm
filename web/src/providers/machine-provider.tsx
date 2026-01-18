@@ -242,23 +242,25 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const bulkDeleteMachineTypes = async (ids: string[]): Promise<boolean> => {
     try {
-      if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        throw new Error("Invalid request: IDs array is required");
-      }
+      console.log("Selected Crop Types for bulk delete:", ids);
 
       const token = localStorage.getItem("token");
-      await api.delete(`/agriindustry/machinetypes/${ids}`, token || undefined);
+      const response = await api.delete(
+        `/agriindustry/machinetypes`,
+        token || undefined,
+        { ids },
+      );
 
-      setMachineTypes((prev) => prev.filter((type) => !ids.includes(type.id)));
-      toast.success(`${ids.length} machine types deleted successfully`);
-      return true;
-    } catch (error) {
+      if (response && !response.error) {
+        toast.success(`${ids.length} machine types deleted successfully`);
+        await Promise.all([fetchMachineTypes(), fetchMachines()]);
+        return true;
+      } else {
+        throw new Error(response.error || "Failed to delete machine types");
+      }
+    } catch (err) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to delete machine types";
-      setError(errorMessage);
-      console.error("Bulk delete machine types error:", errorMessage);
+        err instanceof Error ? err.message : "Failed to delete machine types";
       toast.error(errorMessage);
       return false;
     }
@@ -353,15 +355,22 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       const token = localStorage.getItem("token");
-      await api.delete("/agriindustry/machines", token || undefined, { ids });
+      const response = await api.delete(
+        "/agriindustry/machines",
+        token || undefined,
+        { ids },
+      );
 
-      toast.success(`${ids.length} machines deleted successfully`);
-      await fetchMachines();
-      return true;
-    } catch (error) {
+      if (response && !response.error) {
+        toast.success(`${ids.length} machines deleted successfully`);
+        await fetchMachines();
+        return true;
+      } else {
+        throw new Error(response.error || "Failed to delete machines");
+      }
+    } catch (err) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete machines";
-      setError(errorMessage);
+        err instanceof Error ? err.message : "Failed to delete machines";
       toast.error(errorMessage);
       return false;
     }

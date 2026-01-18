@@ -159,19 +159,32 @@ export const FisheryProvider: React.FC<{ children: ReactNode }> = ({
   const bulkDeleteFisheries = useCallback(
     async (ids: string[]): Promise<boolean> => {
       try {
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+          throw new Error("Invalid request: IDs array is required");
+        }
+
         const token = localStorage.getItem("token");
-        await api.delete(`/fishery/fishs/${ids}`, token || undefined);
-        toast.success("Fishery deleted successfully!");
-        setFisheries((prev) => prev.filter((item) => !ids.includes(item.id)));
-        return true;
-      } catch (err: any) {
-        toast.error(
-          err.response?.data?.message || err.message || "Unknown error",
+        const response = await api.delete(
+          `/fishery/fishs`,
+          token || undefined,
+          { ids },
         );
+
+        if (response && !response.error) {
+          toast.success(`${ids.length} fishes deleted successfully`);
+          await fetchFisheries();
+          return true;
+        } else {
+          throw new Error(response.error || "Failed to delete fishes");
+        }
+      } catch (err: any) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete fishes";
+        toast.error(errorMessage);
         return false;
       }
     },
-    [],
+    [fetchFisheries],
   );
 
   const getFisheryById = useCallback(
