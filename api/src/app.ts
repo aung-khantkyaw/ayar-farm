@@ -13,6 +13,7 @@ import fish from "./routes/fish";
 import document from "./routes/document";
 import resource from "./routes/resource";
 import chat from "./routes/chat";
+import post from "./routes/post";
 
 const app = express();
 
@@ -51,5 +52,6 @@ app.use("/api/agriindustry", machine)
 app.use("/api/document", document)
 app.use("/api/resources", resource);
 app.use("/api/chat", chat);
+app.use("/api", post);
 
 export default app;

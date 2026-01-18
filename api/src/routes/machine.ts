@@ -18,8 +18,8 @@ machine.post('/machines', authenticate, isAdmin, uploadImage.array('image_urls')
 machine.put('/machinetypes/:id', authenticate, isAdmin, uploadImage.array('image_urls'), (req, res) => machineController.editMachineType(req, res));
 machine.put('/machines/:id', authenticate, isAdmin, uploadImage.array('image_urls'), (req, res) => machineController.editMachine(req, res));  
 
-machine.delete('/croptypes', authenticate, isAdmin, (req, res) => machineController.bulkDeleteMachineTypes(req, res));
-machine.delete('/crops', authenticate, isAdmin, (req, res) => machineController.bulkDeleteMachines(req, res));
+machine.delete('/machinetypes', authenticate, isAdmin, (req, res) => machineController.bulkDeleteMachineTypes(req, res));
+machine.delete('/machines', authenticate, isAdmin, (req, res) => machineController.bulkDeleteMachines(req, res));
 
 machine.delete('/machinetypes/:id', authenticate, isAdmin, (req, res) => machineController.deleteMachineType(req, res));
 machine.delete('/machines/:id', authenticate, isAdmin, (req, res) => machineController.deleteMachine(req, res));
