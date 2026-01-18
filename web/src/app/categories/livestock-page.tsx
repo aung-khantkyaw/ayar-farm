@@ -84,7 +84,7 @@ const LivestockManagement = () => {
   const [livestockSearchTerm, setLivestockSearchTerm] = useState("");
   const [isLivestockDialogOpen, setIsLivestockDialogOpen] = useState(false);
   const [editingLivestock, setEditingLivestock] = useState<Livestock | null>(
-    null
+    null,
   );
   const [livestockFormData, setLivestockFormData] = useState({
     name: "",
@@ -110,7 +110,7 @@ const LivestockManagement = () => {
   const [livestockPageSize, setLivestockPageSize] = useState(10);
   const [livestockSortBy, setLivestockSortBy] = useState<string>("");
   const [livestockSortOrder, setLivestockSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Document pagination and sorting state
@@ -118,12 +118,12 @@ const LivestockManagement = () => {
   const [documentPageSize, setDocumentPageSize] = useState(10);
   const [documentSortBy, setDocumentSortBy] = useState<string>("");
   const [documentSortOrder, setDocumentSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Delete confirmation dialog states
   const [deleteLivestockId, setDeleteLivestockId] = useState<string | null>(
-    null
+    null,
   );
   const [isDeleteLivestockDialogOpen, setIsDeleteLivestockDialogOpen] =
     useState(false);
@@ -138,7 +138,7 @@ const LivestockManagement = () => {
     const filtered = livestocks.filter((livestock) =>
       (livestock.name || "")
         .toLowerCase()
-        .includes(livestockSearchTerm.toLowerCase())
+        .includes(livestockSearchTerm.toLowerCase()),
     );
 
     return filtered.sort((a, b) => {
@@ -169,14 +169,14 @@ const LivestockManagement = () => {
   // Livestock pagination logic
   const livestockTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedLivestock.length / livestockPageSize)
+    Math.ceil(filteredAndSortedLivestock.length / livestockPageSize),
   );
   const livestockStartIndex = (livestockCurrentPage - 1) * livestockPageSize;
   const livestockEndIndex = livestockStartIndex + livestockPageSize;
   const paginatedLivestock = useMemo(
     () =>
       filteredAndSortedLivestock.slice(livestockStartIndex, livestockEndIndex),
-    [filteredAndSortedLivestock, livestockStartIndex, livestockEndIndex]
+    [filteredAndSortedLivestock, livestockStartIndex, livestockEndIndex],
   );
 
   const documentsWithLivestock = useMemo(
@@ -186,7 +186,7 @@ const LivestockManagement = () => {
         livestocks:
           doc.Livestocks || livestocks.find((l) => l.id === doc.livestock_id),
       })),
-    [documents, livestocks]
+    [documents, livestocks],
   );
 
   // Filter and sort functions for Document (only show those with livestock_id)
@@ -245,14 +245,14 @@ const LivestockManagement = () => {
   // Document pagination logic
   const documentTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedDocuments.length / documentPageSize)
+    Math.ceil(filteredAndSortedDocuments.length / documentPageSize),
   );
   const documentStartIndex = (documentCurrentPage - 1) * documentPageSize;
   const documentEndIndex = documentStartIndex + documentPageSize;
   const paginatedDocuments = useMemo(
     () =>
       filteredAndSortedDocuments.slice(documentStartIndex, documentEndIndex),
-    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex]
+    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex],
   );
 
   // Reset pagination when filters change
@@ -415,7 +415,7 @@ const LivestockManagement = () => {
     setSelectedLivestock((prev) =>
       prev.includes(livestockId)
         ? prev.filter((id) => id !== livestockId)
-        : [...prev, livestockId]
+        : [...prev, livestockId],
     );
   };
 
@@ -562,7 +562,7 @@ const LivestockManagement = () => {
                       ...new Set(
                         documents
                           .map((doc) => doc.livestock_id)
-                          .filter((id) => id !== null)
+                          .filter((id) => id !== null),
                       ),
                     ].length
                   }{" "}
@@ -716,7 +716,7 @@ const LivestockManagement = () => {
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setSelectedLivestock(
-                            paginatedLivestock.map((l) => l.id)
+                            paginatedLivestock.map((l) => l.id),
                           );
                         } else {
                           setSelectedLivestock([]);
@@ -777,7 +777,13 @@ const LivestockManagement = () => {
                       </TableCell>
                       <TableCell>
                         <img
-                          src={livestock.image_urls?.[0] || "/placeholder-image.png"}
+                          src={
+                            (livestock.image_urls?.length
+                              ? livestock.image_urls[
+                                  livestock.image_urls.length - 1
+                                ]
+                              : undefined) || "/placeholder-image.png"
+                          }
                           alt={livestock.name}
                           className="w-10 h-10 rounded-md object-cover"
                         />
@@ -871,7 +877,7 @@ const LivestockManagement = () => {
                 size="sm"
                 onClick={() =>
                   setLivestockCurrentPage(
-                    Math.min(livestockTotalPages, livestockCurrentPage + 1)
+                    Math.min(livestockTotalPages, livestockCurrentPage + 1),
                   )
                 }
                 disabled={livestockCurrentPage === livestockTotalPages}
@@ -1222,7 +1228,7 @@ const LivestockManagement = () => {
                 size="sm"
                 onClick={() =>
                   setDocumentCurrentPage(
-                    Math.min(documentTotalPages, documentCurrentPage + 1)
+                    Math.min(documentTotalPages, documentCurrentPage + 1),
                   )
                 }
                 disabled={documentCurrentPage === documentTotalPages}

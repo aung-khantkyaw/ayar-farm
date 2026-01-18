@@ -107,7 +107,7 @@ const FisheriesManagement = () => {
   const [fisheryPageSize, setFisheryPageSize] = useState(10);
   const [fisherySortBy, setFisherySortBy] = useState<string>("");
   const [fisherySortOrder, setFisherySortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Document pagination and sorting state
@@ -115,7 +115,7 @@ const FisheriesManagement = () => {
   const [documentPageSize, setDocumentPageSize] = useState(10);
   const [documentSortBy, setDocumentSortBy] = useState<string>("");
   const [documentSortOrder, setDocumentSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Delete confirmation dialog states
@@ -133,7 +133,7 @@ const FisheriesManagement = () => {
     const filtered = fisheries.filter((fishery) =>
       (fishery.name || "")
         .toLowerCase()
-        .includes(fisherySearchTerm.toLowerCase())
+        .includes(fisherySearchTerm.toLowerCase()),
     );
 
     return filtered.sort((a, b) => {
@@ -164,13 +164,13 @@ const FisheriesManagement = () => {
   // Fishery pagination logic
   const fisheryTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedFishery.length / fisheryPageSize)
+    Math.ceil(filteredAndSortedFishery.length / fisheryPageSize),
   );
   const fisheryStartIndex = (fisheryCurrentPage - 1) * fisheryPageSize;
   const fisheryEndIndex = fisheryStartIndex + fisheryPageSize;
   const paginatedFishery = useMemo(
     () => filteredAndSortedFishery.slice(fisheryStartIndex, fisheryEndIndex),
-    [filteredAndSortedFishery, fisheryStartIndex, fisheryEndIndex]
+    [filteredAndSortedFishery, fisheryStartIndex, fisheryEndIndex],
   );
 
   const documentsWithFishery = useMemo(
@@ -179,7 +179,7 @@ const FisheriesManagement = () => {
         ...doc,
         Fisheries: doc.Fisheries || fisheries.find((l) => l.id === doc.fish_id),
       })),
-    [documents, fisheries]
+    [documents, fisheries],
   );
 
   // Filter and sort functions for Document (only show those with fish_id)
@@ -238,14 +238,14 @@ const FisheriesManagement = () => {
   // Document pagination logic
   const documentTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedDocuments.length / documentPageSize)
+    Math.ceil(filteredAndSortedDocuments.length / documentPageSize),
   );
   const documentStartIndex = (documentCurrentPage - 1) * documentPageSize;
   const documentEndIndex = documentStartIndex + documentPageSize;
   const paginatedDocuments = useMemo(
     () =>
       filteredAndSortedDocuments.slice(documentStartIndex, documentEndIndex),
-    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex]
+    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex],
   );
 
   // Reset pagination when filters change
@@ -324,10 +324,7 @@ const FisheriesManagement = () => {
     }
 
     const formData = new FormData();
-    if (
-      documentFormData.fish_id &&
-      documentFormData.fish_id !== "none"
-    ) {
+    if (documentFormData.fish_id && documentFormData.fish_id !== "none") {
       formData.append("fish_id", documentFormData.fish_id);
     }
     formData.append("title", documentFormData.title);
@@ -408,7 +405,7 @@ const FisheriesManagement = () => {
     setSelectedFishery((prev) =>
       prev.includes(fisheryId)
         ? prev.filter((id) => id !== fisheryId)
-        : [...prev, fisheryId]
+        : [...prev, fisheryId],
     );
   };
 
@@ -555,7 +552,7 @@ const FisheriesManagement = () => {
                       ...new Set(
                         documents
                           .map((doc) => doc.fish_id)
-                          .filter((id) => id !== null)
+                          .filter((id) => id !== null),
                       ),
                     ].length
                   }{" "}
@@ -764,7 +761,11 @@ const FisheriesManagement = () => {
                       <TableCell>
                         <img
                           src={
-                            fishery.image_urls?.[0] || "/placeholder-image.png"
+                            (fishery.image_urls?.length
+                              ? fishery.image_urls[
+                                  fishery.image_urls.length - 1
+                                ]
+                              : undefined) || "/placeholder-image.png"
                           }
                           alt={fishery.name}
                           className="w-10 h-10 rounded-md object-cover"
@@ -859,7 +860,7 @@ const FisheriesManagement = () => {
                 size="sm"
                 onClick={() =>
                   setFisheryCurrentPage(
-                    Math.min(fisheryTotalPages, fisheryCurrentPage + 1)
+                    Math.min(fisheryTotalPages, fisheryCurrentPage + 1),
                   )
                 }
                 disabled={fisheryCurrentPage === fisheryTotalPages}
@@ -1192,7 +1193,7 @@ const FisheriesManagement = () => {
                 size="sm"
                 onClick={() =>
                   setDocumentCurrentPage(
-                    Math.min(documentTotalPages, documentCurrentPage + 1)
+                    Math.min(documentTotalPages, documentCurrentPage + 1),
                   )
                 }
                 disabled={documentCurrentPage === documentTotalPages}

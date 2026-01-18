@@ -117,7 +117,7 @@ const MachinesManagement = () => {
     image: null as File | null,
   });
   const [selectedMachineTypes, setSelectedMachineTypes] = useState<string[]>(
-    []
+    [],
   );
   const [machineTypeSortBy, setMachineTypeSortBy] = useState<string>("");
   const [machineTypeSortOrder, setMachineTypeSortOrder] = useState<
@@ -141,7 +141,7 @@ const MachinesManagement = () => {
   });
   const [documentSortBy, setDocumentSortBy] = useState<string>("");
   const [documentSortOrder, setDocumentSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Pagination state
@@ -157,7 +157,7 @@ const MachinesManagement = () => {
   const [isDeleteMachineDialogOpen, setIsDeleteMachineDialogOpen] =
     useState(false);
   const [deleteMachineTypeId, setDeleteMachineTypeId] = useState<string | null>(
-    null
+    null,
   );
   const [isDeleteMachineTypeDialogOpen, setIsDeleteMachineTypeDialogOpen] =
     useState(false);
@@ -210,7 +210,7 @@ const MachinesManagement = () => {
     .filter((type) =>
       (type.name || "")
         .toLowerCase()
-        .includes(machineTypeSearchTerm.toLowerCase())
+        .includes(machineTypeSearchTerm.toLowerCase()),
     )
     .sort((a, b) => {
       if (!machineTypeSortBy) return 0;
@@ -296,28 +296,28 @@ const MachinesManagement = () => {
   const endIndex = startIndex + pageSize;
   const paginatedMachines = filteredAndSortedMachines.slice(
     startIndex,
-    endIndex
+    endIndex,
   );
 
   const machineTypeTotalPages = Math.ceil(
-    filteredAndSortedMachineTypes.length / machineTypePageSize
+    filteredAndSortedMachineTypes.length / machineTypePageSize,
   );
   const machineTypeStartIndex =
     (machineTypeCurrentPage - 1) * machineTypePageSize;
   const machineTypeEndIndex = machineTypeStartIndex + machineTypePageSize;
   const paginatedMachineTypes = filteredAndSortedMachineTypes.slice(
     machineTypeStartIndex,
-    machineTypeEndIndex
+    machineTypeEndIndex,
   );
 
   const documentTotalPages = Math.ceil(
-    filteredAndSortedDocuments.length / documentPageSize
+    filteredAndSortedDocuments.length / documentPageSize,
   );
   const documentStartIndex = (documentCurrentPage - 1) * documentPageSize;
   const documentEndIndex = documentStartIndex + documentPageSize;
   const paginatedDocuments = filteredAndSortedDocuments.slice(
     documentStartIndex,
-    documentEndIndex
+    documentEndIndex,
   );
 
   // Reset pagination when filters change
@@ -544,7 +544,7 @@ const MachinesManagement = () => {
     setSelectedMachines((prev) =>
       prev.includes(machineId)
         ? prev.filter((id) => id !== machineId)
-        : [...prev, machineId]
+        : [...prev, machineId],
     );
   };
 
@@ -552,7 +552,7 @@ const MachinesManagement = () => {
     setSelectedMachineTypes((prev) =>
       prev.includes(typeId)
         ? prev.filter((id) => id !== typeId)
-        : [...prev, typeId]
+        : [...prev, typeId],
     );
   };
 
@@ -623,9 +623,7 @@ const MachinesManagement = () => {
     setSelectedDocumentMachine(""); // Reset machine selection when machine type changes
   };
 
-  paginatedMachines.map((machine) => (
-    console.log(machine)
-  ))
+  paginatedMachines.map((machine) => console.log(machine));
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
@@ -685,9 +683,9 @@ const MachinesManagement = () => {
                       machineTypes
                         .filter(
                           (type) =>
-                            type.machines.length && type.machines.length > 0
+                            type.machines.length && type.machines.length > 0,
                         )
-                        .map((type) => type.id)
+                        .map((type) => type.id),
                     ).size
                   }{" "}
                   Machine Types Active
@@ -770,7 +768,7 @@ const MachinesManagement = () => {
                       ...new Set(
                         documents
                           .map((doc) => doc.machine_id)
-                          .filter((id) => id !== null)
+                          .filter((id) => id !== null),
                       ),
                     ].length
                   }{" "}
@@ -928,7 +926,7 @@ const MachinesManagement = () => {
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setSelectedMachineTypes(
-                            paginatedMachineTypes.map((t) => t.id)
+                            paginatedMachineTypes.map((t) => t.id),
                           );
                         } else {
                           setSelectedMachineTypes([]);
@@ -991,7 +989,7 @@ const MachinesManagement = () => {
                       <TableCell>
                         <Checkbox
                           checked={selectedMachineTypes.includes(
-                            machineType.id
+                            machineType.id,
                           )}
                           onCheckedChange={() =>
                             handleSelectMachineType(machineType.id)
@@ -1001,8 +999,11 @@ const MachinesManagement = () => {
                       <TableCell>
                         <img
                           src={
-                            machineType.image_urls?.[0] ||
-                            "/placeholder-image.png"
+                            (machineType.image_urls?.length
+                              ? machineType.image_urls[
+                                  machineType.image_urls.length - 1
+                                ]
+                              : undefined) || "/placeholder-image.png"
                           }
                           alt={machineType.name}
                           className="w-10 h-10 rounded-md object-cover"
@@ -1064,7 +1065,7 @@ const MachinesManagement = () => {
                 Showing {machineTypeStartIndex + 1}-
                 {Math.min(
                   machineTypeEndIndex,
-                  filteredAndSortedMachineTypes.length
+                  filteredAndSortedMachineTypes.length,
                 )}{" "}
                 of {filteredAndSortedMachineTypes.length} machine types
               </div>
@@ -1295,7 +1296,7 @@ const MachinesManagement = () => {
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setSelectedMachines(
-                            paginatedMachines.map((m) => m.id)
+                            paginatedMachines.map((m) => m.id),
                           );
                         } else {
                           setSelectedMachines([]);
@@ -1364,7 +1365,11 @@ const MachinesManagement = () => {
                       <TableCell>
                         <img
                           src={
-                            machine.image_urls?.[0] || "/placeholder-image.png"
+                            (machine.image_urls?.length
+                              ? machine.image_urls[
+                                  machine.image_urls.length - 1
+                                ]
+                              : undefined) || "/placeholder-image.png"
                           }
                           alt={machine.name}
                           className="w-10 h-10 rounded-md object-cover"
@@ -1519,10 +1524,10 @@ const MachinesManagement = () => {
                           (machine) =>
                             selectedDocumentMachineType === "" ||
                             selectedDocumentMachineType === "all" ||
-                            machine.type_id === selectedDocumentMachineType
+                            machine.type_id === selectedDocumentMachineType,
                         )
-                        .map((machine) => [machine.name, machine])
-                    ).values()
+                        .map((machine) => [machine.name, machine]),
+                    ).values(),
                   ).map((machine) => (
                     <SelectItem key={machine.id} value={machine.id}>
                       {machine.name} ({machine.type?.name || "Unknown"})
@@ -1627,10 +1632,10 @@ const MachinesManagement = () => {
                                         "none" ||
                                       !documentFormData.machine_type_id ||
                                       machine.type_id ===
-                                        documentFormData.machine_type_id
+                                        documentFormData.machine_type_id,
                                   )
-                                  .map((machine) => [machine.name, machine]) // Use name as key
-                              ).values()
+                                  .map((machine) => [machine.name, machine]), // Use name as key
+                              ).values(),
                             ).map((machine) => (
                               <SelectItem key={machine.id} value={machine.id}>
                                 {machine.name} (

@@ -141,7 +141,7 @@ const CropsManagement = () => {
   const [cropTypePageSize, setCropTypePageSize] = useState(10);
   const [cropTypeSortBy, setCropTypeSortBy] = useState<string>("");
   const [cropTypeSortOrder, setCropTypeSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Document pagination and sorting state
@@ -149,7 +149,7 @@ const CropsManagement = () => {
   const [documentPageSize, setDocumentPageSize] = useState(10);
   const [documentSortBy, setDocumentSortBy] = useState<string>("");
   const [documentSortOrder, setDocumentSortOrder] = useState<"asc" | "desc">(
-    "asc"
+    "asc",
   );
 
   // Delete confirmation dialog states
@@ -168,7 +168,9 @@ const CropsManagement = () => {
   // Filter and sort functions
   const filteredAndSortedCropTypes = useMemo(() => {
     const filtered = cropTypes.filter((type) =>
-      (type.name || "").toLowerCase().includes(cropTypeSearchTerm.toLowerCase())
+      (type.name || "")
+        .toLowerCase()
+        .includes(cropTypeSearchTerm.toLowerCase()),
     );
 
     return filtered.sort((a, b) => {
@@ -202,14 +204,14 @@ const CropsManagement = () => {
   // Crop Types pagination logic
   const cropTypeTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedCropTypes.length / cropTypePageSize)
+    Math.ceil(filteredAndSortedCropTypes.length / cropTypePageSize),
   );
   const cropTypeStartIndex = (cropTypeCurrentPage - 1) * cropTypePageSize;
   const cropTypeEndIndex = cropTypeStartIndex + cropTypePageSize;
   const paginatedCropTypes = useMemo(
     () =>
       filteredAndSortedCropTypes.slice(cropTypeStartIndex, cropTypeEndIndex),
-    [filteredAndSortedCropTypes, cropTypeStartIndex, cropTypeEndIndex]
+    [filteredAndSortedCropTypes, cropTypeStartIndex, cropTypeEndIndex],
   );
 
   const filteredAndSortedCrops = useMemo(() => {
@@ -312,26 +314,26 @@ const CropsManagement = () => {
   // Document pagination logic
   const documentTotalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedDocuments.length / documentPageSize)
+    Math.ceil(filteredAndSortedDocuments.length / documentPageSize),
   );
   const documentStartIndex = (documentCurrentPage - 1) * documentPageSize;
   const documentEndIndex = documentStartIndex + documentPageSize;
   const paginatedDocuments = useMemo(
     () =>
       filteredAndSortedDocuments.slice(documentStartIndex, documentEndIndex),
-    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex]
+    [filteredAndSortedDocuments, documentStartIndex, documentEndIndex],
   );
 
   // Pagination logic
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedCrops.length / pageSize)
+    Math.ceil(filteredAndSortedCrops.length / pageSize),
   );
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedCrops = useMemo(
     () => filteredAndSortedCrops.slice(startIndex, endIndex),
-    [filteredAndSortedCrops, startIndex, endIndex]
+    [filteredAndSortedCrops, startIndex, endIndex],
   );
 
   // Reset pagination when filters change
@@ -584,7 +586,7 @@ const CropsManagement = () => {
     setSelectedCropTypes((prev) =>
       prev.includes(typeId)
         ? prev.filter((id) => id !== typeId)
-        : [...prev, typeId]
+        : [...prev, typeId],
     );
   };
 
@@ -592,7 +594,7 @@ const CropsManagement = () => {
     setSelectedCrops((prev) =>
       prev.includes(cropId)
         ? prev.filter((id) => id !== cropId)
-        : [...prev, cropId]
+        : [...prev, cropId],
     );
   };
 
@@ -723,9 +725,10 @@ const CropsManagement = () => {
                     new Set(
                       cropTypes
                         .filter(
-                          (type) => type.crops?.length && type.crops?.length > 0
+                          (type) =>
+                            type.crops?.length && type.crops?.length > 0,
                         )
-                        .map((type) => type.id)
+                        .map((type) => type.id),
                     ).size
                   }{" "}
                   Crop Types Active
@@ -809,7 +812,7 @@ const CropsManagement = () => {
                       ...new Set(
                         documents
                           .map((doc) => doc.crop_id)
-                          .filter((id) => id !== null)
+                          .filter((id) => id !== null),
                       ),
                     ].length
                   }{" "}
@@ -962,7 +965,7 @@ const CropsManagement = () => {
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setSelectedCropTypes(
-                            paginatedCropTypes.map((t) => t.id)
+                            paginatedCropTypes.map((t) => t.id),
                           );
                         } else {
                           setSelectedCropTypes([]);
@@ -1031,7 +1034,11 @@ const CropsManagement = () => {
                       <TableCell>
                         <img
                           src={
-                            cropType.image_urls?.[0] ||
+                            (cropType.image_urls?.length
+                              ? cropType.image_urls[
+                                  cropType.image_urls.length - 1
+                                ]
+                              : undefined) ||
                             cropType.image_url ||
                             "/placeholder-image.png"
                           }
@@ -1374,7 +1381,9 @@ const CropsManagement = () => {
                       <TableCell>
                         <img
                           src={
-                            crop.image_urls?.[0] ||
+                            (crop.image_urls?.length
+                              ? crop.image_urls[crop.image_urls.length - 1]
+                              : undefined) ||
                             crop.image_url ||
                             "/placeholder-image.png"
                           }
@@ -1525,7 +1534,7 @@ const CropsManagement = () => {
                       (crop) =>
                         selectedDocumentCropType === "" ||
                         selectedDocumentCropType === "all" ||
-                        crop.type_id === selectedDocumentCropType
+                        crop.type_id === selectedDocumentCropType,
                     )
                     .map((crop) => (
                       <SelectItem key={crop.id} value={crop.id}>
@@ -1627,7 +1636,8 @@ const CropsManagement = () => {
                                 (crop) =>
                                   documentFormData.crop_type_id === "none" ||
                                   !documentFormData.crop_type_id ||
-                                  crop.type_id === documentFormData.crop_type_id
+                                  crop.type_id ===
+                                    documentFormData.crop_type_id,
                               )
                               .map((crop) => (
                                 <SelectItem key={crop.id} value={crop.id}>
