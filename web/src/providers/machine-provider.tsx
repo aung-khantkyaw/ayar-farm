@@ -19,6 +19,13 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizeMachine = (machine: any): Machine => ({
+    ...machine,
+    // Ensure UI has consistent type references without needing a full refresh
+    type: machine.MachineTypes ?? machine.type,
+    type_id: machine.machine_type_id ?? machine.type_id,
+  });
+
   const fetchMachineTypes = async (): Promise<MachineType[]> => {
     try {
       setError(null);
@@ -57,21 +64,13 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
       const data = response.data;
 
       if (Array.isArray(data)) {
-        const fetchedMachines = data.map((machine: any) => ({
-          ...machine,
-          type: machine.MachineTypes,
-          type_id: machine.machine_type_id,
-        }));
+        const fetchedMachines = data.map(normalizeMachine);
         setMachines(fetchedMachines);
         return fetchedMachines;
         // setMachines(data);
         // return data;
       } else if (data && data.machines) {
-        const fetchedMachines = data.crops.map((machine: any) => ({
-          ...machine,
-          type: machine.MachineTypes,
-          type_id: machine.machine_type_id,
-        }));
+        const fetchedMachines = data.crops.map(normalizeMachine);
         setMachines(fetchedMachines);
         return fetchedMachines;
         // setMachines(data.machines);
@@ -278,7 +277,8 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
       const result = response.data;
       if (result) {
-        setMachines((prev) => [...prev, result]);
+        const normalized = normalizeMachine(result);
+        setMachines((prev) => [...prev, normalized]);
         toast.success("Machine created successfully");
         return true;
       } else {
@@ -311,8 +311,9 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
       const result = response.data;
       if (result) {
+        const normalized = normalizeMachine(result);
         setMachines((prev) =>
-          prev.map((machine) => (machine.id === id ? result : machine)),
+          prev.map((machine) => (machine.id === id ? normalized : machine)),
         );
         toast.success("Machine updated successfully");
         return true;

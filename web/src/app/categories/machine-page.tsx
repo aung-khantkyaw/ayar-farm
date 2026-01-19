@@ -623,8 +623,6 @@ const MachinesManagement = () => {
     setSelectedDocumentMachine(""); // Reset machine selection when machine type changes
   };
 
-  paginatedMachines.map((machine) => console.log(machine));
-
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
       {/* Header */}
@@ -681,10 +679,7 @@ const MachinesManagement = () => {
                   {
                     new Set(
                       machineTypes
-                        .filter(
-                          (type) =>
-                            type.machines.length && type.machines.length > 0,
-                        )
+                        .filter((type) => (type.machines?.length || 0) > 0)
                         .map((type) => type.id),
                     ).size
                   }{" "}
@@ -1014,7 +1009,7 @@ const MachinesManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {machineType.machines.length} machines
+                          {machineType.machines?.length || 0} machines
                         </Badge>
                       </TableCell>
                       <TableCell>
