@@ -30,4 +30,8 @@ class ApiConstants {
 
   // Document endpoints
   static const String documents = '/document/documents';
+
+  // Post endpoints
+  static const String getPostsByUser = '/posts/user';
+  static const String posts = '/post/posts';
 }

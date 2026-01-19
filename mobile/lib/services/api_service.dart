@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'package:image_picker/image_picker.dart'; // for XFile
 import '../constants/api_constants.dart';
 
 class ApiService {
@@ -61,7 +63,7 @@ class ApiService {
   static Future<Map<String, dynamic>> postMultipart(
     String endpoint,
     Map<String, String> fields, {
-    Map<String, String>? files,
+    Map<String, dynamic>? files,
   }) async {
     final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
     final request = http.MultipartRequest('POST', url);
@@ -76,10 +78,41 @@ class ApiService {
 
     if (files != null) {
       for (var entry in files.entries) {
-        if (entry.value.isNotEmpty) {
-          request.files.add(
-            await http.MultipartFile.fromPath(entry.key, entry.value),
-          );
+        if (entry.value is String && (entry.value as String).isNotEmpty) {
+          if (!kIsWeb) {
+            request.files.add(
+              await http.MultipartFile.fromPath(entry.key, entry.value),
+            );
+          }
+        } else if (entry.value is List<String>) {
+          if (!kIsWeb) {
+            for (var path in (entry.value as List<String>)) {
+              if (path.isNotEmpty) {
+                request.files.add(
+                  await http.MultipartFile.fromPath(entry.key, path),
+                );
+              }
+            }
+          }
+        } else if (entry.value is List &&
+            (entry.value as List).isNotEmpty &&
+            (entry.value as List).first is XFile) {
+          for (var item in (entry.value as List)) {
+            final file = item as XFile;
+            if (kIsWeb) {
+              request.files.add(
+                http.MultipartFile.fromBytes(
+                  entry.key,
+                  await file.readAsBytes(),
+                  filename: file.name,
+                ),
+              );
+            } else {
+              request.files.add(
+                await http.MultipartFile.fromPath(entry.key, file.path),
+              );
+            }
+          }
         }
       }
     }
@@ -92,7 +125,7 @@ class ApiService {
   static Future<Map<String, dynamic>> putMultipart(
     String endpoint,
     Map<String, String> fields, {
-    Map<String, String>? files,
+    Map<String, dynamic>? files,
   }) async {
     final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
     final request = http.MultipartRequest('PUT', url);
@@ -107,10 +140,41 @@ class ApiService {
 
     if (files != null) {
       for (var entry in files.entries) {
-        if (entry.value.isNotEmpty) {
-          request.files.add(
-            await http.MultipartFile.fromPath(entry.key, entry.value),
-          );
+        if (entry.value is String && (entry.value as String).isNotEmpty) {
+          if (!kIsWeb) {
+            request.files.add(
+              await http.MultipartFile.fromPath(entry.key, entry.value),
+            );
+          }
+        } else if (entry.value is List<String>) {
+          if (!kIsWeb) {
+            for (var path in (entry.value as List<String>)) {
+              if (path.isNotEmpty) {
+                request.files.add(
+                  await http.MultipartFile.fromPath(entry.key, path),
+                );
+              }
+            }
+          }
+        } else if (entry.value is List &&
+            (entry.value as List).isNotEmpty &&
+            (entry.value as List).first is XFile) {
+          for (var item in (entry.value as List)) {
+            final file = item as XFile;
+            if (kIsWeb) {
+              request.files.add(
+                http.MultipartFile.fromBytes(
+                  entry.key,
+                  await file.readAsBytes(),
+                  filename: file.name,
+                ),
+              );
+            } else {
+              request.files.add(
+                await http.MultipartFile.fromPath(entry.key, file.path),
+              );
+            }
+          }
         }
       }
     }

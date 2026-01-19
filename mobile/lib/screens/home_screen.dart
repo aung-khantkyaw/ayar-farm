@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_header.dart';
 import 'weather_screen.dart';
+import '../services/post_service.dart';
+import '../models/post.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,11 +20,46 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _weather;
   bool _isLoadingWeather = true;
   String _locationError = '';
+  late Future<List<Post>> _postsFuture;
+  String _selectedCategory = 'All';
+
+  final List<String> _availableHashtags = [
+    "ကောက်ပဲသီးနှံများ",
+    "ခြံမွေးတိရစ္ဆာန်များ",
+    "ငါးလုပ်ငန်း",
+    "လယ်ယာသုံးစက်ကိရိယာများ",
+    "မိုးလေဝသ",
+    "ပေါက်ဈေး",
+  ];
 
   @override
   void initState() {
     super.initState();
     _fetchWeather();
+    _loadPosts();
+  }
+
+  void _loadPosts() {
+    _postsFuture = PostService.getPosts(
+      tag: _selectedCategory == 'All' ? null : _selectedCategory,
+    );
+  }
+
+  String _timeAgo(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 365) {
+      return DateFormat.yMMMd().format(date);
+    } else if (diff.inDays > 30) {
+      return DateFormat.MMMd().format(date);
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   Future<void> _fetchWeather() async {
@@ -327,54 +365,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       clipBehavior: Clip.none,
                       child: Row(
                         children: [
-                          _buildCategoryChip(
-                            AppLocalizations.of(context)!.catAll,
-                            true,
-                            primaryColor,
-                            primaryContentColor,
-                            surfaceColor,
-                            textMainColor,
-                            borderColor,
+                          _buildCategoryItem(
+                            context,
+                            id: 'All',
+                            label: AppLocalizations.of(context)!.catAll,
+                            primaryColor: primaryColor,
+                            primaryContentColor: primaryContentColor,
+                            surfaceColor: surfaceColor,
+                            textMainColor: textMainColor,
+                            borderColor: borderColor,
                           ),
-                          const SizedBox(width: 12),
-                          _buildCategoryChip(
-                            AppLocalizations.of(context)!.catPestControl,
-                            false,
-                            primaryColor,
-                            primaryContentColor,
-                            surfaceColor,
-                            textMainColor,
-                            borderColor,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildCategoryChip(
-                            AppLocalizations.of(context)!.catIrrigation,
-                            false,
-                            primaryColor,
-                            primaryContentColor,
-                            surfaceColor,
-                            textMainColor,
-                            borderColor,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildCategoryChip(
-                            AppLocalizations.of(context)!.catOrganic,
-                            false,
-                            primaryColor,
-                            primaryContentColor,
-                            surfaceColor,
-                            textMainColor,
-                            borderColor,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildCategoryChip(
-                            AppLocalizations.of(context)!.catLivestock,
-                            false,
-                            primaryColor,
-                            primaryContentColor,
-                            surfaceColor,
-                            textMainColor,
-                            borderColor,
+                          ..._availableHashtags.map(
+                            (tag) => Padding(
+                              padding: const EdgeInsets.only(left: 12),
+                              child: _buildCategoryItem(
+                                context,
+                                id: tag,
+                                label: tag,
+                                primaryColor: primaryColor,
+                                primaryContentColor: primaryContentColor,
+                                surfaceColor: surfaceColor,
+                                textMainColor: textMainColor,
+                                borderColor: borderColor,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -393,59 +407,67 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Post 1
-                    _buildPostCard(
-                      context,
-                      surfaceColor,
-                      borderColor,
-                      textMainColor,
-                      textSubColor,
-                      primaryColor,
-                      'GreenThumb',
-                      '2h ago • Question',
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuB5Dpr0VSjxHC9Ba604an-xdmRuFw9z6zR16ai4JidPsokqe1kKbPzbmpWDc7CnSG8mNlmrcOka0wFH8NukPPSknTUDflmTOFzGHxtOs4xbZUQiqF899TM_Oc7H4lgD5IUhO4OSSnndIjnuNyMjgvzjT-2cAmZUCM14BUWH2berBTQbQ-aMgn-g-sapx3Ror_75fqyPdNan0NGrMfEHrE7TYSERPZkm2fSsbSEU1kj9i7V8YawOeboYHLsqBrfdpW6Zy2cwcdfHaNcx',
-                      "What's the best organic pesticide for tomato blight? My plants are looking spotty and I want to save them before harvest!",
-                      imageUrl:
-                          'https://lh3.googleusercontent.com/aida-public/AB6AXuDC0TDG_GOaM8D4epOu6jd93DwAaf1VAXEmC_oMU-jcRPx9pOIyodHBiDjMfzn4DYQCez656aEW2pk625HwPqc_2gB2PjuQt0NsS4cosGE_1BWoslHL0-SsKzsteQ3MPtHJUMoZrYpNEwiVrCCiRXZh3rqpQ-9ucw68qK4HiZ26gRoEorLeeUvXrd1ADGDwYwFoEVxy7ydcyjK-IdRS7AVtu_9TwRLDjU1d1Nj_KQGd1xAHgujmLK9ZPva0fFdJAKu2bE2Mg9rlLjyn',
-                      likes: '124',
-                      comments: '45 ${AppLocalizations.of(context)!.comments}',
-                    ),
-                    const SizedBox(height: 16),
+                    FutureBuilder<List<Post>>(
+                      future: _postsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error loading posts',
+                              style: TextStyle(color: textSubColor),
+                            ),
+                          );
+                        }
+                        final posts = snapshot.data ?? [];
+                        if (posts.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'No posts yet',
+                              style: TextStyle(color: textSubColor),
+                            ),
+                          );
+                        }
 
-                    // Post 2
-                    _buildPostCard(
-                      context,
-                      surfaceColor,
-                      borderColor,
-                      textMainColor,
-                      textSubColor,
-                      primaryColor,
-                      'AgriExpert',
-                      '5h ago • Pro Tip',
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDII8r8iNDOfeqwaOn9JRhxQVENfVstBW4BidXSRK76gUlmT5wbpsy1so_6_-P4CyMn0OAQ5SFLm255GoUiQV1qw6toa4HrSbz8dT3Ix0vW7qG3TZbqBNzpLX--fy-rZWaepN7-4RswUXtAIw6LgqGx21gcMMyRD6vTysnrA4xbNBp2meKRUyD4Bg21JSDm0tsQ4mXRaqYcm4IkF-7VQqcENDMa-l8fPiJege574TXxXszLjpCV-PObEERuK1IHPCEuC-EGUX3gol9y',
-                      "Remember to rotate your crops every season. Planting the same crop in the same spot encourages pest buildup and depletes specific nutrients. Try legumes after corn! 🌽➡️🫘",
-                      tag: 'SOIL HEALTH',
-                      likes: '856',
-                      comments: '12 ${AppLocalizations.of(context)!.comments}',
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Post 3
-                    _buildPostCard(
-                      context,
-                      surfaceColor,
-                      borderColor,
-                      textMainColor,
-                      textSubColor,
-                      primaryColor,
-                      'SarahFields',
-                      '1d ago • Harvest',
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuAHQ999w9jvA-_vPDRO1MLihV6kwHZonGV0EnVAWzV1gvXHO8hjH1tN3bHCTn0l_FC5J5kuUDwJRRhd1VLhZKDSHvKLrjG3z9N1e9Z7QLg3ZLutt_d8yhC2N2nuOAKJNxllJBlwmKvQGwckLPOwd4GYL_3Ucv0_tXbTCOZtlCepGnqU_lLzHxCjYBBqgteLWZErGJ15LTp2kBQXptsdbrjxUV6Xf7fcexAeD9e7uPGivNMxuF0z9spdXAKYOIjU81yneoegJyIH-sFA',
-                      "First pumpkin harvest of the year looks promising! 🎃",
-                      imageUrl:
-                          'https://lh3.googleusercontent.com/aida-public/AB6AXuAKr3T-T6YWnnuCIovWlpEstig0AQfE9DDAoOUdvq5zo7reuDzSHCu_1iO1iR9h1DcpD7rEwojXfDtNGHgGJAQCGJCfHc2kwnmyCy0tzfh96JP5ioS4JnMnM_0L9EcrgYNj1k42W4E07nth9KqnclcTHDinOp47Wl-aVOT8xxYoR59ixGgGhFPFsche4OJDxrjwZ4La1wzTCGFT5m4HDEOUTH2QdWzO84spBzbodIce-PlUQSeW5Qt2sUvEEv-4jf9Qz68Cd5lvzMh9',
-                      likes: '2.1k',
-                      comments: '89 ${AppLocalizations.of(context)!.comments}',
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: posts.length,
+                          separatorBuilder:
+                              (context, index) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final post = posts[index];
+                            return _buildPostCard(
+                              context,
+                              surfaceColor,
+                              borderColor,
+                              textMainColor,
+                              textSubColor,
+                              primaryColor,
+                              post.author.name,
+                              _timeAgo(post.createdAt),
+                              post.author.profilePicture ??
+                                  "https://lh3.googleusercontent.com/aida-public/AB6AXuC7cLEx-rRko3eKJNBZfv1q-n02PKnsdDpr4_-5R_WDMow5yLTfoVaM-Y1BNElVINCilmaqa8NQNhBjdk5M_5qkew1YJNU78FjfEMHSokdaLMNABsTPTpju4u6T1huzT9DMCVoyFokgCw74ksB91v04hJcRcnqwEP1I_ANxqlF5M69MltaIkagUHSkt96fOt409StIvCLy8TLVl5iM4MiKfeJZAJgejZnjS6NCf5HSAG2rWmto2dQoJOiN5PoLMX2f4QWKw8Bvehpi3",
+                              post.content ?? '',
+                              imageUrl:
+                                  post.media.isNotEmpty
+                                      ? (post.media.first.thumbnail ??
+                                          post.media.first.url)
+                                      : null,
+                              tag:
+                                  post.tags.isNotEmpty ? post.tags.first : null,
+                              likes: post.counts.reactions.toString(),
+                              comments:
+                                  "${post.counts.comments} ${AppLocalizations.of(context)!.comments}",
+                            );
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -479,6 +501,36 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCategoryItem(
+    BuildContext context, {
+    required String id,
+    required String label,
+    required Color primaryColor,
+    required Color primaryContentColor,
+    required Color surfaceColor,
+    required Color textMainColor,
+    required Color borderColor,
+  }) {
+    final isSelected = _selectedCategory == id;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = id;
+          _loadPosts();
+        });
+      },
+      child: _buildCategoryChip(
+        label,
+        isSelected,
+        primaryColor,
+        primaryContentColor,
+        surfaceColor,
+        textMainColor,
+        borderColor,
+      ),
     );
   }
 
@@ -637,7 +689,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              Icon(Icons.share_outlined, size: 20, color: textSub),
             ],
           ),
         ],

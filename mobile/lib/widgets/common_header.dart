@@ -32,10 +32,9 @@ class CommonHeader extends StatelessWidget {
                   color: primaryColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.local_florist,
-                  color: isDark ? primaryColor : primaryContentColor,
-                  size: 24,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                 ),
               ),
               const SizedBox(width: 12),
