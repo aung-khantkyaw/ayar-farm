@@ -59,9 +59,11 @@ const parseMediaFromFiles = (files?: Express.Multer.File[]): PostMediaInput[] =>
 };
 
 export class PostController {
-    public async listPosts(_req: Request, res: Response): Promise<void> {
+    public async listPosts(req: Request, res: Response): Promise<void> {
         try {
-            const { posts } = await PostService.listPosts();
+            const authorId = req.query.authorId as string | undefined;
+            const tag = req.query.tag as string | undefined;
+            const { posts } = await PostService.listPosts({ authorId, tag });
             res.status(200).json({ message: "Get posts successful", data: posts });
         } catch (error) {
             res.status(500).json({ message: `Error fetching posts: ${error}` });
@@ -80,6 +82,23 @@ export class PostController {
             }
 
             res.status(200).json({ message: "Get post successful", data: post });
+        } catch (error) {
+            res.status(500).json({ message: `Error fetching post: ${error}` });
+            console.error("Error fetching post:", error);
+        }
+    }
+
+    public async getPostByUserId(req: Request, res: Response): Promise<void>{
+        try {
+            const { id } = req.params;
+            const { posts } = await PostService.getPostByUserId(id);
+
+            if (!posts) {
+                res.status(404).json({ message: "Post not found" });
+                return;
+            }
+
+            res.status(200).json({ message: "Get post successful", data: posts });
         } catch (error) {
             res.status(500).json({ message: `Error fetching post: ${error}` });
             console.error("Error fetching post:", error);

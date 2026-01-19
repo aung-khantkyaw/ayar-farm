@@ -28,8 +28,16 @@ app.use((req, res, next) => {
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow any localhost origin for development (inclduing Flutter Web)
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+       return callback(null, true);
+    }
+
     const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',');
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -52,6 +60,6 @@ app.use("/api/agriindustry", machine)
 app.use("/api/document", document)
 app.use("/api/resources", resource);
 app.use("/api/chat", chat);
-app.use("/api", post);
+app.use("/api/post", post);
 
 export default app;

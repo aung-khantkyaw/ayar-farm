@@ -9,8 +9,17 @@ export type PostMediaInput = {
 };
 
 export class PostService {
-    public static async listPosts() {
+    public static async listPosts(filter?: { authorId?: string; tag?: string }) {
+        const where: any = {};
+        if (filter?.authorId) {
+            where.authorId = filter.authorId;
+        }
+        if (filter?.tag) {
+            where.tags = { has: filter.tag };
+        }
+
         const posts = await prisma.post.findMany({
+            where,
             orderBy: { createdAt: "desc" },
             include: {
                 media: true,
@@ -55,6 +64,39 @@ export class PostService {
         });
 
         return { post };
+    }
+
+    public static async getPostByUserId(id: string) {
+        const posts = await prisma.post.findMany({
+            where: { authorId: id },
+            include: {
+                media: true,
+                reactions: true,
+                author: {
+                    select: { id: true, name: true, profile_picture: true },
+                },
+                comments: {
+                    where: { parentCommentId: null },
+                    orderBy: { createdAt: "desc" },
+                    include: {
+                        author: {
+                            select: { id: true, name: true, profile_picture: true },
+                        },
+                        replies: {
+                            orderBy: { createdAt: "asc" },
+                            include: {
+                                author: {
+                                    select: { id: true, name: true, profile_picture: true },
+                                },
+                            },
+                        },
+                    },
+                },
+                _count: { select: { reactions: true, comments: true } },
+            },
+        });
+
+        return { posts };
     }
 
     public static async createPost(params: {

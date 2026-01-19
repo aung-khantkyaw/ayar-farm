@@ -9,6 +9,7 @@ const postController = new PostController();
 post.get("/", (_req, res) => res.json({ ok: true, message: "Post API is running" }));
 post.get("/posts", (req, res) => postController.listPosts(req, res));
 post.get("/posts/:id", (req, res) => postController.getPost(req, res));
+post.get("/posts/user/:id", (req, res) => postController.getPostByUserId(req, res));
 
 post.post("/posts", authenticate, uploadResource.array("media"), (req, res) => postController.createPost(req, res));
 post.post("/posts/:id/react", authenticate, (req, res) => postController.reactToPost(req, res));
