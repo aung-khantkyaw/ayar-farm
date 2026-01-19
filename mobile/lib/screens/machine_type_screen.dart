@@ -145,7 +145,9 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder:
-                                          (context) => const MachineScreen(),
+                                          (context) => MachineScreen(
+                                            machineType: machineType['name'],
+                                          ),
                                     ),
                                   );
                                 },

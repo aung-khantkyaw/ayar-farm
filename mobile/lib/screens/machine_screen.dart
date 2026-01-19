@@ -5,7 +5,9 @@ import '../constants/api_constants.dart';
 import 'document_screen.dart';
 
 class MachineScreen extends StatefulWidget {
-  const MachineScreen({super.key});
+  final String? machineType;
+
+  const MachineScreen({super.key, this.machineType});
 
   @override
   State<MachineScreen> createState() => _MachineScreenState();
@@ -25,8 +27,21 @@ class _MachineScreenState extends State<MachineScreen> {
     try {
       final response = await ApiService.get(ApiConstants.machines);
       if (response['data'] != null) {
+        List<Map<String, dynamic>> allCrops = List<Map<String, dynamic>>.from(
+          response['data'],
+        );
         setState(() {
-          _machines = List<Map<String, dynamic>>.from(response['data']);
+          if (widget.machineType != null) {
+            _machines =
+                allCrops
+                    .where(
+                      (machine) =>
+                          machine['MachineTypes']['name'] == widget.machineType,
+                    )
+                    .toList();
+          } else {
+            _machines = allCrops;
+          }
           _isLoading = false;
         });
       } else {
