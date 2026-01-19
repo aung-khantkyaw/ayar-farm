@@ -97,7 +97,6 @@ docker-compose up -d --build
 #### Understanding Run Modes
 
 - **With `-d` (Detached Mode):**
-
   - Runs containers in the background.
   - Terminal is free for other commands.
   - Use `docker-compose logs -f` to view logs.
@@ -164,6 +163,9 @@ flutter run -d web-server
 # To build for Android or iOS, ensure you have the respective SDKs set up.
 flutter build apk --release --dart-define=API_BASE_URL=https://ayarfarmlink-api.onrender.com/api
 flutter build ios --release --dart-define=API_BASE_URL=https://ayarfarmlink-api.onrender.com/api
+
+# To build APK with obfuscation and split per ABI
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info --dart-define=API_BASE_URL=https://ayarfarmlink-api.onrender.com/api
 ```
 
 ## Environment Variables

@@ -661,9 +661,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get logOut => 'အကောင့်ထွက်ရန်';
 
   @override
-  String get appVersion => 'AgriConnect v1.0.4';
-
-  @override
   String get editProfile => 'ပရိုဖိုင် ပြင်ဆင်ခြင်း';
 
   @override

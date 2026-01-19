@@ -204,7 +204,8 @@ class _MachineScreenState extends State<MachineScreen> {
                     image: NetworkImage(
                       machine['image_urls'] != null &&
                               machine['image_urls'].isNotEmpty
-                          ? machine['image_urls'][0]
+                          ? machine['image_urls'][machine['image_urls'].length -
+                              1]
                           : '',
                     ),
                     fit: BoxFit.cover,

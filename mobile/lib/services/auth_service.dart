@@ -143,6 +143,13 @@ class AuthService {
     return AuthResponse.fromJson(response);
   }
 
+  /// Persist updated user data locally so subsequent sessions reflect changes.
+  static Future<void> persistUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+    currentUser = user;
+  }
+
   static Future<Map<String, dynamic>> deleteAccount() async {
     return await ApiService.delete(ApiConstants.deleteAccount);
   }

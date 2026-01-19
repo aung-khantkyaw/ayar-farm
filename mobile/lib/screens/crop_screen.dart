@@ -208,7 +208,7 @@ class _CropScreenState extends State<CropScreen> {
                         image: NetworkImage(
                           crop['image_urls'] != null &&
                                   crop['image_urls'].isNotEmpty
-                              ? crop['image_urls'][0]
+                              ? crop['image_urls'][crop['image_urls'].length - 1]
                               : '',
                         ),
                         fit: BoxFit.cover,

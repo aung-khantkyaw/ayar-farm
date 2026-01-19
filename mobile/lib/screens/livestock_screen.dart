@@ -189,7 +189,9 @@ class _LivestockScreenState extends State<LivestockScreen> {
                     image: NetworkImage(
                       livestock['image_urls'] != null &&
                               livestock['image_urls'].isNotEmpty
-                          ? livestock['image_urls'][0]
+                          ? livestock['image_urls'][livestock['image_urls']
+                                  .length -
+                              1]
                           : '',
                     ),
                     fit: BoxFit.cover,

@@ -137,7 +137,9 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
                                 '${cropType['crops']?.length ?? 0} ${(cropType['crops']?.length ?? 0) > 1 ? AppLocalizations.of(context)!.subcategories : AppLocalizations.of(context)!.subcategory}',
                                 cropType['image_urls'] != null &&
                                         cropType['image_urls'].isNotEmpty
-                                    ? cropType['image_urls'][0]
+                                    ? cropType['image_urls'][cropType['image_urls']
+                                            .length -
+                                        1]
                                     : '',
                                 surfaceColor,
                                 textMainColor,

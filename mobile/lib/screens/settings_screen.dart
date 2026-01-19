@@ -147,23 +147,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Preferences Section
           _buildSectionHeader(l10n.preferencesSection, sectionHeaderColor),
           _buildSectionContainer(cardColor, borderColor, [
-            _buildListTile(
-              icon: Icons.notifications_outlined,
-              title: l10n.pushNotifications,
-              textColor: textColor,
-              iconBgColor: iconBgColor,
-              iconColor: iconColor,
-              trailing: Switch(
-                value: _pushNotifications,
-                onChanged: (value) {
-                  setState(() {
-                    _pushNotifications = value;
-                  });
-                },
-                activeColor: const Color(0xFF2BEE5B),
-              ),
-            ),
-            _buildDivider(borderColor),
+            // _buildListTile(
+            //   icon: Icons.notifications_outlined,
+            //   title: l10n.pushNotifications,
+            //   textColor: textColor,
+            //   iconBgColor: iconBgColor,
+            //   iconColor: iconColor,
+            //   trailing: Switch(
+            //     value: _pushNotifications,
+            //     onChanged: (value) {
+            //       setState(() {
+            //         _pushNotifications = value;
+            //       });
+            //     },
+            //     activeColor: const Color(0xFF2BEE5B),
+            //   ),
+            // ),
+            // _buildDivider(borderColor),
             _buildListTile(
               icon: Icons.translate,
               title: l10n.language,
@@ -272,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Text(
-              l10n.appVersion,
+              'App Version 1.0.0',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),

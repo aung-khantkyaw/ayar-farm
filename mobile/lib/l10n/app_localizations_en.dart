@@ -648,9 +648,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logOut => 'Log Out';
 
   @override
-  String get appVersion => 'AgriConnect v1.0.4';
-
-  @override
   String get editProfile => 'Edit Profile';
 
   @override

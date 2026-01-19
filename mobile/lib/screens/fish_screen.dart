@@ -186,7 +186,7 @@ class _FishScreenState extends State<FishScreen> {
                     image: NetworkImage(
                       fish['image_urls'] != null &&
                               fish['image_urls'].isNotEmpty
-                          ? fish['image_urls'][0]
+                          ? fish['image_urls'][fish['image_urls'].length - 1]
                           : '',
                     ),
                     fit: BoxFit.cover,

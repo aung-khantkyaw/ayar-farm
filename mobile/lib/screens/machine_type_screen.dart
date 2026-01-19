@@ -135,7 +135,9 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
                                 '${machineType['machines']?.length ?? 0} ${(machineType['machines']?.length ?? 0) > 1 ? AppLocalizations.of(context)!.subcategories : AppLocalizations.of(context)!.subcategory}',
                                 machineType['image_urls'] != null &&
                                         machineType['image_urls'].isNotEmpty
-                                    ? machineType['image_urls'][0]
+                                    ? machineType['image_urls'][machineType['image_urls']
+                                            .length -
+                                        1]
                                     : '',
                                 surfaceColor,
                                 textMainColor,

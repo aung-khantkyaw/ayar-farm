@@ -165,9 +165,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _nameController.text = user.name ?? '';
       _phoneController.text = user.phoneNumber ?? '';
       _emailController.text = user.email ?? '';
-      // Note: Gender and UserType might not be in the User model yet,
-      // but we can initialize them if they were.
-      // For now, we'll leave them null or set defaults if needed.
+      _addressController.text = user.location ?? '';
+      _selectedGender = user.gender;
+      _selectedUserType = user.userType;
     }
   }
 
@@ -250,10 +250,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     };
 
     try {
-      await AuthService.updateAccount(
+      final resp = await AuthService.updateAccount(
         output,
         profilePicturePath: _imageFile?.path,
       );
+
+      // Update locally cached session data so the app reflects new profile info
+      if (resp.token != null && resp.user != null) {
+        await AuthService.saveSession(resp.token!, resp.user!);
+      } else if (resp.user != null) {
+        await AuthService.persistUser(resp.user!);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.changesSaved)),
