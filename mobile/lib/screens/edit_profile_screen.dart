@@ -166,8 +166,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _phoneController.text = user.phoneNumber ?? '';
       _emailController.text = user.email ?? '';
       _addressController.text = user.location ?? '';
-      _selectedGender = user.gender;
-      _selectedUserType = user.userType;
+
+      // Validate gender - ensure it matches dropdown items
+      if (['MALE', 'FEMALE', 'OTHER'].contains(user.gender)) {
+        _selectedGender = user.gender;
+      } else {
+        _selectedGender = null;
+      }
+
+      // Validate user type - ensure it matches dropdown items (excludes ADMIN, etc if not in list)
+      final validUserTypes = [
+        UserTypes.farmer,
+        UserTypes.agriculturalSpecialist,
+        UserTypes.agriculturalEquipmentShop,
+        UserTypes.traderVendor,
+        UserTypes.livestockBreeder,
+        UserTypes.livestockSpecialist,
+        UserTypes.others,
+      ];
+
+      if (validUserTypes.contains(user.userType)) {
+        _selectedUserType = user.userType;
+      } else {
+        _selectedUserType = null;
+      }
     }
   }
 

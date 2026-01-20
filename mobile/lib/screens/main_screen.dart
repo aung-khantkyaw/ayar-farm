@@ -9,6 +9,7 @@ import '../services/socket_service.dart';
 import '../services/notification_service.dart';
 import '../models/chat_models.dart';
 import 'chat_room_screen.dart';
+import '../services/auth_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -27,6 +28,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    if (AuthService.currentUser == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+      return;
+    }
     _notificationService.init();
     _setupSocketListeners();
   }
@@ -34,16 +41,18 @@ class _MainScreenState extends State<MainScreen> {
   void _setupSocketListeners() {
     _socketService.onNewMessage((data) {
       if (!mounted) return;
-      
+
       try {
         final message = Message.fromJson(data);
-        
+
         // Only show notification if user is not in the active conversation
         if (SocketService.activeConversationId != message.conversationId) {
           _notificationService.showNotification(
             id: message.hashCode,
             title: message.user?.name ?? "New Message",
-            body: message.content ?? (message.type == MessageType.IMAGE ? "Image" : "File"),
+            body:
+                message.content ??
+                (message.type == MessageType.IMAGE ? "Image" : "File"),
             payload: message.conversationId,
           );
         }

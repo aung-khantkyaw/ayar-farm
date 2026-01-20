@@ -14,6 +14,9 @@ class ApiConstants {
   static const String updateAccount = '/auth/update';
   static const String deleteAccount = '/auth/delete';
 
+  // User endpoints
+  static const String users = '/users';
+
   // Crop endpoints
   static const String cropTypes = '/cropsandpulses/croptypes';
   static const String crops = '/cropsandpulses/crops';

@@ -3,15 +3,17 @@ import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
+import '../services/user_service.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../constants/user_types.dart';
 import 'edit_profile_screen.dart';
 import 'create_post_screen.dart';
+import '../widgets/common_post_card.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final User? user;
-  const ProfileScreen({super.key, this.user});
+  final String userId;
+  const ProfileScreen({super.key, required this.userId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -24,21 +26,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _bgDark = Color(0xFF102215);
   static const _textLight = Color(0xFF111813);
 
+  User? _user;
+  bool _isLoading = true;
   late Future<List<Post>> _postsFuture;
 
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    // If it's the current user, use cached data immediately for better UX
+    if (widget.userId == AuthService.currentUser?.id) {
+      _user = AuthService.currentUser;
+    }
+
+    // Fetch fresh user data
+    try {
+      final user = await UserService.getUserById(widget.userId);
+      if (user != null) {
+        if (mounted) {
+          setState(() {
+            _user = user;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching user: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+
     _loadPosts();
   }
 
   void _loadPosts() {
-    final user = widget.user ?? AuthService.currentUser;
-    if (user != null) {
-      _postsFuture = PostService.getPosts(userId: user.id);
-    } else {
-      _postsFuture = Future.value([]);
-    }
+    _postsFuture = PostService.getPosts(userId: widget.userId);
   }
 
   String _timeAgo(DateTime date) {
@@ -80,9 +108,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  IconData _getUserTypeIcon(String? type) {
+    switch (type) {
+      case UserTypes.admin:
+        return Icons.verified_user;
+      case UserTypes.farmer:
+        return Icons.agriculture;
+      case UserTypes.agriculturalSpecialist:
+        return Icons.psychology;
+      case UserTypes.agriculturalEquipmentShop:
+        return Icons.handyman;
+      case UserTypes.traderVendor:
+        return Icons.storefront;
+      case UserTypes.livestockBreeder:
+        return Icons.pets;
+      case UserTypes.livestockSpecialist:
+        return Icons.medical_services;
+      case UserTypes.others:
+      default:
+        return Icons.person_outline;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = widget.user ?? AuthService.currentUser;
+    final user = _user;
     final isCurrentUser =
         user != null && user.id == AuthService.currentUser?.id;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -96,10 +146,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final l10n = AppLocalizations.of(context);
 
-    if (user == null) {
+    if (_isLoading && user == null) {
       return Scaffold(
         backgroundColor: bgColor,
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        appBar: AppBar(backgroundColor: bgColor, elevation: 0),
+        body: const Center(child: Text("User not found")),
       );
     }
 
@@ -187,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               image: DecorationImage(
                                 image: NetworkImage(
                                   user.profilePicture ??
-                                      "https://lh3.googleusercontent.com/aida-public/AB6AXuAAvekwvU6oweISzBfhAUuUJ02UaAUla-SbyblO6bvY_WQNd2lcr8rjYbNNqLerMt_NAJ155wZEGzu_C55ZPh6hIjcC91jNWxF7PCTwLe5rSMvLuYjhneskA6684T2ZR7Y_c_X08pnJCECf7ST9e_WEgOxk27sUDlic4WkeA4QwqpgMN6WuhkIjP7nnNCOw_WD5X1yR8XD3Jba7v37KW_1cAhm3wsu7HwFoRmcY-ERyEA0QfqZeP0A8JScAWIUEb9rCLVzC5aBTN-Jr",
+                                      "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -198,6 +256,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   offset: const Offset(0, 2),
                                 ),
                               ],
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: _getUserTypeColor(user.userType),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: bgColor, width: 4),
+                              ),
+                              child: Icon(
+                                _getUserTypeIcon(user.userType),
+                                size: 24,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -461,37 +536,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 20),
 
-                // Feed Section Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Posts",
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "See All",
-                        style: TextStyle(
-                          color: _primaryColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
                 FutureBuilder<List<Post>>(
                   future: _postsFuture,
                   builder: (context, snapshot) {
@@ -524,6 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
 
                     return ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: posts.length,
@@ -531,18 +576,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           (context, index) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
                         final post = posts[index];
-                        return _buildFeedItem(
-                          context,
-                          user: post.author,
-                          timeAgo: _timeAgo(post.createdAt),
-                          text: post.content ?? '',
-                          cardColor: cardColor,
+                        return CommonPostCard(
+                          surfaceColor: cardColor,
                           borderColor: borderColor,
-                          textColor: textColor,
-                          isDark: isDark,
-                          likes: post.counts.reactions.toString(),
-                          comments: post.counts.comments.toString(),
-                          child: _buildMediaPreview(post.media, isDark),
+                          textMainColor: textColor,
+                          textSubColor:
+                              isDark
+                                  ? Colors.grey[400]!
+                                  : const Color(0xFF61896B),
+                          primaryColor: _primaryColor,
+                          authorName: post.author.name,
+                          timeAgo: _timeAgo(post.createdAt),
+                          authorAvatarUrl:
+                              post.author.profilePicture ??
+                              "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
+                          content: post.content ?? '',
+                          imageUrl:
+                              post.media.isNotEmpty
+                                  ? (post.media.first.thumbnail ??
+                                      post.media.first.url)
+                                  : null,
+                          tag: post.tags.isNotEmpty ? post.tags.first : null,
+                          likesCount: post.counts.reactions.toString(),
+                          commentsCount:
+                              "${post.counts.comments} ${AppLocalizations.of(context)!.comments}",
+                          isCurrentUser:
+                              post.author.id == AuthService.currentUser?.id,
+                          userType: post.author.userType,
+                          onProfileTap: () {
+                            // If we are already on this user's profile, maybe avoid pushing?
+                            // But checking that is complex. Pushing new instance is safe.
+                            if (user?.id != post.author.id) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          ProfileScreen(userId: post.author.id),
+                                ),
+                              );
+                            }
+                          },
                         );
                       },
                     );
@@ -554,35 +628,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMediaPreview(List<PostMedia> media, bool isDark) {
-    if (media.isEmpty) return const SizedBox.shrink();
-    final first = media.first;
-
-    return Container(
-      height: 200,
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.grey[200],
-        image: DecorationImage(
-          image: NetworkImage(first.thumbnail ?? first.url),
-          fit: BoxFit.cover,
-          onError: (_, __) {},
-        ),
-      ),
-      child:
-          first.type == 'VIDEO'
-              ? const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  size: 48,
-                  color: Colors.white,
-                ),
-              )
-              : null,
     );
   }
 
@@ -652,156 +697,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       : (isDark ? Colors.grey[300] : const Color(0xFF61896B)),
               fontSize: 14,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeedItem(
-    BuildContext context, {
-    required dynamic user,
-    required String timeAgo,
-    required String text,
-    required Color cardColor,
-    required Color borderColor,
-    required Color textColor,
-    required bool isDark,
-    Widget? child,
-    required String likes,
-    required String comments,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        border: Border.all(color: borderColor),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Post Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage(
-                    user.profilePicture ??
-                        "https://lh3.googleusercontent.com/aida-public/AB6AXuC7cLEx-rRko3eKJNBZfv1q-n02PKnsdDpr4_-5R_WDMow5yLTfoVaM-Y1BNElVINCilmaqa8NQNhBjdk5M_5qkew1YJNU78FjfEMHSokdaLMNABsTPTpju4u6T1huzT9DMCVoyFokgCw74ksB91v04hJcRcnqwEP1I_ANxqlF5M69MltaIkagUHSkt96fOt409StIvCLy8TLVl5iM4MiKfeJZAJgejZnjS6NCf5HSAG2rWmto2dQoJOiN5PoLMX2f4QWKw8Bvehpi3",
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          "$timeAgo • ",
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                        Icon(Icons.public, size: 12, color: Colors.grey[500]),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Post Text
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: isDark ? Colors.grey[200] : Colors.grey[800],
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-          ),
-
-          if (child != null) child,
-
-          // Actions
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildActionButton(
-                  Icons.thumb_up_outlined,
-                  likes,
-                  Colors.grey[600],
-                  isDark,
-                ),
-                _buildActionButton(
-                  Icons.chat_bubble_outline,
-                  comments,
-                  Colors.grey[600],
-                  isDark,
-                ),
-                _buildActionButton(
-                  Icons.share_outlined,
-                  "Share",
-                  Colors.grey[600],
-                  isDark,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    IconData icon,
-    String label,
-    Color? color,
-    bool isDark,
-  ) {
-    final finalColor = isDark ? Colors.grey[400] : color;
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: finalColor),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            color: finalColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],

@@ -305,7 +305,7 @@ abstract class AppLocalizations {
   /// No description provided for @phonePlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'+1 (555) 000-0000'**
+  /// **'9xxxxxxxxx'**
   String get phonePlaceholder;
 
   /// No description provided for @emailPlaceholder.

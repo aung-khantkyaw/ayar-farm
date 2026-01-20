@@ -113,7 +113,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterFullName => 'Enter your full name';
 
   @override
-  String get phonePlaceholder => '+1 (555) 000-0000';
+  String get phonePlaceholder => '9xxxxxxxxx';
 
   @override
   String get emailPlaceholder => 'you@example.com';

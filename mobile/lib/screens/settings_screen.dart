@@ -38,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         currentLocale.languageCode == 'my' ? 'မြန်မာ' : 'English';
 
     final user = AuthService.currentUser;
-    final userName = user?.name ?? "Guest";
+    final userName = user?.name ?? "";
     final userContact = user?.email ?? user?.phoneNumber ?? "";
     final userImage =
         user?.profilePicture ??
@@ -55,12 +55,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
+                if (AuthService.currentUser?.id != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => ProfileScreen(
+                            userId: AuthService.currentUser!.id,
+                          ),
+                    ),
+                  );
+                }
                 print('navigate to profile screen');
               },
               child: Container(

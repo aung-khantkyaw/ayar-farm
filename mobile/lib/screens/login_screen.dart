@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
@@ -16,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   String _loginType = 'phone';
+  String _countryCode = '+95';
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -32,7 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await AuthService.login(
-        phoneNumber: _loginType == 'phone' ? _identifierController.text : null,
+        phoneNumber:
+            _loginType == 'phone'
+                ? '$_countryCode${_identifierController.text}'
+                : null,
         email: _loginType == 'email' ? _identifierController.text : null,
         password: _passwordController.text,
       );
@@ -287,10 +292,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon:
                                   _loginType == 'phone'
                                       ? Container(
-                                        width: 80,
                                         padding: const EdgeInsets.only(
-                                          left: 12,
-                                          right: 8,
+                                          left: 4,
+                                          right: 4,
                                         ),
                                         margin: const EdgeInsets.only(right: 8),
                                         decoration: BoxDecoration(
@@ -300,21 +304,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                           ),
                                         ),
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              '+95', // Defaulting to Myanmar code based on context
-                                              style: TextStyle(
-                                                color: textMainColor,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            Icon(
-                                              Icons.expand_more,
-                                              size: 16,
-                                              color: textSubColor,
-                                            ),
-                                          ],
+                                        child: CountryCodePicker(
+                                          onChanged: (country) {
+                                            setState(() {
+                                              _countryCode = country.dialCode!;
+                                            });
+                                          },
+                                          initialSelection: 'MM',
+                                          favorite: const ['+95', 'MM'],
+                                          showCountryOnly: false,
+                                          showOnlyCountryWhenClosed: false,
+                                          alignLeft: false,
+                                          padding: EdgeInsets.zero,
+                                          flagWidth: 20,
+                                          textStyle: TextStyle(
+                                            color: textMainColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          dialogTextStyle: TextStyle(
+                                            color: Colors.black,
+                                          ),
+                                          searchStyle: TextStyle(
+                                            color: Colors.black,
+                                          ),
                                         ),
                                       )
                                       : Icon(

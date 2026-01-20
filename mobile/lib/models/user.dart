@@ -35,8 +35,8 @@ class User {
         phoneNumber: json['phone_number'],
         email: json['email'],
         gender: json['gender'],
-        userType: json['user_type'],
-        profilePicture: json['profile_picture'],
+        userType: json['user_type'] ?? json['userType'],
+        profilePicture: json['profile_picture'] ?? json['profilePicture'],
         location: json['location'],
         isVerified: json['isVerified'] ?? false,
         lastLogin:

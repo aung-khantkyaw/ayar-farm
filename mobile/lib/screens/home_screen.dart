@@ -1,3 +1,4 @@
+import 'package:ayar_farm/screens/create_post_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -5,8 +6,11 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_header.dart';
+import '../widgets/common_post_card.dart';
 import 'weather_screen.dart';
+import 'profile_screen.dart';
 import '../services/post_service.dart';
+import '../services/auth_service.dart';
 import '../models/post.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -326,39 +330,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Search Bar
-                    TextField(
-                      style: TextStyle(color: textMainColor),
-                      decoration: InputDecoration(
-                        hintText:
-                            AppLocalizations.of(context)!.searchPlaceholder,
-                        hintStyle: TextStyle(color: textSubColor),
-                        filled: true,
-                        fillColor: surfaceColor,
-                        prefixIcon: Icon(Icons.search, color: textSubColor),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
                     // Categories
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -396,17 +367,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Community Feed
-                    Text(
-                      AppLocalizations.of(context)!.communityFeed,
-                      style: TextStyle(
-                        color: textMainColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
                     FutureBuilder<List<Post>>(
                       future: _postsFuture,
                       builder: (context, snapshot) {
@@ -442,18 +402,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               (context, index) => const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final post = posts[index];
-                            return _buildPostCard(
-                              context,
-                              surfaceColor,
-                              borderColor,
-                              textMainColor,
-                              textSubColor,
-                              primaryColor,
-                              post.author.name,
-                              _timeAgo(post.createdAt),
-                              post.author.profilePicture ??
-                                  "https://lh3.googleusercontent.com/aida-public/AB6AXuC7cLEx-rRko3eKJNBZfv1q-n02PKnsdDpr4_-5R_WDMow5yLTfoVaM-Y1BNElVINCilmaqa8NQNhBjdk5M_5qkew1YJNU78FjfEMHSokdaLMNABsTPTpju4u6T1huzT9DMCVoyFokgCw74ksB91v04hJcRcnqwEP1I_ANxqlF5M69MltaIkagUHSkt96fOt409StIvCLy8TLVl5iM4MiKfeJZAJgejZnjS6NCf5HSAG2rWmto2dQoJOiN5PoLMX2f4QWKw8Bvehpi3",
-                              post.content ?? '',
+                            return CommonPostCard(
+                              surfaceColor: surfaceColor,
+                              borderColor: borderColor,
+                              textMainColor: textMainColor,
+                              textSubColor: textSubColor,
+                              primaryColor: primaryColor,
+                              authorName: post.author.name,
+                              timeAgo: _timeAgo(post.createdAt),
+                              authorAvatarUrl:
+                                  post.author.profilePicture ??
+                                  "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
+                              content: post.content ?? '',
                               imageUrl:
                                   post.media.isNotEmpty
                                       ? (post.media.first.thumbnail ??
@@ -461,9 +421,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                       : null,
                               tag:
                                   post.tags.isNotEmpty ? post.tags.first : null,
-                              likes: post.counts.reactions.toString(),
-                              comments:
+                              likesCount: post.counts.reactions.toString(),
+                              commentsCount:
                                   "${post.counts.comments} ${AppLocalizations.of(context)!.comments}",
+                              isCurrentUser:
+                                  post.author.id == AuthService.currentUser?.id,
+                              userType: post.author.userType,
+                              onProfileTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => ProfileScreen(
+                                          userId: post.author.id,
+                                        ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         );
@@ -496,7 +470,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.add, color: primaryContentColor),
-              onPressed: () {},
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+                );
+                if (result == true) {
+                  setState(() {
+                    _loadPosts();
+                  });
+                }
+              },
             ),
           ),
         ),
@@ -559,139 +543,6 @@ class _HomeScreenState extends State<HomeScreen> {
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
-      ),
-    );
-  }
-
-  Widget _buildPostCard(
-    BuildContext context,
-    Color surface,
-    Color border,
-    Color textMain,
-    Color textSub,
-    Color primary,
-    String author,
-    String time,
-    String avatarUrl,
-    String content, {
-    String? imageUrl,
-    String? tag,
-    required String likes,
-    required String comments,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: NetworkImage(avatarUrl),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        author,
-                        style: TextStyle(
-                          color: textMain,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        time,
-                        style: TextStyle(color: textSub, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Icon(Icons.more_horiz, color: textSub),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (tag != null)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                tag,
-                style: TextStyle(
-                  color: const Color(0xFF052E11), // primary-content
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          Text(
-            content,
-            style: TextStyle(color: textMain, fontSize: 16, height: 1.5),
-          ),
-          if (imageUrl != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Divider(color: border, height: 1),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.thumb_up_outlined, size: 20, color: textSub),
-                  const SizedBox(width: 8),
-                  Text(
-                    likes,
-                    style: TextStyle(
-                      color: textSub,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Icon(Icons.chat_bubble_outline, size: 20, color: textSub),
-                  const SizedBox(width: 8),
-                  Text(
-                    comments,
-                    style: TextStyle(
-                      color: textSub,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
