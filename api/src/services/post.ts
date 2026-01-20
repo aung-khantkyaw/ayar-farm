@@ -24,7 +24,7 @@ export class PostService {
             include: {
                 media: true,
                 author: {
-                    select: { id: true, name: true, profile_picture: true },
+                    select: { id: true, name: true, profile_picture: true, user_type: true },
                 },
                 _count: { select: { reactions: true, comments: true } },
             },
@@ -40,14 +40,14 @@ export class PostService {
                 media: true,
                 reactions: true,
                 author: {
-                    select: { id: true, name: true, profile_picture: true },
+                    select: { id: true, name: true, profile_picture: true, user_type: true },
                 },
                 comments: {
                     where: { parentCommentId: null },
                     orderBy: { createdAt: "desc" },
                     include: {
                         author: {
-                            select: { id: true, name: true, profile_picture: true },
+                            select: { id: true, name: true, profile_picture: true, user_type: true },
                         },
                         replies: {
                             orderBy: { createdAt: "asc" },
@@ -73,20 +73,20 @@ export class PostService {
                 media: true,
                 reactions: true,
                 author: {
-                    select: { id: true, name: true, profile_picture: true },
+                    select: { id: true, name: true, profile_picture: true, user_type: true },
                 },
                 comments: {
                     where: { parentCommentId: null },
                     orderBy: { createdAt: "desc" },
                     include: {
                         author: {
-                            select: { id: true, name: true, profile_picture: true },
+                            select: { id: true, name: true, profile_picture: true,  user_type: true },
                         },
                         replies: {
                             orderBy: { createdAt: "asc" },
                             include: {
                                 author: {
-                                    select: { id: true, name: true, profile_picture: true },
+                                    select: { id: true, name: true, profile_picture: true,  user_type: true },
                                 },
                             },
                         },
@@ -134,7 +134,7 @@ export class PostService {
 
             const postWithRelations = await tx.post.findUnique({
                 where: { id: post.id },
-                include: { media: true, author: { select: { id: true, name: true, profile_picture: true } }, _count: { select: { reactions: true, comments: true } } },
+                include: { media: true, author: { select: { id: true, name: true, profile_picture: true,  user_type: true } }, _count: { select: { reactions: true, comments: true } } },
             });
 
             return { post: postWithRelations };
@@ -182,7 +182,7 @@ export class PostService {
 
             const postWithRelations = await tx.post.findUnique({
                 where: { id },
-                include: { media: true, author: { select: { id: true, name: true, profile_picture: true } }, _count: { select: { reactions: true, comments: true } } },
+                include: { media: true, author: { select: { id: true, name: true, profile_picture: true,  user_type: true } }, _count: { select: { reactions: true, comments: true } } },
             });
 
             return { post: postWithRelations };
