@@ -86,6 +86,9 @@ export class AuthService {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
             },
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,   // 10 seconds
+            socketTimeout: 20000,     // 20 seconds
         });
 
         const mailOptions = {
@@ -123,6 +126,9 @@ export class AuthService {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
             },
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,   // 10 seconds
+            socketTimeout: 20000,     // 20 seconds
         });
 
         const mailOptions = {

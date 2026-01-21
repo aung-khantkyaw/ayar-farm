@@ -61,9 +61,13 @@ export class AuthController {
             } catch (e) {
                 console.warn('Failed to rollback user after OTP send failure', e);
             }
-            res.status(500).json({ message: 'Failed to send OTP' });
+            if (!res.headersSent) {
+                res.status(500).json({ message: 'Failed to send OTP' });
+            }
             return;
         }
+
+        if (res.headersSent) return;
 
         // Generate JWT token
         const token = AuthService.generateToken(user.id, user.user_type);
@@ -195,11 +199,15 @@ export class AuthController {
             : await AuthService.sendOTP(phone_number);
             
         if (!isSent) {
-            res.status(500).json({ message: 'Failed to send OTP' });
+            if (!res.headersSent) {
+                res.status(500).json({ message: 'Failed to send OTP' });
+            }
             return;
         }
 
-        res.status(200).json({ message: 'OTP resent successfully' });
+        if (!res.headersSent) {
+            res.status(200).json({ message: 'OTP resent successfully' });
+        }
     }
 
     public async accountUpdate(req: Request, res: Response): Promise<void> {
@@ -257,11 +265,15 @@ export class AuthController {
         const isSend = email ? await AuthService.sendResetEmail(email, otp!) : await AuthService.sendOTP(phone_number);
 
         if (!isSend) {
-            res.send(500).json({ message: 'Failed to send reset code' });
+            if (!res.headersSent) {
+                res.status(500).json({ message: 'Failed to send reset code' });
+            }
             return;
         }
 
-        res.status(200).json({ message: 'Reset code sent' });
+        if (!res.headersSent) {
+            res.status(200).json({ message: 'Reset code sent' });
+        }
     }
 
     public async resetPassword(req: Request, res: Response): Promise<void> {
