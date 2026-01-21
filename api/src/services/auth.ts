@@ -78,6 +78,7 @@ export class AuthService {
     }
 
     public static async sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
+        console.log(`[AuthService] Sending OTP email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
             port: Number(process.env.EMAIL_PORT),
@@ -118,6 +119,7 @@ export class AuthService {
     }
 
     public static async sendResetEmail(toEmail: string, otp: string): Promise<boolean> {
+        console.log(`[AuthService] Sending Reset email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
             port: Number(process.env.EMAIL_PORT),
