@@ -7,6 +7,31 @@ import { otpEmailTemplate } from "../templates/otp-email";
 export class AuthService {
     private static twilioClient: ReturnType<typeof Twilio> | null = null;
 
+    private static createEmailTransporter() {
+        const useTls = (process.env.EMAIL_USE_TLS ?? "").toLowerCase() === "true";
+        const host = process.env.EMAIL_HOST;
+        const port = Number(process.env.EMAIL_PORT) || (useTls ? 465 : 587);
+
+        return nodemailer.createTransport({
+            host,
+            port,
+            secure: useTls,
+            requireTLS: !useTls,
+            auth: {
+                user: process.env.EMAIL_USERNAME,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 20000,
+            logger: true,
+            debug: true,
+        } as any);
+    }
+
     public static generateToken(userId: string, userType: string): string {
         const payload = { sub: userId, user_type: userType };
         const secret: jwt.Secret = process.env.JWT_SECRET ?? "changeme";
@@ -78,26 +103,9 @@ export class AuthService {
     }
 
     public static async sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
-        console.log(`[AuthService] Sending OTP email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: Number(process.env.EMAIL_PORT),
-            secure: process.env.EMAIL_USE_TLS,
-            requireTLS: true,
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-            tls: {
-                ciphers: "SSLv3",
-                rejectUnauthorized: false
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000, 
-            socketTimeout: 20000,     
-            logger: true,
-            debug: true, 
-        } as any);
+        const useTls = (process.env.EMAIL_USE_TLS ?? "").toLowerCase() === "true";
+        console.log(`[AuthService] Sending OTP email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${useTls})`);
+        const transporter = this.createEmailTransporter();
 
         const mailOptions = {
             from: process.env.EMAIL_FROM_NAME,
@@ -126,26 +134,9 @@ export class AuthService {
     }
 
     public static async sendResetEmail(toEmail: string, otp: string): Promise<boolean> {
-        console.log(`[AuthService] Sending Reset email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: Number(process.env.EMAIL_PORT),
-            secure: process.env.EMAIL_USE_TLS,
-            requireTLS: true,
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-            tls: {
-                ciphers: "SSLv3",
-                rejectUnauthorized: false
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000, 
-            socketTimeout: 20000,     
-            logger: true,
-            debug: true,    
-        }as any);
+        const useTls = (process.env.EMAIL_USE_TLS ?? "").toLowerCase() === "true";
+        console.log(`[AuthService] Sending Reset email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${useTls})`);
+        const transporter = this.createEmailTransporter();
 
         const mailOptions = {
             from: process.env.EMAIL_FROM_NAME,
