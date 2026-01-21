@@ -80,25 +80,23 @@ export class AuthService {
     public static async sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
         console.log(`[AuthService] Sending OTP email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.EMAIL_HOST,
+            port: Number(process.env.EMAIL_PORT),
+            secure: process.env.EMAIL_USE_TLS,
+            requireTLS: true,
             auth: {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
             },
-
-            // host: process.env.EMAIL_HOST,
-            // port: Number(process.env.EMAIL_PORT),
-            // secure: process.env.EMAIL_USE_TLS === 'true',
-
-            connectionTimeout: 60000, 
-            greetingTimeout: 30000,   
-            socketTimeout: 60000,     
-            family: 4, // Force IPv4
+            tls: {
+                ciphers: "SSLv3",
+                rejectUnauthorized: false
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000, 
+            socketTimeout: 20000,     
             logger: true,
-            debug: true,
-            // tls: {
-            //     rejectUnauthorized: false
-            // }
+            debug: true, 
         } as any);
 
         const mailOptions = {
@@ -130,22 +128,24 @@ export class AuthService {
     public static async sendResetEmail(toEmail: string, otp: string): Promise<boolean> {
         console.log(`[AuthService] Sending Reset email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${process.env.EMAIL_USE_TLS})`);
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.EMAIL_HOST,
+            port: Number(process.env.EMAIL_PORT),
+            secure: process.env.EMAIL_USE_TLS,
+            requireTLS: true,
             auth: {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
             },
-
-            // host: process.env.EMAIL_HOST,
-            // port: Number(process.env.EMAIL_PORT),
-            // secure: process.env.EMAIL_USE_TLS === 'true',
-
-            connectionTimeout: 60000,
-            greetingTimeout: 30000,
-            socketTimeout: 60000,
+            tls: {
+                ciphers: "SSLv3",
+                rejectUnauthorized: false
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000, 
+            socketTimeout: 20000,     
             logger: true,
-            debug: true,
-        });
+            debug: true,    
+        }as any);
 
         const mailOptions = {
             from: process.env.EMAIL_FROM_NAME,
