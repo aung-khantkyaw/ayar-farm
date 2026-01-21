@@ -87,10 +87,15 @@ export class AuthService {
                 user: process.env.EMAIL_USERNAME,
                 pass: process.env.EMAIL_PASSWORD,
             },
-            connectionTimeout: 10000, // 10 seconds
-            greetingTimeout: 10000,   // 10 seconds
-            socketTimeout: 20000,     // 20 seconds
-        });
+            connectionTimeout: 20000, 
+            greetingTimeout: 20000,   
+            socketTimeout: 30000,     
+            // dnsTimeout: 20000, // Removed invalid option
+            family: 4, // Force IPv4
+            tls: {
+                rejectUnauthorized: false
+            }
+        } as any);
 
         const mailOptions = {
             from: process.env.EMAIL_FROM_NAME,
