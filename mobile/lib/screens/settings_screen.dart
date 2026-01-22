@@ -243,10 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: ElevatedButton(
-              onPressed: () {
-                ApiService.setToken(null);
-                AuthService.currentUser = null;
-                SocketService().disconnect();
+              onPressed: () async {
+                await AuthService.clearSession();
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/login',

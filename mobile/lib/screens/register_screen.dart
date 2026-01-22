@@ -1,4 +1,6 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../constants/user_types.dart';
 import '../services/auth_service.dart';
@@ -18,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String _userType = UserTypes.farmer;
+  String _countryCode = '+95';
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -45,32 +48,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final response = await AuthService.register(
+      await AuthService.register(
         name: _nameController.text,
-        phoneNumber: _phoneController.text,
+        phoneNumber: '$_countryCode${_phoneController.text}',
         email: _emailController.text.isEmpty ? null : _emailController.text,
         password: _passwordController.text,
         userType: _userType,
       );
       if (mounted) {
-        Navigator.pushNamed(
-          context,
-          '/verify',
-          arguments: {
-            'phoneNumber': _phoneController.text,
-            'email':
-                _emailController.text.isEmpty ? null : _emailController.text,
-          },
-        );
+        // Navigator.pushNamed(
+        //   context,
+        //   '/verify',
+        //   arguments: {
+        //     'phoneNumber': _phoneController.text,
+        //     'email':
+        //         _emailController.text.isEmpty ? null : _emailController.text,
+        //   },
+        // );
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppLocalizations.of(context)!.registrationFailed}$e',
-            ),
-          ),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text(
+        //       '${AppLocalizations.of(context)!.registrationFailed}$e',
+        //     ),
+        //   ),
+        // );
+        print('Registration error: $e');
+        CommonSnackbar.show(
+          context,
+          message: '${AppLocalizations.of(context)!.registrationFailed} $e',
+          position: SnackBarPosition.bottom,
+          type: SnackBarType.error,
         );
       }
     } finally {
@@ -259,21 +270,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         AppLocalizations.of(context)!.phoneNumber,
                         textColor,
                       ),
-                      _buildTextField(
-                        controller: _phoneController,
-                        hint: AppLocalizations.of(context)!.phonePlaceholder,
-                        icon: Icons.call,
-                        keyboardType: TextInputType.phone,
-                        surfaceColor: surfaceColor,
-                        borderColor: borderColor,
-                        textColor: textColor,
-                        iconColor: iconColor,
-                        primaryColor: primaryColor,
-                        validator:
-                            (v) =>
-                                v?.isEmpty ?? true
-                                    ? AppLocalizations.of(context)!.required
-                                    : null,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            style: TextStyle(color: textColor),
+                            validator:
+                                (v) =>
+                                    v?.isEmpty ?? true
+                                        ? AppLocalizations.of(context)!.required
+                                        : null,
+                            decoration: InputDecoration(
+                              hintText:
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.phonePlaceholder,
+                              hintStyle: TextStyle(
+                                color: iconColor.withOpacity(0.6),
+                              ),
+                              filled: true,
+                              fillColor: surfaceColor,
+                              prefixIcon: Container(
+                                padding: const EdgeInsets.only(
+                                  left: 4,
+                                  right: 4,
+                                ),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    right: BorderSide(color: borderColor),
+                                  ),
+                                ),
+                                child: CountryCodePicker(
+                                  onChanged: (country) {
+                                    setState(() {
+                                      _countryCode = country.dialCode!;
+                                    });
+                                  },
+                                  initialSelection: 'MM',
+                                  favorite: const ['+95', 'MM'],
+                                  showCountryOnly: false,
+                                  showOnlyCountryWhenClosed: false,
+                                  alignLeft: false,
+                                  padding: EdgeInsets.zero,
+                                  flagWidth: 20,
+                                  textStyle: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  dialogTextStyle: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  searchStyle: TextStyle(color: Colors.black),
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: primaryColor.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
 

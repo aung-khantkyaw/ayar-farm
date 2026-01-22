@@ -30,27 +30,20 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     try {
       return User(
-        id: json['id'],
-        name: json['name'],
-        phoneNumber: json['phone_number'],
-        email: json['email'],
-        gender: json['gender'],
-        userType: json['user_type'] ?? json['userType'],
-        profilePicture: json['profile_picture'] ?? json['profilePicture'],
-        location: json['location'],
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        phoneNumber: json['phone_number']?.toString(),
+        email: json['email']?.toString(),
+        gender: json['gender']?.toString(),
+        userType: json['user_type']?.toString() ?? json['userType']?.toString(),
+        profilePicture:
+            json['profile_picture']?.toString() ??
+            json['profilePicture']?.toString(),
+        location: json['location']?.toString(),
         isVerified: json['isVerified'] ?? false,
-        lastLogin:
-            json['last_login'] != null
-                ? DateTime.parse(json['last_login'])
-                : null,
-        createdAt:
-            json['created_at'] != null
-                ? DateTime.parse(json['created_at'])
-                : null,
-        updatedAt:
-            json['updated_at'] != null
-                ? DateTime.parse(json['updated_at'])
-                : null,
+        lastLogin: DateTime.tryParse(json['last_login']?.toString() ?? ''),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+        updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? ''),
       );
     } catch (e) {
       print('Error parsing User: $e');
@@ -86,12 +79,12 @@ class AuthResponse {
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return AuthResponse(
-      message: json['message'],
+      message: json['message']?.toString() ?? '',
       user:
           json['data']?['user'] != null
-              ? User.fromJson(json['data']['user'])
+              ? User.fromJson(Map<String, dynamic>.from(json['data']['user']))
               : null,
-      token: json['data']?['token'],
+      token: json['data']?['token']?.toString(),
     );
   }
 }
