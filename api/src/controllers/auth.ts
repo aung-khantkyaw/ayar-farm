@@ -28,16 +28,6 @@ export class AuthController {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        let otp: string | null = null;
-        let otpExpiry: Date | null = null;
-
-        if (email) {
-            otp = generateOTP();
-            otpExpiry = new Date();
-            otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
-        }
-
-        // Create user
         const user = await prisma.users.create({
             data: {
                 name,
@@ -45,27 +35,50 @@ export class AuthController {
                 email,
                 password: hashedPassword,
                 user_type,
-                verificationToken: otp,
-                verificationTokenExpiresAt: otpExpiry,
+                verificationToken: null,
+                verificationTokenExpiresAt: null,
+                isVerified: true
             }
         });
 
-        // Send OTP via email or phone
-        const isSent = email 
-            ? await AuthService.sendOTPEmail(user.email!, otp!)
-            : await AuthService.sendOTP(user.phone_number);
+        // let otp: string | null = null;
+        // let otpExpiry: Date | null = null;
 
-        if (!isSent) {
-            try {
-                await prisma.users.delete({ where: { id: user.id } });
-            } catch (e) {
-                console.warn('Failed to rollback user after OTP send failure', e);
-            }
-            if (!res.headersSent) {
-                res.status(500).json({ message: 'Failed to send OTP' });
-            }
-            return;
-        }
+        // if (email) {
+        //     otp = generateOTP();
+        //     otpExpiry = new Date();
+        //     otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
+        // }
+
+        // Create user
+        // const user = await prisma.users.create({
+        //     data: {
+        //         name,
+        //         phone_number,
+        //         email,
+        //         password: hashedPassword,
+        //         user_type,
+        //         verificationToken: otp,
+        //         verificationTokenExpiresAt: otpExpiry,
+        //     }
+        // });
+
+        // Send OTP via email or phone
+        // const isSent = email 
+        //     ? await AuthService.sendOTPEmail(user.email!, otp!)
+        //     : await AuthService.sendOTP(user.phone_number);
+
+        // if (!isSent) {
+        //     try {
+        //         await prisma.users.delete({ where: { id: user.id } });
+        //     } catch (e) {
+        //         console.warn('Failed to rollback user after OTP send failure', e);
+        //     }
+        //     if (!res.headersSent) {
+        //         res.status(500).json({ message: 'Failed to send OTP' });
+        //     }
+        //     return;
+        // }
 
         if (res.headersSent) return;
 
