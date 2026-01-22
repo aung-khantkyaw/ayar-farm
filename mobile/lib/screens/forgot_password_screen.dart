@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
@@ -22,10 +23,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _handleSendResetCode() async {
     if (_identifierController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.enterEmailOrPhone),
-        ),
+      CommonSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.enterEmailOrPhone,
+        type: SnackBarType.info,
+        position: SnackBarPosition.bottom,
       );
       return;
     }
@@ -41,8 +43,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.resetCodeSent)),
+        CommonSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.resetCodeSent,
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
         // Navigate to ResetPasswordScreen (which contains the OTP and New Password fields)
         Navigator.pushNamed(
@@ -53,12 +58,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppLocalizations.of(context)!.failedToSendResetCode}$e',
-            ),
-          ),
+        CommonSnackbar.show(
+          context,
+          message: '${AppLocalizations.of(context)!.failedToSendResetCode}$e',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
         );
       }
     } finally {

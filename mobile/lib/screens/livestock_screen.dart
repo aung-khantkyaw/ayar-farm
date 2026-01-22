@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -33,24 +34,23 @@ class _LivestockScreenState extends State<LivestockScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CommonSnackbar.show(
+          context,
+          message:
               '${AppLocalizations.of(context)!.failedToLoadLivestock}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
-            ),
-          ),
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppLocalizations.of(context)!.errorLoadingLivestock}$e',
-          ),
-        ),
+      CommonSnackbar.show(
+        context,
+        message: '${AppLocalizations.of(context)!.errorLoadingLivestock}$e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
       );
     }
   }

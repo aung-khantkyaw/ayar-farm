@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -106,9 +107,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
+      CommonSnackbar.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+        message: 'Failed to send message: $e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
+      );
     }
   }
 

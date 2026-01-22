@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -35,12 +36,12 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
           _isLoading = false;
         });
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CommonSnackbar.show(
+          context,
+          position: SnackBarPosition.bottom,
+          type: SnackBarType.error,
+          message:
               '${AppLocalizations.of(context)!.failedToLoadMachineTypes}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
-            ),
-          ),
         );
       }
     } catch (e) {
@@ -48,12 +49,11 @@ class _MachineTypeScreenState extends State<MachineTypeScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppLocalizations.of(context)!.errorLoadingMachineTypes}$e',
-          ),
-        ),
+      CommonSnackbar.show(
+        context,
+        position: SnackBarPosition.bottom,
+        type: SnackBarType.error,
+        message: '${AppLocalizations.of(context)!.errorLoadingMachineTypes}$e',
       );
     }
   }

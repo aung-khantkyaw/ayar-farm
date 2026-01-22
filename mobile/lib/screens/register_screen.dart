@@ -56,27 +56,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         userType: _userType,
       );
       if (mounted) {
-        // Navigator.pushNamed(
-        //   context,
-        //   '/verify',
-        //   arguments: {
-        //     'phoneNumber': _phoneController.text,
-        //     'email':
-        //         _emailController.text.isEmpty ? null : _emailController.text,
-        //   },
-        // );
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text(
-        //       '${AppLocalizations.of(context)!.registrationFailed}$e',
-        //     ),
-        //   ),
-        // );
-        print('Registration error: $e');
         CommonSnackbar.show(
           context,
           message: '${AppLocalizations.of(context)!.registrationFailed} $e',

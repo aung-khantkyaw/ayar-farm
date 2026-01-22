@@ -1,4 +1,5 @@
 import 'package:ayar_farm/widgets/common_header.dart';
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
@@ -110,12 +111,22 @@ class _ChattingScreenState extends State<ChattingScreen> {
 
     try {
       final userResponse = await ApiService.get('/users/search?q=$query');
-      final groupResponse = await ApiService.get('/chat/groups/search?q=$query');
+      final groupResponse = await ApiService.get(
+        '/chat/groups/search?q=$query',
+      );
 
       if (mounted) {
         setState(() {
-          _searchUsers = (userResponse['data'] as List?)?.map((e) => User.fromJson(e)).toList() ?? [];
-          _searchGroups = (groupResponse['data'] as List?)?.map((e) => Conversation.fromJson(e)).toList() ?? [];
+          _searchUsers =
+              (userResponse['data'] as List?)
+                  ?.map((e) => User.fromJson(e))
+                  .toList() ??
+              [];
+          _searchGroups =
+              (groupResponse['data'] as List?)
+                  ?.map((e) => Conversation.fromJson(e))
+                  .toList() ??
+              [];
         });
       }
     } catch (e) {
@@ -135,8 +146,11 @@ class _ChattingScreenState extends State<ChattingScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      CommonSnackbar.show(
+        context,
+        message: 'Failed to start chat: $e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
       );
     }
   }
@@ -144,46 +158,48 @@ class _ChattingScreenState extends State<ChattingScreen> {
   Future<void> _showGroupInfo(Conversation group) async {
     // Check if current user is already a member
     final isMember = group.participants.any((p) => p.userId == _currentUserId);
-    
+
     if (isMember) {
       // Already a member, go to group chat
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => GroupChatScreen(conversation: group),
-        ),
+        MaterialPageRoute(builder: (_) => GroupChatScreen(conversation: group)),
       );
     } else {
       // Not a member, show join dialog
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(group.name ?? 'Group'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (group.description != null) Text(group.description!),
-              const SizedBox(height: 8),
-              Text('${group.participants.length} members'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+        builder:
+            (context) => AlertDialog(
+              title: Text(group.name ?? 'Group'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (group.description != null) Text(group.description!),
+                  const SizedBox(height: 8),
+                  Text('${group.participants.length} members'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    CommonSnackbar.show(
+                      context,
+                      message: 'Join group feature coming soon',
+                      type: SnackBarType.info,
+                      position: SnackBarPosition.bottom,
+                    );
+                  },
+                  child: const Text('Join'),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Join group feature coming soon')),
-                );
-              },
-              child: const Text('Join'),
-            ),
-          ],
-        ),
       );
     }
   }
@@ -228,31 +244,34 @@ class _ChattingScreenState extends State<ChattingScreen> {
         isDark ? const Color(0xFF1E3626) : const Color(0xFFF9FAFB);
 
     // Filter conversations based on selected filter and search query
-    final filteredConversations = _conversations.where((conv) {
-      // Filter by type
-      bool matchesFilter = true;
-      if (_selectedFilter == 'Groups') {
-        matchesFilter = conv.type == ConversationType.GROUP;
-      } else if (_selectedFilter == 'Mentors') {
-        matchesFilter = conv.type == ConversationType.DIRECT;
-      }
-      
-      // Filter by search query
-      if (_searchController.text.isNotEmpty) {
-        final query = _searchController.text.toLowerCase();
-        if (conv.type == ConversationType.GROUP) {
-          return matchesFilter && (conv.name?.toLowerCase().contains(query) ?? false);
-        } else {
-          final other = conv.participants.firstWhere(
-            (p) => p.userId != _currentUserId,
-            orElse: () => conv.participants.first,
-          );
-          return matchesFilter && (other.user?.name.toLowerCase().contains(query) ?? false);
-        }
-      }
-      
-      return matchesFilter;
-    }).toList();
+    final filteredConversations =
+        _conversations.where((conv) {
+          // Filter by type
+          bool matchesFilter = true;
+          if (_selectedFilter == 'Groups') {
+            matchesFilter = conv.type == ConversationType.GROUP;
+          } else if (_selectedFilter == 'Mentors') {
+            matchesFilter = conv.type == ConversationType.DIRECT;
+          }
+
+          // Filter by search query
+          if (_searchController.text.isNotEmpty) {
+            final query = _searchController.text.toLowerCase();
+            if (conv.type == ConversationType.GROUP) {
+              return matchesFilter &&
+                  (conv.name?.toLowerCase().contains(query) ?? false);
+            } else {
+              final other = conv.participants.firstWhere(
+                (p) => p.userId != _currentUserId,
+                orElse: () => conv.participants.first,
+              );
+              return matchesFilter &&
+                  (other.user?.name.toLowerCase().contains(query) ?? false);
+            }
+          }
+
+          return matchesFilter;
+        }).toList();
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -279,7 +298,8 @@ class _ChattingScreenState extends State<ChattingScreen> {
                       controller: _searchController,
                       style: TextStyle(color: textMainColor),
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.searchConversations,
+                        hintText:
+                            AppLocalizations.of(context)!.searchConversations,
                         hintStyle: TextStyle(color: textSubColor),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.only(bottom: 4),
@@ -346,59 +366,103 @@ class _ChattingScreenState extends State<ChattingScreen> {
           Expanded(
             child: Container(
               color: surfaceColor,
-              child: _searchController.text.isNotEmpty
-                  ? ListView(
-                      padding: const EdgeInsets.only(bottom: 100),
-                      children: [
-                        if (_searchUsers.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text('Users', style: TextStyle(color: textSubColor, fontWeight: FontWeight.bold)),
-                          ),
-                          ..._searchUsers.map((user) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage: user.profilePicture != null ? NetworkImage(user.profilePicture!) : null,
-                                  child: user.profilePicture == null ? const Icon(Icons.person) : null,
+              child:
+                  _searchController.text.isNotEmpty
+                      ? ListView(
+                        padding: const EdgeInsets.only(bottom: 100),
+                        children: [
+                          if (_searchUsers.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                'Users',
+                                style: TextStyle(
+                                  color: textSubColor,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                title: Text(user.name, style: TextStyle(color: textMainColor)),
-                                subtitle: Text(user.email ?? '', style: TextStyle(color: textSubColor)),
-                                onTap: () => _startDirectChat(user),
-                              )),
-                        ],
-                        if (_searchGroups.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text('Groups', style: TextStyle(color: textSubColor, fontWeight: FontWeight.bold)),
-                          ),
-                          ..._searchGroups.map((group) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage: group.imageUrl != null ? NetworkImage(group.imageUrl!) : null,
-                                  child: group.imageUrl == null ? const Icon(Icons.group) : null,
-                                ),
-                                title: Text(group.name ?? 'Group', style: TextStyle(color: textMainColor)),
-                                subtitle: Text('${group.participants.length} members', style: TextStyle(color: textSubColor)),
-                                onTap: () => _showGroupInfo(group),
-                              )),
-                        ],
-                        if (_searchUsers.isEmpty && _searchGroups.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Text('No results found', style: TextStyle(color: textSubColor)),
+                              ),
                             ),
-                          ),
-                      ],
-                    )
-                  : _isLoading
+                            ..._searchUsers.map(
+                              (user) => ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      user.profilePicture != null
+                                          ? NetworkImage(user.profilePicture!)
+                                          : null,
+                                  child:
+                                      user.profilePicture == null
+                                          ? const Icon(Icons.person)
+                                          : null,
+                                ),
+                                title: Text(
+                                  user.name,
+                                  style: TextStyle(color: textMainColor),
+                                ),
+                                subtitle: Text(
+                                  user.email ?? '',
+                                  style: TextStyle(color: textSubColor),
+                                ),
+                                onTap: () => _startDirectChat(user),
+                              ),
+                            ),
+                          ],
+                          if (_searchGroups.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                'Groups',
+                                style: TextStyle(
+                                  color: textSubColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            ..._searchGroups.map(
+                              (group) => ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      group.imageUrl != null
+                                          ? NetworkImage(group.imageUrl!)
+                                          : null,
+                                  child:
+                                      group.imageUrl == null
+                                          ? const Icon(Icons.group)
+                                          : null,
+                                ),
+                                title: Text(
+                                  group.name ?? 'Group',
+                                  style: TextStyle(color: textMainColor),
+                                ),
+                                subtitle: Text(
+                                  '${group.participants.length} members',
+                                  style: TextStyle(color: textSubColor),
+                                ),
+                                onTap: () => _showGroupInfo(group),
+                              ),
+                            ),
+                          ],
+                          if (_searchUsers.isEmpty && _searchGroups.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Text(
+                                  'No results found',
+                                  style: TextStyle(color: textSubColor),
+                                ),
+                              ),
+                            ),
+                        ],
+                      )
+                      : _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : filteredConversations.isEmpty
-                          ? Center(
-                              child: Text(
-                                "No conversations yet",
-                                style: TextStyle(color: textSubColor),
-                              ),
-                            )
-                          : ListView.builder(
+                      ? Center(
+                        child: Text(
+                          "No conversations yet",
+                          style: TextStyle(color: textSubColor),
+                        ),
+                      )
+                      : ListView.builder(
                         padding: const EdgeInsets.only(bottom: 100),
                         itemCount: filteredConversations.length,
                         itemBuilder: (context, index) {

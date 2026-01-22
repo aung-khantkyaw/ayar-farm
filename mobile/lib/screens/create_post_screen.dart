@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -144,8 +145,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _handlePost() async {
     if (_textController.text.trim().isEmpty && _attachments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add some content to your post')),
+      CommonSnackbar.show(
+        context,
+        message: 'Please add some content to your post',
+        type: SnackBarType.warning,
+        position: SnackBarPosition.bottom,
       );
       return;
     }
@@ -168,9 +172,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (success && mounted) {
         Navigator.pop(context, true);
       } else if (mounted) {
-        ScaffoldMessenger.of(
+        CommonSnackbar.show(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to create post')));
+          message: 'Failed to create post',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
+        );
       }
     } finally {
       if (mounted) {

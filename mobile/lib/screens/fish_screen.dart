@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -33,22 +34,23 @@ class _FishScreenState extends State<FishScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CommonSnackbar.show(
+          context,
+          message:
               '${AppLocalizations.of(context)!.failedToLoadFish}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
-            ),
-          ),
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${AppLocalizations.of(context)!.errorLoadingFish}$e'),
-        ),
+      CommonSnackbar.show(
+        context,
+        message: '${AppLocalizations.of(context)!.errorLoadingFish}$e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
       );
     }
   }

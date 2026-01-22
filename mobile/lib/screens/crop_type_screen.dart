@@ -1,4 +1,5 @@
 import 'package:ayar_farm/l10n/app_localizations.dart';
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
@@ -35,12 +36,12 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
           _isLoading = false;
         });
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CommonSnackbar.show(
+          context,
+          message:
               '${AppLocalizations.of(context)!.failedToLoadCropTypes}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
-            ),
-          ),
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
       }
     } catch (e) {
@@ -48,12 +49,11 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppLocalizations.of(context)!.errorLoadingCropTypes}$e',
-          ),
-        ),
+      CommonSnackbar.show(
+        context,
+        message: '${AppLocalizations.of(context)!.errorLoadingCropTypes}$e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
       );
     }
   }

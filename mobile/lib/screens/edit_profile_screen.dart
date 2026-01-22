@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -153,9 +154,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
+      CommonSnackbar.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+        message: 'Error picking image: $e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
+      );
     }
   }
 
@@ -217,12 +221,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       debugPrint('Error fetching townships: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppLocalizations.of(context)!.errorLoadingTownships}$e',
-            ),
-          ),
+        CommonSnackbar.show(
+          context,
+          message: '${AppLocalizations.of(context)!.errorLoadingTownships}$e',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
         );
       }
     } finally {
@@ -285,16 +288,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.changesSaved)),
+        CommonSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.changesSaved,
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        CommonSnackbar.show(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
+          message: 'Error updating profile: $e',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
+        );
       }
     }
   }

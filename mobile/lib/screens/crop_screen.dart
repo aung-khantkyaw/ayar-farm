@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -47,22 +48,23 @@ class _CropScreenState extends State<CropScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CommonSnackbar.show(
+          context,
+          message:
               '${AppLocalizations.of(context)!.failedToLoadCrops}${response['message'] ?? AppLocalizations.of(context)!.unknown}',
-            ),
-          ),
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${AppLocalizations.of(context)!.errorLoadingCrops}$e'),
-        ),
+      CommonSnackbar.show(
+        context,
+        message: '${AppLocalizations.of(context)!.errorLoadingCrops}$e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
       );
     }
   }
@@ -208,7 +210,8 @@ class _CropScreenState extends State<CropScreen> {
                         image: NetworkImage(
                           crop['image_urls'] != null &&
                                   crop['image_urls'].isNotEmpty
-                              ? crop['image_urls'][crop['image_urls'].length - 1]
+                              ? crop['image_urls'][crop['image_urls'].length -
+                                  1]
                               : '',
                         ),
                         fit: BoxFit.cover,

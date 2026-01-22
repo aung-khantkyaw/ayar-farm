@@ -1,3 +1,4 @@
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:country_code_picker/country_code_picker.dart';
@@ -51,24 +52,31 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.loginSuccessful),
-            ),
+          CommonSnackbar.show(
+            context,
+            message: AppLocalizations.of(context)!.loginSuccessful,
+            type: SnackBarType.info,
+            position: SnackBarPosition.bottom,
           );
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(
+          CommonSnackbar.show(
             context,
-          ).showSnackBar(SnackBar(content: Text(response.message)));
+            position: SnackBarPosition.bottom,
+            type: SnackBarType.error,
+            message: response.message ?? AppLocalizations.of(context)!.unknown,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)),
+        CommonSnackbar.show(
+          context,
+          message: '${AppLocalizations.of(context)!.errorOccurred} $e',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
         );
       }
     } finally {
