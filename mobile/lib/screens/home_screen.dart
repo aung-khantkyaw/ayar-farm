@@ -12,6 +12,7 @@ import 'profile_screen.dart';
 import '../services/post_service.dart';
 import '../services/auth_service.dart';
 import '../models/post.dart';
+import '../services/socket_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,7 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingWeather = true;
   String _locationError = '';
   late Future<List<Post>> _postsFuture;
+  List<Post> _livePosts = [];
   String _selectedCategory = 'All';
+  void Function(dynamic)? _postReactionListener;
+  void Function(dynamic)? _postCommentListener;
+  void Function(dynamic)? _postCommentDeletedListener;
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+  bool _isScrollToTopInProgress = false;
 
   final List<String> _availableHashtags = [
     "ကောက်ပဲသီးနှံများ",
@@ -39,14 +47,40 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchWeather();
-    _loadPosts();
+    _refreshAll();
+    _setupRealtime();
+    _scrollController.addListener(_handleScroll);
   }
 
-  void _loadPosts() {
-    _postsFuture = PostService.getPosts(
+  Future<void> _loadPosts() async {
+    final future = PostService.getPosts(
       tag: _selectedCategory == 'All' ? null : _selectedCategory,
     );
+    setState(() {
+      _postsFuture = future;
+    });
+    final posts = await future;
+    if (mounted) {
+      setState(() {
+        _livePosts = posts;
+      });
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_fetchWeather(), _loadPosts()]);
+  }
+
+  void _setupRealtime() {
+    final socket = SocketService().socket;
+    if (socket == null) return;
+    _postReactionListener = (data) => _handlePostReactionEvent(data);
+    _postCommentListener = (data) => _handlePostCommentEvent(data);
+    _postCommentDeletedListener =
+        (data) => _handlePostCommentDeletedEvent(data);
+    socket.on('post:reaction', _postReactionListener!);
+    socket.on('post:comment', _postCommentListener!);
+    socket.on('post:comment:deleted', _postCommentDeletedListener!);
   }
 
   String _timeAgo(DateTime date) {
@@ -129,6 +163,192 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    final socket = SocketService().socket;
+    if (socket != null) {
+      if (_postReactionListener != null)
+        socket.off('post:reaction', _postReactionListener!);
+      if (_postCommentListener != null)
+        socket.off('post:comment', _postCommentListener!);
+      if (_postCommentDeletedListener != null)
+        socket.off('post:comment:deleted', _postCommentDeletedListener!);
+    }
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    final shouldShow = _scrollController.offset > 300;
+    if (shouldShow != _showScrollToTop) {
+      setState(() => _showScrollToTop = shouldShow);
+    }
+  }
+
+  Future<void> _scrollToTop() async {
+    if (_isScrollToTopInProgress) return;
+    setState(() => _isScrollToTopInProgress = true);
+    try {
+      await _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOut,
+      );
+      await _refreshAll();
+    } finally {
+      if (mounted) {
+        setState(() => _isScrollToTopInProgress = false);
+      }
+    }
+  }
+
+  void _handlePostReactionEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final action = data['action']?.toString();
+    final userId = data['userId']?.toString();
+    // Skip applying socket counts for the actor; their local optimistic update already handled it.
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    final reactionType = data['reactionType']?.toString();
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId || userId == null || action == null) return p;
+            return _updatePostReaction(p, action, userId, reactionType);
+          }).toList();
+    });
+  }
+
+  void _handlePostCommentEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId) return p;
+            final newCount = p.counts.comments + 1;
+            return Post(
+              id: p.id,
+              content: p.content,
+              authorId: p.authorId,
+              createdAt: p.createdAt,
+              media: p.media,
+              tags: p.tags,
+              author: p.author,
+              counts: PostCount(
+                reactions: p.counts.reactions,
+                comments: newCount,
+              ),
+              reactionUserIds: p.reactionUserIds,
+              reactions: p.reactions,
+            );
+          }).toList();
+    });
+  }
+
+  void _handlePostCommentDeletedEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    final deletedCount = _asInt(data['deletedCount']) ?? 1;
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId) return p;
+            final newCount = (p.counts.comments - deletedCount).clamp(
+              0,
+              1 << 30,
+            );
+            return Post(
+              id: p.id,
+              content: p.content,
+              authorId: p.authorId,
+              createdAt: p.createdAt,
+              media: p.media,
+              tags: p.tags,
+              author: p.author,
+              counts: PostCount(
+                reactions: p.counts.reactions,
+                comments: newCount,
+              ),
+              reactionUserIds: p.reactionUserIds,
+              reactions: p.reactions,
+            );
+          }).toList();
+    });
+  }
+
+  int? _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Post _updatePostReaction(
+    Post post,
+    String action,
+    String userId,
+    String? reactionType,
+  ) {
+    final reactions = List<PostReaction>.from(post.reactions);
+    final idx = reactions.indexWhere((r) => r.userId == userId);
+
+    if (action == 'removed') {
+      if (idx >= 0) {
+        reactions.removeAt(idx);
+      }
+    } else if (action == 'updated') {
+      if (idx >= 0) {
+        reactions[idx] = PostReaction(
+          userId: userId,
+          type: reactionType ?? reactions[idx].type,
+        );
+      } else {
+        reactions.add(
+          PostReaction(userId: userId, type: reactionType ?? 'LIKE'),
+        );
+      }
+    } else if (action == 'added') {
+      if (idx >= 0) {
+        reactions[idx] = PostReaction(
+          userId: userId,
+          type: reactionType ?? reactions[idx].type,
+        );
+      } else {
+        reactions.add(
+          PostReaction(userId: userId, type: reactionType ?? 'LIKE'),
+        );
+      }
+    }
+
+    final reactionUserIds = reactions.map((r) => r.userId).toList();
+    final reactionCount = reactions.length;
+
+    return Post(
+      id: post.id,
+      content: post.content,
+      authorId: post.authorId,
+      createdAt: post.createdAt,
+      media: post.media,
+      tags: post.tags,
+      author: post.author,
+      counts: PostCount(
+        reactions: reactionCount,
+        comments: post.counts.comments,
+      ),
+      reactionUserIds: reactionUserIds,
+      reactions: reactions,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -152,314 +372,332 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const CommonHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Weather Widget
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WeatherScreen(),
+              child: RefreshIndicator(
+                onRefresh: _refreshAll,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Weather Widget
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const WeatherScreen(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: surfaceColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: borderColor),
+                            boxShadow: [
+                              if (!isDark)
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                            ],
                           ),
-                        );
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: surfaceColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: borderColor),
-                          boxShadow: [
-                            if (!isDark)
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: -32,
+                                right: -32,
+                                child: Container(
+                                  width: 128,
+                                  height: 128,
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                               ),
-                          ],
+                              Padding(
+                                padding: const EdgeInsets.all(20),
+                                child:
+                                    _isLoadingWeather
+                                        ? const Center(
+                                          child: CircularProgressIndicator(),
+                                        )
+                                        : _weather == null
+                                        ? Center(
+                                          child: Text(
+                                            _locationError.isNotEmpty
+                                                ? _locationError
+                                                : AppLocalizations.of(
+                                                  context,
+                                                )!.weatherUnavailable,
+                                            style: TextStyle(
+                                              color: textSubColor,
+                                            ),
+                                          ),
+                                        )
+                                        : Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.currentLocation,
+                                                      style: TextStyle(
+                                                        color: textSubColor,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      "${_weather!['current']['temperature']}°${_weather!['current']['unit'] ?? 'C'}",
+                                                      style: TextStyle(
+                                                        color: textMainColor,
+                                                        fontSize: 30,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      _weather!['current']['status'] ??
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.unknown,
+                                                      style: TextStyle(
+                                                        color: textMainColor,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Container(
+                                                  width: 48,
+                                                  height: 48,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        isDark
+                                                            ? Colors.blue
+                                                                .withOpacity(
+                                                                  0.2,
+                                                                )
+                                                            : Colors.blue[50],
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.wb_sunny_outlined,
+                                                    color: Colors.blue,
+                                                    size: 28,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Divider(
+                                              color: borderColor,
+                                              height: 1,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.water_drop_outlined,
+                                                  size: 18,
+                                                  color: textSubColor,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _weather!['current']['humidity'] ??
+                                                      '--%',
+                                                  style: TextStyle(
+                                                    color: textMainColor,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 24),
+                                                Icon(
+                                                  Icons.air,
+                                                  size: 18,
+                                                  color: textSubColor,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _weather!['current']['wind'] ??
+                                                      '-- km/h',
+                                                  style: TextStyle(
+                                                    color: textMainColor,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Stack(
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Categories
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        child: Row(
                           children: [
-                            Positioned(
-                              top: -32,
-                              right: -32,
-                              child: Container(
-                                width: 128,
-                                height: 128,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.2),
-                                  shape: BoxShape.circle,
+                            _buildCategoryItem(
+                              context,
+                              id: 'All',
+                              label: AppLocalizations.of(context)!.catAll,
+                              primaryColor: primaryColor,
+                              primaryContentColor: primaryContentColor,
+                              surfaceColor: surfaceColor,
+                              textMainColor: textMainColor,
+                              borderColor: borderColor,
+                            ),
+                            ..._availableHashtags.map(
+                              (tag) => Padding(
+                                padding: const EdgeInsets.only(left: 12),
+                                child: _buildCategoryItem(
+                                  context,
+                                  id: tag,
+                                  label: tag,
+                                  primaryColor: primaryColor,
+                                  primaryContentColor: primaryContentColor,
+                                  surfaceColor: surfaceColor,
+                                  textMainColor: textMainColor,
+                                  borderColor: borderColor,
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child:
-                                  _isLoadingWeather
-                                      ? const Center(
-                                        child: CircularProgressIndicator(),
-                                      )
-                                      : _weather == null
-                                      ? Center(
-                                        child: Text(
-                                          _locationError.isNotEmpty
-                                              ? _locationError
-                                              : AppLocalizations.of(
-                                                context,
-                                              )!.weatherUnavailable,
-                                          style: TextStyle(color: textSubColor),
-                                        ),
-                                      )
-                                      : Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.currentLocation, // API doesn't seem to return city name in the snippet provided
-                                                    style: TextStyle(
-                                                      color: textSubColor,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    '${_weather!['current']['temperature']}°${_weather!['current']['unit'] ?? 'C'}',
-                                                    style: TextStyle(
-                                                      color: textMainColor,
-                                                      fontSize: 30,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    _weather!['current']['status'] ??
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.unknown,
-                                                    style: TextStyle(
-                                                      color: textMainColor,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Container(
-                                                width: 48,
-                                                height: 48,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      isDark
-                                                          ? Colors.blue
-                                                              .withOpacity(0.2)
-                                                          : Colors.blue[50],
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: const Icon(
-                                                  Icons.wb_sunny_outlined,
-                                                  color: Colors.blue,
-                                                  size: 28,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Divider(
-                                            color: borderColor,
-                                            height: 1,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.water_drop_outlined,
-                                                size: 18,
-                                                color: textSubColor,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                _weather!['current']['humidity'] ??
-                                                    '--%',
-                                                style: TextStyle(
-                                                  color: textMainColor,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 24),
-                                              Icon(
-                                                Icons.air,
-                                                size: 18,
-                                                color: textSubColor,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                _weather!['current']['wind'] ??
-                                                    '-- km/h',
-                                                style: TextStyle(
-                                                  color: textMainColor,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                            ),
                           ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Categories
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      child: Row(
-                        children: [
-                          _buildCategoryItem(
-                            context,
-                            id: 'All',
-                            label: AppLocalizations.of(context)!.catAll,
-                            primaryColor: primaryColor,
-                            primaryContentColor: primaryContentColor,
-                            surfaceColor: surfaceColor,
-                            textMainColor: textMainColor,
-                            borderColor: borderColor,
-                          ),
-                          ..._availableHashtags.map(
-                            (tag) => Padding(
-                              padding: const EdgeInsets.only(left: 12),
-                              child: _buildCategoryItem(
-                                context,
-                                id: tag,
-                                label: tag,
-                                primaryColor: primaryColor,
-                                primaryContentColor: primaryContentColor,
-                                surfaceColor: surfaceColor,
-                                textMainColor: textMainColor,
-                                borderColor: borderColor,
+                      FutureBuilder<List<Post>>(
+                        future: _postsFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Error loading posts',
+                                style: TextStyle(color: textSubColor),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            );
+                          }
+                          if (snapshot.connectionState ==
+                                  ConnectionState.waiting &&
+                              _livePosts.isEmpty) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
-                    const SizedBox(height: 24),
+                          final posts =
+                              _livePosts.isNotEmpty
+                                  ? _livePosts
+                                  : (snapshot.data ?? []);
+                          if (posts.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No posts yet',
+                                style: TextStyle(color: textSubColor),
+                              ),
+                            );
+                          }
 
-                    FutureBuilder<List<Post>>(
-                      future: _postsFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Error loading posts',
-                              style: TextStyle(color: textSubColor),
-                            ),
-                          );
-                        }
-                        final posts = snapshot.data ?? [];
-                        if (posts.isEmpty) {
-                          return Center(
-                            child: Text(
-                              'No posts yet',
-                              style: TextStyle(color: textSubColor),
-                            ),
-                          );
-                        }
-
-                        return ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: posts.length,
-                          separatorBuilder:
-                              (context, index) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final post = posts[index];
-                            final currentUserId = AuthService.currentUser?.id;
-                            PostReaction? userReaction;
-                            if (currentUserId != null) {
-                              for (final r in post.reactions) {
-                                if (r.userId == currentUserId) {
-                                  userReaction = r;
-                                  break;
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: posts.length,
+                            separatorBuilder:
+                                (context, index) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final post = posts[index];
+                              final currentUserId = AuthService.currentUser?.id;
+                              PostReaction? userReaction;
+                              if (currentUserId != null) {
+                                for (final r in post.reactions) {
+                                  if (r.userId == currentUserId) {
+                                    userReaction = r;
+                                    break;
+                                  }
                                 }
                               }
-                            }
-                            final reacted = userReaction != null;
-                            final reactionType = userReaction?.type;
-                            return CommonPostCard(
-                              surfaceColor: surfaceColor,
-                              borderColor: borderColor,
-                              textMainColor: textMainColor,
-                              textSubColor: textSubColor,
-                              primaryColor: primaryColor,
-                              authorName: post.author.name,
-                              timeAgo: _timeAgo(post.createdAt),
-                              authorAvatarUrl:
-                                  post.author.profilePicture ??
-                                  "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
-                              content: post.content ?? '',
-                              images:
-                                  post.media.isNotEmpty
-                                      ? post.media
-                                          .map((m) => m.thumbnail ?? m.url)
-                                          .cast<String>()
-                                          .toList()
-                                      : null,
-                              postId: post.id,
-                              tag:
-                                  post.tags.isNotEmpty ? post.tags.first : null,
-                              likesCount: post.counts.reactions.toString(),
-                              commentsCount: post.counts.comments.toString(),
-                              isCurrentUser:
-                                  post.author.id == AuthService.currentUser?.id,
-                              userType: post.author.userType,
-                              reacted: reacted,
-                              reactionType: reactionType,
-                              onProfileTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => ProfileScreen(
-                                          userId: post.author.id,
-                                        ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
+                              final reacted = userReaction != null;
+                              final reactionType = userReaction?.type;
+                              return CommonPostCard(
+                                surfaceColor: surfaceColor,
+                                borderColor: borderColor,
+                                textMainColor: textMainColor,
+                                textSubColor: textSubColor,
+                                primaryColor: primaryColor,
+                                authorName: post.author.name,
+                                timeAgo: _timeAgo(post.createdAt),
+                                authorAvatarUrl:
+                                    post.author.profilePicture ??
+                                    "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
+                                content: post.content ?? '',
+                                images:
+                                    post.media.isNotEmpty
+                                        ? post.media
+                                            .map((m) => m.thumbnail ?? m.url)
+                                            .cast<String>()
+                                            .toList()
+                                        : null,
+                                postId: post.id,
+                                tag:
+                                    post.tags.isNotEmpty
+                                        ? post.tags.first
+                                        : null,
+                                likesCount: post.counts.reactions.toString(),
+                                commentsCount: post.counts.comments.toString(),
+                                isCurrentUser:
+                                    post.author.id ==
+                                    AuthService.currentUser?.id,
+                                userType: post.author.userType,
+                                reacted: reacted,
+                                reactionType: reactionType,
+                                onProfileTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => ProfileScreen(
+                                            userId: post.author.id,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -500,6 +738,41 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+
+        if (_showScrollToTop)
+          Positioned(
+            bottom: 160,
+            right: 16,
+            child: Material(
+              color: primaryColor,
+              shape: const CircleBorder(),
+              elevation: 4,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _scrollToTop,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child:
+                      _isScrollToTopInProgress
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                primaryContentColor,
+                              ),
+                            ),
+                          )
+                          : const Icon(
+                            Icons.arrow_upward,
+                            color: primaryContentColor,
+                            size: 20,
+                          ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

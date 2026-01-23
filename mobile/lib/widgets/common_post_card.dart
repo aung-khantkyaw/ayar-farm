@@ -3,6 +3,9 @@ import '../constants/user_types.dart';
 import '../screens/post_screen.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
+import '../services/post_service.dart';
+import '../models/post.dart';
+import '../screens/create_post_screen.dart';
 
 class CommonPostCard extends StatefulWidget {
   final Color surfaceColor;
@@ -22,6 +25,7 @@ class CommonPostCard extends StatefulWidget {
   final bool isCurrentUser;
   final String? userType;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onDeleted;
   final bool reacted;
   final String? reactionType;
 
@@ -44,6 +48,7 @@ class CommonPostCard extends StatefulWidget {
     this.isCurrentUser = false,
     this.userType,
     this.onProfileTap,
+    this.onDeleted,
     this.reacted = false,
     this.reactionType,
   });
@@ -57,6 +62,7 @@ class _CommonPostCardState extends State<CommonPostCard> {
   late int _likes;
   late int _comments;
   String? _reactionType;
+  late String _content;
 
   @override
   void initState() {
@@ -65,6 +71,7 @@ class _CommonPostCardState extends State<CommonPostCard> {
     _likes = int.tryParse(widget.likesCount) ?? 0;
     _comments = int.tryParse(widget.commentsCount) ?? 0;
     _reactionType = widget.reactionType;
+    _content = widget.content;
   }
 
   @override
@@ -74,13 +81,99 @@ class _CommonPostCardState extends State<CommonPostCard> {
     if (oldWidget.reacted != widget.reacted ||
         oldWidget.reactionType != widget.reactionType ||
         oldWidget.likesCount != widget.likesCount ||
-        oldWidget.commentsCount != widget.commentsCount) {
+        oldWidget.commentsCount != widget.commentsCount ||
+        oldWidget.content != widget.content) {
       setState(() {
         _reacted = widget.reacted;
         _reactionType = widget.reactionType;
         _likes = int.tryParse(widget.likesCount) ?? _likes;
         _comments = int.tryParse(widget.commentsCount) ?? _comments;
+        _content = widget.content;
       });
+    }
+  }
+
+  Future<void> _editPost() async {
+    Post? full;
+    try {
+      full = await PostService.getPost(widget.postId);
+    } catch (_) {}
+    final post = full;
+    if (post == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load post for editing')),
+        );
+      }
+      return;
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => CreatePostScreen(
+              postId: post.id,
+              initialContent: post.content ?? '',
+              initialTags: post.tags,
+              initialMedia: post.media,
+              initialVisibility: null,
+            ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (result is Post) {
+      setState(() {
+        _content = result.content ?? _content;
+        _comments = result.counts.comments;
+        _likes = result.counts.reactions;
+      });
+    } else if (result == true) {
+      // Fallback: refresh post after generic success flag.
+      final refreshed = await PostService.getPost(widget.postId);
+      if (refreshed != null && mounted) {
+        setState(() {
+          _content = refreshed.content ?? _content;
+          _comments = refreshed.counts.comments;
+          _likes = refreshed.counts.reactions;
+        });
+      }
+    }
+  }
+
+  Future<void> _deletePost() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete post?'),
+            content: const Text('This will permanently remove your post.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+    if (confirm != true) return;
+    try {
+      await ApiService.delete('${ApiConstants.posts}/${widget.postId}');
+      if (!mounted) return;
+      widget.onDeleted?.call();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to delete post')));
     }
   }
 
@@ -273,7 +366,21 @@ class _CommonPostCardState extends State<CommonPostCard> {
                 ),
               ),
               if (widget.isCurrentUser)
-                Icon(Icons.more_horiz, color: widget.textSubColor)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_horiz, color: widget.textSubColor),
+                  onSelected: (value) {
+                    if (value == 'edit') _editPost();
+                    if (value == 'delete') _deletePost();
+                  },
+                  itemBuilder:
+                      (ctx) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Edit post')),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Delete post'),
+                        ),
+                      ],
+                )
               else
                 Tooltip(
                   message: widget.userType ?? 'User',
@@ -336,7 +443,7 @@ class _CommonPostCardState extends State<CommonPostCard> {
                 //     ),
                 //   ),
                 Text(
-                  _truncateWords(widget.content, 100),
+                  _truncateWords(_content, 100),
                   style: TextStyle(
                     color: widget.textMainColor,
                     fontSize: 16,

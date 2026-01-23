@@ -5,11 +5,25 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../models/post.dart';
 import '../services/auth_service.dart';
 import '../services/post_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({super.key});
+  final String? postId;
+  final String? initialContent;
+  final List<String>? initialTags;
+  final List<PostMedia>? initialMedia;
+  final String? initialVisibility;
+
+  const CreatePostScreen({
+    super.key,
+    this.postId,
+    this.initialContent,
+    this.initialTags,
+    this.initialMedia,
+    this.initialVisibility,
+  });
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -19,6 +33,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _textController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final List<Attachment> _attachments = [];
+  final List<PostMedia> _existingMedia = [];
   final List<String> _selectedHashtags = [];
   bool _isLoading = false;
   String _visibility = 'PUBLIC';
@@ -44,6 +59,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void initState() {
     super.initState();
     _textController.addListener(_onTextChanged);
+    _initFromInitialValues();
+  }
+
+  bool get _isEdit => widget.postId != null;
+
+  void _initFromInitialValues() {
+    if (widget.initialContent != null) {
+      _textController.text = widget.initialContent!;
+    }
+    if (widget.initialTags != null) {
+      _selectedHashtags
+        ..clear()
+        ..addAll(widget.initialTags!);
+    }
+    if (widget.initialVisibility != null) {
+      _visibility = widget.initialVisibility!;
+    }
+    if (widget.initialMedia != null) {
+      _existingMedia
+        ..clear()
+        ..addAll(widget.initialMedia!);
+    }
   }
 
   void _onTextChanged() {
@@ -159,25 +196,48 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
 
     try {
-      final success = await PostService.createPost(
-        content: _textController.text,
-        tags: _selectedHashtags,
-        files:
-            _attachments
-                .map((a) => kIsWeb ? a.file : XFile(a.file.path))
-                .toList(),
-        visibility: _visibility,
-      );
+      final newFiles =
+          _attachments
+              .map((a) => kIsWeb ? a.file : XFile(a.file.path))
+              .toList();
 
-      if (success && mounted) {
-        Navigator.pop(context, true);
-      } else if (mounted) {
-        CommonSnackbar.show(
-          context,
-          message: 'Failed to create post',
-          type: SnackBarType.error,
-          position: SnackBarPosition.bottom,
+      if (_isEdit) {
+        final updated = await PostService.updatePost(
+          postId: widget.postId!,
+          content: _textController.text,
+          tags: _selectedHashtags,
+          files: newFiles,
+          existingMedia: _existingMedia,
+          visibility: _visibility,
         );
+        if (updated != null && mounted) {
+          Navigator.pop(context, updated);
+        } else if (mounted) {
+          CommonSnackbar.show(
+            context,
+            message: 'Failed to update post',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+        }
+      } else {
+        final success = await PostService.createPost(
+          content: _textController.text,
+          tags: _selectedHashtags,
+          files: newFiles,
+          visibility: _visibility,
+        );
+
+        if (success && mounted) {
+          Navigator.pop(context, true);
+        } else if (mounted) {
+          CommonSnackbar.show(
+            context,
+            message: 'Failed to create post',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -225,7 +285,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         centerTitle: true,
         title: Text(
-          "Create Post",
+          _isEdit ? "Edit Post" : "Create Post",
           style: TextStyle(
             color: textColor,
             fontSize: 18,
@@ -258,7 +318,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             ),
                           )
                           : const Text(
-                            "Post",
+                            "Save",
                             style: TextStyle(
                               color: Color(0xFF102215),
                               fontSize: 14,
@@ -471,7 +531,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
           ),
 
-          // Media Preview Section
+          // Existing media preview (for edit mode)
+          if (_existingMedia.isNotEmpty)
+            Container(
+              height: 144,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: _existingMedia.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final media = _existingMedia[index];
+                  return _buildExistingMediaPreview(media, isDark, textColor);
+                },
+              ),
+            ),
+
+          // Media Preview Section for new attachments
           if (_attachments.isNotEmpty)
             Container(
               height: 144, // 128 (image) + 16 (padding)
@@ -642,6 +719,112 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildExistingMediaPreview(
+    PostMedia media,
+    bool isDark,
+    Color textColor,
+  ) {
+    final isImage = media.type.toUpperCase() == 'IMAGE';
+    final isVideo = media.type.toUpperCase() == 'VIDEO';
+    Widget content;
+
+    if (isImage) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          media.thumbnail ?? media.url,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.error)),
+        ),
+      );
+    } else if (isVideo) {
+      content = Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
+        ),
+      );
+    } else {
+      content = Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          ),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.insert_drive_file,
+              color: Colors.blueGrey,
+              size: 32,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _extractFileName(media.url),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(width: 128, height: 128, child: content),
+        Positioned(
+          top: -8,
+          right: -8,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _existingMedia.remove(media);
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A).withOpacity(0.8),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _extractFileName(String url) {
+    try {
+      final uri = Uri.tryParse(url);
+      final segments = uri?.pathSegments;
+      if (segments != null && segments.isNotEmpty) {
+        final last = segments.last;
+        if (last.isNotEmpty) return last;
+      }
+    } catch (_) {}
+
+    if (url.contains('/')) return url.split('/').last;
+    return 'File';
   }
 
   Widget _buildToolbarButton(

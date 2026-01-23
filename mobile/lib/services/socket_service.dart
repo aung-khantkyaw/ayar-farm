@@ -17,6 +17,22 @@ class SocketService {
   bool get isConnected => _isConnected;
   IO.Socket? get socket => _socket;
 
+  void on(String event, Function(dynamic data) handler) {
+    _socket?.on(event, handler);
+  }
+
+  void off(String event, Function(dynamic data) handler) {
+    _socket?.off(event, handler);
+  }
+
+  void subscribe(String room) {
+    _socket?.emit('subscribe', room);
+  }
+
+  void unsubscribe(String room) {
+    _socket?.emit('unsubscribe', room);
+  }
+
   void connect(String token, User user) {
     if (_socket != null && _socket!.connected) return;
 

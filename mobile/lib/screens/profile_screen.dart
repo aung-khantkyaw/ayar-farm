@@ -10,6 +10,7 @@ import '../constants/user_types.dart';
 import 'edit_profile_screen.dart';
 import 'create_post_screen.dart';
 import '../widgets/common_post_card.dart';
+import '../services/socket_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userId;
@@ -29,11 +30,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _user;
   bool _isLoading = true;
   late Future<List<Post>> _postsFuture;
+  List<Post> _livePosts = [];
+  void Function(dynamic)? _postReactionListener;
+  void Function(dynamic)? _postCommentListener;
+  void Function(dynamic)? _postCommentDeletedListener;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _setupRealtime();
   }
 
   Future<void> _loadData() async {
@@ -67,6 +73,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _loadPosts() {
     _postsFuture = PostService.getPosts(userId: widget.userId);
+    _postsFuture.then((posts) {
+      if (mounted) {
+        setState(() {
+          _livePosts = posts;
+        });
+      }
+    });
+  }
+
+  void _setupRealtime() {
+    final socket = SocketService().socket;
+    if (socket == null) return;
+    _postReactionListener = (data) => _handlePostReactionEvent(data);
+    _postCommentListener = (data) => _handlePostCommentEvent(data);
+    _postCommentDeletedListener =
+        (data) => _handlePostCommentDeletedEvent(data);
+    socket.on('post:reaction', _postReactionListener!);
+    socket.on('post:comment', _postCommentListener!);
+    socket.on('post:comment:deleted', _postCommentDeletedListener!);
   }
 
   String _timeAgo(DateTime date) {
@@ -128,6 +153,166 @@ class _ProfileScreenState extends State<ProfileScreen> {
       default:
         return Icons.person_outline;
     }
+  }
+
+  @override
+  void dispose() {
+    final socket = SocketService().socket;
+    if (socket != null) {
+      if (_postReactionListener != null)
+        socket.off('post:reaction', _postReactionListener!);
+      if (_postCommentListener != null)
+        socket.off('post:comment', _postCommentListener!);
+      if (_postCommentDeletedListener != null)
+        socket.off('post:comment:deleted', _postCommentDeletedListener!);
+    }
+    super.dispose();
+  }
+
+  void _handlePostReactionEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final action = data['action']?.toString();
+    final userId = data['userId']?.toString();
+    // Skip local actor to avoid double +/-; their optimistic update handles it.
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    final reactionType = data['reactionType']?.toString();
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId || userId == null || action == null) return p;
+            return _updatePostReaction(p, action, userId, reactionType);
+          }).toList();
+    });
+  }
+
+  void _handlePostCommentEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId) return p;
+            final newCount = p.counts.comments + 1;
+            return Post(
+              id: p.id,
+              content: p.content,
+              authorId: p.authorId,
+              createdAt: p.createdAt,
+              media: p.media,
+              tags: p.tags,
+              author: p.author,
+              counts: PostCount(
+                reactions: p.counts.reactions,
+                comments: newCount,
+              ),
+              reactionUserIds: p.reactionUserIds,
+              reactions: p.reactions,
+            );
+          }).toList();
+    });
+  }
+
+  void _handlePostCommentDeletedEvent(dynamic data) {
+    if (data == null) return;
+    final postId = data['postId']?.toString();
+    if (postId == null) return;
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id) return;
+    final deletedCount = _asInt(data['deletedCount']) ?? 1;
+    setState(() {
+      _livePosts =
+          _livePosts.map((p) {
+            if (p.id != postId) return p;
+            final newCount = (p.counts.comments - deletedCount).clamp(
+              0,
+              1 << 30,
+            );
+            return Post(
+              id: p.id,
+              content: p.content,
+              authorId: p.authorId,
+              createdAt: p.createdAt,
+              media: p.media,
+              tags: p.tags,
+              author: p.author,
+              counts: PostCount(
+                reactions: p.counts.reactions,
+                comments: newCount,
+              ),
+              reactionUserIds: p.reactionUserIds,
+              reactions: p.reactions,
+            );
+          }).toList();
+    });
+  }
+
+  int? _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Post _updatePostReaction(
+    Post post,
+    String action,
+    String userId,
+    String? reactionType,
+  ) {
+    final reactions = List<PostReaction>.from(post.reactions);
+    final idx = reactions.indexWhere((r) => r.userId == userId);
+
+    if (action == 'removed') {
+      if (idx >= 0) {
+        reactions.removeAt(idx);
+      }
+    } else if (action == 'updated') {
+      if (idx >= 0) {
+        reactions[idx] = PostReaction(
+          userId: userId,
+          type: reactionType ?? reactions[idx].type,
+        );
+      } else {
+        reactions.add(
+          PostReaction(userId: userId, type: reactionType ?? 'LIKE'),
+        );
+      }
+    } else if (action == 'added') {
+      if (idx >= 0) {
+        reactions[idx] = PostReaction(
+          userId: userId,
+          type: reactionType ?? reactions[idx].type,
+        );
+      } else {
+        reactions.add(
+          PostReaction(userId: userId, type: reactionType ?? 'LIKE'),
+        );
+      }
+    }
+
+    final reactionUserIds = reactions.map((r) => r.userId).toList();
+    final reactionCount = reactions.length;
+
+    return Post(
+      id: post.id,
+      content: post.content,
+      authorId: post.authorId,
+      createdAt: post.createdAt,
+      media: post.media,
+      tags: post.tags,
+      author: post.author,
+      counts: PostCount(
+        reactions: reactionCount,
+        comments: post.counts.comments,
+      ),
+      reactionUserIds: reactionUserIds,
+      reactions: reactions,
+    );
   }
 
   @override
@@ -422,8 +607,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       FutureBuilder<List<Post>>(
                         future: _postsFuture,
                         builder: (context, snapshot) {
+                          final posts =
+                              _livePosts.isNotEmpty
+                                  ? _livePosts
+                                  : (snapshot.data ?? []);
                           return _buildStatCard(
-                            snapshot.hasData ? "${snapshot.data!.length}" : "-",
+                            "${posts.length}",
                             "Posts",
                             cardColor,
                             borderColor,
@@ -436,15 +625,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       FutureBuilder<List<Post>>(
                         future: _postsFuture,
                         builder: (context, snapshot) {
-                          int info = 0;
-                          if (snapshot.hasData) {
-                            info = snapshot.data!.fold(
-                              0,
-                              (sum, item) => sum + item.counts.comments,
-                            );
-                          }
+                          final posts =
+                              _livePosts.isNotEmpty
+                                  ? _livePosts
+                                  : (snapshot.data ?? []);
+                          final info = posts.fold(
+                            0,
+                            (sum, item) => sum + item.counts.comments,
+                          );
                           return _buildStatCard(
-                            snapshot.hasData ? "$info" : "-",
+                            "$info",
                             "Comments",
                             cardColor,
                             borderColor,
@@ -457,15 +647,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       FutureBuilder<List<Post>>(
                         future: _postsFuture,
                         builder: (context, snapshot) {
-                          int info = 0;
-                          if (snapshot.hasData) {
-                            info = snapshot.data!.fold(
-                              0,
-                              (sum, item) => sum + item.counts.reactions,
-                            );
-                          }
+                          final posts =
+                              _livePosts.isNotEmpty
+                                  ? _livePosts
+                                  : (snapshot.data ?? []);
+                          final info = posts.fold(
+                            0,
+                            (sum, item) => sum + item.counts.reactions,
+                          );
                           return _buildStatCard(
-                            snapshot.hasData ? "$info" : "-",
+                            "$info",
                             "Reactions",
                             cardColor,
                             borderColor,
@@ -539,7 +730,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 FutureBuilder<List<Post>>(
                   future: _postsFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        _livePosts.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.all(32.0),
                         child: Center(child: CircularProgressIndicator()),
@@ -554,7 +746,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     }
-                    final posts = snapshot.data ?? [];
+                    final posts =
+                        _livePosts.isNotEmpty
+                            ? _livePosts
+                            : (snapshot.data ?? []);
                     if (posts.isEmpty) {
                       return Padding(
                         padding: const EdgeInsets.all(32.0),

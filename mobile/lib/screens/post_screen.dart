@@ -3,6 +3,8 @@ import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import '../services/auth_service.dart';
+import '../services/socket_service.dart';
+import '../services/user_service.dart';
 
 class PostScreen extends StatefulWidget {
   final String postId;
@@ -23,13 +25,19 @@ class _PostScreenState extends State<PostScreen> {
   int _commentsCount = 0;
   String? _replyToCommentId;
   String? _replyToName;
-
-  // ApiService uses ApiConstants.baseUrl; ensure environment is configured for your dev host
+  String? _editingCommentId;
+  final Map<String, Map<String, dynamic>> _reactionUserCache = {};
+  void Function(dynamic)? _postReactionListener;
+  void Function(dynamic)? _postCommentListener;
+  void Function(dynamic)? _postCommentUpdatedListener;
+  void Function(dynamic)? _postCommentDeletedListener;
+  void Function(dynamic)? _commentReactionListener;
 
   @override
   void initState() {
     super.initState();
     _loadPost();
+    _setupRealtime();
   }
 
   Future<void> _loadPost() async {
@@ -62,6 +70,9 @@ class _PostScreenState extends State<PostScreen> {
         });
       }
 
+      _reactionUserCache.clear();
+      _seedUserCacheFromReactions(reactions);
+
       setState(() {
         post = data as Map<String, dynamic>;
         _reacted = reacted;
@@ -80,6 +91,23 @@ class _PostScreenState extends State<PostScreen> {
         });
       }
     }
+  }
+
+  void _setupRealtime() {
+    final socket = SocketService().socket;
+    if (socket == null) return;
+    _postReactionListener = (data) => _handlePostReactionEvent(data);
+    _postCommentListener = (data) => _handlePostCommentEvent(data);
+    _postCommentUpdatedListener =
+        (data) => _handlePostCommentUpdatedEvent(data);
+    _postCommentDeletedListener =
+        (data) => _handlePostCommentDeletedEvent(data);
+    _commentReactionListener = (data) => _handleCommentReactionEvent(data);
+    socket.on('post:reaction', _postReactionListener!);
+    socket.on('post:comment', _postCommentListener!);
+    socket.on('post:comment:updated', _postCommentUpdatedListener!);
+    socket.on('post:comment:deleted', _postCommentDeletedListener!);
+    socket.on('comment:reaction', _commentReactionListener!);
   }
 
   int? _asInt(Object? value) {
@@ -125,6 +153,15 @@ class _PostScreenState extends State<PostScreen> {
                     _setReaction(null);
                   },
                 ),
+              if (_likes > 0)
+                ListTile(
+                  leading: const Icon(Icons.people_outline),
+                  title: const Text('View reactions'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showPostReactionsSheet();
+                  },
+                ),
             ],
           ),
         );
@@ -154,6 +191,59 @@ class _PostScreenState extends State<PostScreen> {
     }
     if (raw is DateTime) return _timeAgo(raw);
     return '';
+  }
+
+  void _seedUserCacheFromReactions(List reactions) {
+    for (final r in reactions) {
+      if (r is! Map) continue;
+      _cacheUserFromReaction(r);
+    }
+  }
+
+  void _cacheUserFromReaction(Map r) {
+    final user = r['user'];
+    final userId = (r['userId'] ?? r['user_id'] ?? user?['id'])?.toString();
+    if (userId == null) return;
+    if (_reactionUserCache.containsKey(userId) &&
+        (_reactionUserCache[userId]?['name'] != null))
+      return;
+
+    final cached = <String, dynamic>{};
+    if (user is Map) {
+      cached['name'] = user['name']?.toString();
+      cached['profilePicture'] =
+          user['profilePicture'] ?? user['profile_picture'];
+    }
+    cached['profilePicture'] ??=
+        r['profilePicture'] ?? r['profile_picture'] ?? r['avatar'];
+    cached['name'] ??= r['userName']?.toString();
+    _reactionUserCache[userId] = cached;
+  }
+
+  Future<void> _ensureReactionUsersLoaded(List reactions) async {
+    final missing = <String>[];
+    for (final r in reactions) {
+      if (r is! Map) continue;
+      final userId =
+          (r['userId'] ?? r['user_id'] ?? r['user']?['id'])?.toString();
+      if (userId == null) continue;
+      if (_reactionUserCache[userId]?['name'] != null) continue;
+      missing.add(userId);
+    }
+    for (final id in missing) {
+      try {
+        final user = await UserService.getUserById(id);
+        if (user != null) {
+          _reactionUserCache[id] = {
+            'name': user.name,
+            'profilePicture': user.profilePicture,
+          };
+          if (mounted) setState(() {});
+        }
+      } catch (_) {
+        // ignore missing user
+      }
+    }
   }
 
   Future<void> _setReaction(String? newType) async {
@@ -192,7 +282,7 @@ class _PostScreenState extends State<PostScreen> {
         _reacted = true;
       });
     } catch (_) {
-      // no-op; could surface a snackbar if desired
+      // optionally surface a snackbar
     }
   }
 
@@ -210,6 +300,118 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
+  IconData _reactionIconForType(String? type) {
+    switch (type) {
+      case 'UNLIKE':
+        return Icons.thumb_down;
+      case 'SUPPORT':
+        return Icons.volunteer_activism;
+      case 'CARE':
+        return Icons.favorite;
+      case 'LIKE':
+      default:
+        return Icons.thumb_up;
+    }
+  }
+
+  String _reactionLabel(String? type) {
+    switch (type) {
+      case 'UNLIKE':
+        return 'Unlike';
+      case 'SUPPORT':
+        return 'Support';
+      case 'CARE':
+        return 'Care';
+      case 'LIKE':
+      default:
+        return 'Like';
+    }
+  }
+
+  Future<void> _showPostReactionsSheet() async {
+    final reactions = (post?['reactions'] as List?) ?? [];
+    if (reactions.isEmpty) return;
+
+    await _ensureReactionUsersLoaded(reactions);
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Reactions',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: reactions.length,
+                  itemBuilder: (context, index) {
+                    final r = reactions[index];
+                    if (r is! Map) return const SizedBox.shrink();
+                    final type = r['type']?.toString();
+                    final userId =
+                        (r['userId'] ?? r['user_id'] ?? r['user']?['id'])
+                            ?.toString();
+                    final cached =
+                        userId != null ? _reactionUserCache[userId] : null;
+                    final inlineUser = r['user'] as Map?;
+                    final name =
+                        cached?['name']?.toString() ??
+                        inlineUser?['name']?.toString() ??
+                        r['userName']?.toString() ??
+                        (userId ?? 'Unknown');
+                    final avatar =
+                        cached?['profilePicture'] ??
+                        inlineUser?['profilePicture'] ??
+                        inlineUser?['profile_picture'] ??
+                        r['profilePicture'] ??
+                        r['profile_picture'];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage:
+                            avatar != null ? NetworkImage(avatar) : null,
+                        child:
+                            avatar == null
+                                ? Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                )
+                                : null,
+                      ),
+                      title: Text(name),
+                      subtitle: Text(_reactionLabel(type)),
+                      trailing: Icon(
+                        _reactionIconForType(type),
+                        color: const Color(0xFF2BEE5B),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  bool _isCurrentUserComment(Map c) {
+    final currentUserId = AuthService.currentUser?.id?.toString();
+    if (currentUserId == null) return false;
+    final authorId =
+        (c['author']?['id'] ?? c['authorId'] ?? c['author_id'])?.toString();
+    return authorId == currentUserId;
+  }
+
   Widget _buildCommentItem(Map<String, dynamic> c, {bool isReply = false}) {
     final author = c['author'] ?? {};
     final name = author['name']?.toString() ?? 'Unknown';
@@ -218,6 +420,7 @@ class _PostScreenState extends State<PostScreen> {
     final reacted = reactionType != null;
     final reactionCount = _commentReactionCount(c);
     final replies = (c['replies'] ?? []) as List<dynamic>;
+    final isOwner = _isCurrentUserComment(c);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(isReply ? 32 : 0, 8, 0, 8),
@@ -251,7 +454,6 @@ class _PostScreenState extends State<PostScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
-                        const SizedBox(width: 8),
                         Text(
                           _commentTimeLabel(c),
                           style: TextStyle(
@@ -259,6 +461,38 @@ class _PostScreenState extends State<PostScreen> {
                             fontSize: 12,
                           ),
                         ),
+                        if (isOwner) ...[
+                          const SizedBox(width: 4),
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            iconSize: 18,
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: _textSubColorTheme,
+                            ),
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  _startEditComment(c);
+                                  break;
+                                case 'delete':
+                                  _confirmDeleteComment(c);
+                                  break;
+                              }
+                            },
+                            itemBuilder:
+                                (ctx) => const [
+                                  PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text('Edit'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text('Delete'),
+                                  ),
+                                ],
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -328,6 +562,121 @@ class _PostScreenState extends State<PostScreen> {
     );
   }
 
+  void _startEditComment(Map<String, dynamic> c) {
+    final commentId = c['id']?.toString();
+    if (commentId == null) return;
+    setState(() {
+      _editingCommentId = commentId;
+      _replyToCommentId = null;
+      _replyToName = null;
+      _commentController.text = c['content']?.toString() ?? '';
+    });
+  }
+
+  Future<void> _submitEditComment(String content) async {
+    final commentId = _editingCommentId;
+    if (commentId == null || content.isEmpty) return;
+
+    try {
+      final res = await ApiService.put(
+        '${ApiConstants.posts}/${widget.postId}/comments/$commentId',
+        {'content': content},
+      );
+      final updated = res['data'] ?? res;
+      if (!mounted) return;
+      setState(() {
+        final existing = _findComment(commentId);
+        if (existing != null) {
+          existing['content'] = updated['content'] ?? content;
+          if (updated['updatedAt'] != null) {
+            existing['updatedAt'] = updated['updatedAt'];
+          }
+        }
+        _editingCommentId = null;
+      });
+      _commentController.clear();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Error updating comment')));
+    }
+  }
+
+  Future<void> _confirmDeleteComment(Map<String, dynamic> c) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Delete comment?'),
+          content: const Text('This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await _deleteComment(c);
+    }
+  }
+
+  Future<void> _deleteComment(Map<String, dynamic> c) async {
+    final commentId = c['id']?.toString();
+    if (commentId == null) return;
+
+    try {
+      await ApiService.delete(
+        '${ApiConstants.posts}/${widget.postId}/comments/$commentId',
+      );
+      if (!mounted) return;
+      setState(() {
+        final removed = _removeCommentFromLocal(commentId);
+        if (removed) {
+          _commentsCount = (_commentsCount - 1).clamp(0, 1 << 30);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Error deleting comment')));
+    }
+  }
+
+  bool _removeCommentFromLocal(String id) {
+    final comments = (post?['comments'] ?? []) as List<dynamic>;
+    for (var i = 0; i < comments.length; i++) {
+      final c = comments[i];
+      if (c is Map && c['id']?.toString() == id) {
+        comments.removeAt(i);
+        post?['comments'] = comments;
+        return true;
+      }
+
+      final replies = (c is Map ? c['replies'] : null) as List<dynamic>?;
+      if (replies != null) {
+        for (var j = 0; j < replies.length; j++) {
+          final r = replies[j];
+          if (r is Map && r['id']?.toString() == id) {
+            replies.removeAt(j);
+            c['replies'] = replies;
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   void _showCommentReactionPicker(Map<String, dynamic> c) {
     showModalBottomSheet(
       context: context,
@@ -383,6 +732,10 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _postComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
+    if (_editingCommentId != null) {
+      await _submitEditComment(text);
+      return;
+    }
     try {
       final res = await ApiService.post(
         '${ApiConstants.posts}/${widget.postId}/comments',
@@ -409,6 +762,7 @@ class _PostScreenState extends State<PostScreen> {
         _commentsCount = _commentsCount + 1;
         _replyToCommentId = null;
         _replyToName = null;
+        _editingCommentId = null;
       });
       _commentController.clear();
     } catch (e) {
@@ -421,10 +775,10 @@ class _PostScreenState extends State<PostScreen> {
   Map<String, dynamic>? _findComment(String id) {
     final comments = (post?['comments'] ?? []) as List<dynamic>;
     for (final c in comments) {
-      if (c['id'] == id) return c as Map<String, dynamic>;
+      if (c['id']?.toString() == id) return c as Map<String, dynamic>;
       final replies = (c['replies'] ?? []) as List<dynamic>;
       for (final r in replies) {
-        if (r['id'] == id) return r as Map<String, dynamic>;
+        if (r['id']?.toString() == id) return r as Map<String, dynamic>;
       }
     }
     return null;
@@ -550,7 +904,184 @@ class _PostScreenState extends State<PostScreen> {
   @override
   void dispose() {
     _commentController.dispose();
+    final socket = SocketService().socket;
+    if (socket != null) {
+      if (_postReactionListener != null)
+        socket.off('post:reaction', _postReactionListener!);
+      if (_postCommentListener != null)
+        socket.off('post:comment', _postCommentListener!);
+      if (_postCommentUpdatedListener != null)
+        socket.off('post:comment:updated', _postCommentUpdatedListener!);
+      if (_postCommentDeletedListener != null)
+        socket.off('post:comment:deleted', _postCommentDeletedListener!);
+      if (_commentReactionListener != null)
+        socket.off('comment:reaction', _commentReactionListener!);
+    }
     super.dispose();
+  }
+
+  void _handlePostReactionEvent(dynamic data) {
+    if (data == null || data['postId']?.toString() != widget.postId) return;
+    final action = data['action']?.toString();
+    final userId = data['userId']?.toString();
+    final reactionType = data['reactionType']?.toString();
+    if (!mounted) return;
+    setState(() {
+      final isCurrentUser =
+          userId != null && userId == AuthService.currentUser?.id?.toString();
+      if (action == 'added') {
+        // Avoid double-counting for the actor; local optimistic update already handled.
+        if (!isCurrentUser) {
+          _likes = _likes + 1;
+        }
+        if (isCurrentUser) {
+          _reactionType = reactionType;
+          _reacted = true;
+        }
+      } else if (action == 'removed') {
+        if (!isCurrentUser) {
+          _likes = (_likes - 1).clamp(0, 1 << 30);
+        }
+        if (isCurrentUser) {
+          _reactionType = null;
+          _reacted = false;
+        }
+      } else if (action == 'updated') {
+        if (isCurrentUser) {
+          _reactionType = reactionType;
+          _reacted = true;
+        }
+      }
+    });
+  }
+
+  void _handlePostCommentEvent(dynamic data) {
+    if (data == null || data['postId']?.toString() != widget.postId) return;
+    final comment = data['comment'];
+    if (comment is! Map) return;
+    final authorId =
+        (comment['author']?['id'] ??
+                comment['authorId'] ??
+                comment['author_id'])
+            ?.toString();
+    if (authorId != null &&
+        authorId == AuthService.currentUser?.id?.toString()) {
+      // Already applied locally when posting; skip to avoid double count.
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      post ??= {};
+      final parentId =
+          comment['parentCommentId'] ?? comment['parent_comment_id'];
+      if (parentId != null) {
+        final target = _findComment(parentId.toString());
+        if (target != null) {
+          final replies = (target['replies'] ?? []) as List;
+          replies.add(comment);
+          target['replies'] = replies;
+        }
+      } else {
+        final comments = (post!['comments'] ?? []) as List<dynamic>;
+        comments.insert(0, comment);
+        post!['comments'] = comments;
+      }
+      _commentsCount = _commentsCount + 1;
+    });
+  }
+
+  void _handlePostCommentUpdatedEvent(dynamic data) {
+    if (data == null || data['postId']?.toString() != widget.postId) return;
+    final comment = data['comment'];
+    if (comment is! Map) return;
+    final id = comment['id']?.toString();
+    if (id == null) return;
+    if (!mounted) return;
+    setState(() {
+      final existing = _findComment(id);
+      if (existing != null) {
+        existing['content'] = comment['content'] ?? existing['content'];
+        if (comment['updatedAt'] != null) {
+          existing['updatedAt'] = comment['updatedAt'];
+        }
+      }
+    });
+  }
+
+  void _handlePostCommentDeletedEvent(dynamic data) {
+    if (data == null || data['postId']?.toString() != widget.postId) return;
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id?.toString()) {
+      // Local delete already adjusted counts.
+      return;
+    }
+    final commentId = data['commentId']?.toString();
+    if (commentId == null) return;
+    final deletedCount = _asInt(data['deletedCount']) ?? 1;
+    if (!mounted) return;
+    setState(() {
+      final removed = _removeCommentFromLocal(commentId);
+      if (removed) {
+        _commentsCount = (_commentsCount - deletedCount).clamp(0, 1 << 30);
+      }
+    });
+  }
+
+  void _handleCommentReactionEvent(dynamic data) {
+    if (data == null || data['postId']?.toString() != widget.postId) return;
+    final commentId = data['commentId']?.toString();
+    if (commentId == null) return;
+    final action = data['action']?.toString();
+    final reactionType = data['reactionType']?.toString();
+    final userId = data['userId']?.toString();
+    if (userId != null && userId == AuthService.currentUser?.id?.toString()) {
+      // Local optimistic update already handled.
+      return;
+    }
+    final target = _findComment(commentId);
+    if (target == null || userId == null) return;
+
+    setState(() {
+      final reactions = List<Map<String, dynamic>>.from(
+        (target['reactions'] ?? []) as List,
+      );
+      final idx = reactions.indexWhere((r) {
+        final uid =
+            (r['userId'] ?? r['user_id'] ?? r['user']?['id'])?.toString();
+        return uid == userId;
+      });
+      if (action == 'removed') {
+        if (idx >= 0) {
+          reactions.removeAt(idx);
+          final cnt = _commentReactionCount(target) - 1;
+          target['_count'] = {
+            ...(target['_count'] ?? {}),
+            'reactions': cnt.clamp(0, 1 << 30),
+          };
+        }
+      } else if (action == 'updated') {
+        if (idx >= 0) {
+          reactions[idx]['type'] = reactionType;
+        }
+      } else if (action == 'added') {
+        if (idx >= 0) {
+          reactions[idx]['type'] = reactionType;
+        } else {
+          reactions.add({'userId': userId, 'type': reactionType});
+          final cnt = _commentReactionCount(target) + 1;
+          target['_count'] = {...(target['_count'] ?? {}), 'reactions': cnt};
+        }
+      }
+      target['reactions'] = reactions;
+    });
+  }
+
+  List<String> _mediaUrls(dynamic media) {
+    if (media is List) {
+      return media.map((m) => m.toString()).toList();
+    }
+    if (media is String) return [media];
+    return [];
   }
 
   @override
@@ -558,6 +1089,7 @@ class _PostScreenState extends State<PostScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final mediaUrls = _mediaUrls(post?['media']);
 
     // Colors from HTML design
     const primaryColor = Color(0xFF2BEE5B);
@@ -644,12 +1176,10 @@ class _PostScreenState extends State<PostScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 // images vertical
-                                if ((post!['media'] as List<dynamic>?)
-                                        ?.isNotEmpty ??
-                                    false)
-                                  ...((post!['media'] as List<dynamic>)
+                                if (mediaUrls.isNotEmpty)
+                                  ...(mediaUrls
                                       .map(
-                                        (m) => Padding(
+                                        (url) => Padding(
                                           padding: const EdgeInsets.only(
                                             bottom: 12,
                                           ),
@@ -658,7 +1188,7 @@ class _PostScreenState extends State<PostScreen> {
                                               8,
                                             ),
                                             child: Image.network(
-                                              m.toString(),
+                                              url,
                                               width: double.infinity,
                                               height: 300,
                                               fit: BoxFit.cover,
@@ -676,6 +1206,7 @@ class _PostScreenState extends State<PostScreen> {
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(10),
                                         onTap: _showReactionPicker,
+                                        onLongPress: _showPostReactionsSheet,
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 12,
@@ -808,6 +1339,33 @@ class _PostScreenState extends State<PostScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (_editingCommentId != null) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Editing your comment',
+                                      style: TextStyle(
+                                        color: _textSubColorTheme,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 18),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      setState(() {
+                                        _editingCommentId = null;
+                                        _commentController.clear();
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                            ],
                             if (_replyToName != null) ...[
                               Row(
                                 children: [
@@ -842,7 +1400,9 @@ class _PostScreenState extends State<PostScreen> {
                                     controller: _commentController,
                                     decoration: InputDecoration(
                                       hintText:
-                                          _replyToName != null
+                                          _editingCommentId != null
+                                              ? 'Update your comment'
+                                              : _replyToName != null
                                               ? "Replying to $_replyToName"
                                               : AppLocalizations.of(
                                                     context,
