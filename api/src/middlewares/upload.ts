@@ -1,4 +1,5 @@
-import multer from 'multer';
+import fs from 'fs';
+import multer, { StorageEngine } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Request } from 'express';
@@ -11,6 +12,48 @@ cloudinary.config({
 });
 
 const baseFolder = process.env.CLOUDINARY_FOLDER || 'AyarFarm';
+
+const uploadDir = path.join(process.cwd(), 'upload');
+
+const ensureUploadDir = (): void => {
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+};
+
+const apkDiskStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        ensureUploadDir();
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const name = path.basename(file.originalname, ext);
+        cb(null, `${name}-${Date.now()}${ext}`);
+    },
+});
+
+const createApkAwareStorage = (cloudinaryStorage: StorageEngine): StorageEngine => ({
+    _handleFile(req, file, cb) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext === '.apk') {
+            ensureUploadDir();
+            (apkDiskStorage as any)._handleFile(req, file, cb);
+        } else {
+            (cloudinaryStorage as any)._handleFile(req, file, cb);
+        }
+    },
+    _removeFile(req, file, cb) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext === '.apk' && typeof (apkDiskStorage as any)._removeFile === 'function') {
+            (apkDiskStorage as any)._removeFile(req, file, cb);
+        } else if (typeof (cloudinaryStorage as any)._removeFile === 'function') {
+            (cloudinaryStorage as any)._removeFile(req, file, cb);
+        } else {
+            cb(null);
+        }
+    },
+});
 
 const imageStorage = new CloudinaryStorage({
     cloudinary,
@@ -29,7 +72,7 @@ const videoStorage = new CloudinaryStorage({
     } as any,
 });
 
-const fileStorage = new CloudinaryStorage({
+const fileCloudinaryStorage = new CloudinaryStorage({
     cloudinary,
     params: async (req, file) => {
         const ext = path.extname(file.originalname);
@@ -42,7 +85,9 @@ const fileStorage = new CloudinaryStorage({
     }
 });
 
-const resourceStorage = new CloudinaryStorage({
+const fileStorage = createApkAwareStorage(fileCloudinaryStorage);
+
+const resourceCloudinaryStorage = new CloudinaryStorage({
     cloudinary,
     params: async (req, file) => {
         const ext = path.extname(file.originalname);
@@ -69,6 +114,8 @@ const resourceStorage = new CloudinaryStorage({
         }
     }
 });
+
+const resourceStorage = createApkAwareStorage(resourceCloudinaryStorage);
 
 export const uploadImage = multer({ storage: imageStorage });
 export const uploadVideo = multer({ storage: videoStorage });
