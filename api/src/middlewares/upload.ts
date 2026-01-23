@@ -21,6 +21,22 @@ const ensureUploadDir = (): void => {
     }
 };
 
+const getBaseUrl = (req: Request): string => {
+    const envBase = (process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').trim();
+    if (envBase) return envBase.replace(/\/$/, '');
+
+    const proto = req.get('x-forwarded-proto') || req.protocol || 'http';
+    const host = req.get('x-forwarded-host') || req.get('host');
+    return host ? `${proto}://${host}` : '';
+};
+
+const buildPublicUploadUrl = (req: Request, filename?: string): string => {
+    if (!filename) return '';
+    const relative = `/upload/${filename}`;
+    const base = getBaseUrl(req);
+    return base ? `${base}${relative}` : relative;
+};
+
 const apkDiskStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         ensureUploadDir();
@@ -38,7 +54,11 @@ const createApkAwareStorage = (cloudinaryStorage: StorageEngine): StorageEngine 
         const ext = path.extname(file.originalname).toLowerCase();
         if (ext === '.apk') {
             ensureUploadDir();
-            (apkDiskStorage as any)._handleFile(req, file, cb);
+            (apkDiskStorage as any)._handleFile(req, file, (err: any, info: any) => {
+                if (err) return cb(err);
+                const publicPath = buildPublicUploadUrl(req as Request, info?.filename || file.filename);
+                cb(null, { ...info, path: publicPath || info?.path });
+            });
         } else {
             (cloudinaryStorage as any)._handleFile(req, file, cb);
         }
