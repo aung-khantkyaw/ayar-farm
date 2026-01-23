@@ -1513,6 +1513,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search conversations...'**
   String get searchConversations;
+
+  /// No description provided for @loadingAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Author...'**
+  String get loadingAuthor;
+
+  /// No description provided for @noComments.
+  ///
+  /// In en, this message translates to:
+  /// **'No Comments'**
+  String get noComments;
+
+  /// No description provided for @writeComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Write Comment'**
+  String get writeComment;
 }
 
 class _AppLocalizationsDelegate

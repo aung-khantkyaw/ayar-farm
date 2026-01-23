@@ -402,6 +402,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               (context, index) => const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final post = posts[index];
+                            final currentUserId = AuthService.currentUser?.id;
+                            PostReaction? userReaction;
+                            if (currentUserId != null) {
+                              for (final r in post.reactions) {
+                                if (r.userId == currentUserId) {
+                                  userReaction = r;
+                                  break;
+                                }
+                              }
+                            }
+                            final reacted = userReaction != null;
+                            final reactionType = userReaction?.type;
                             return CommonPostCard(
                               surfaceColor: surfaceColor,
                               borderColor: borderColor,
@@ -414,19 +426,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                   post.author.profilePicture ??
                                   "https://lh3.googleusercontent.com/aida-public/AB6AXuA9ewvkffzPg2DVJEM93D25jdhjC8Kq4BSClkdT7GiLz1Dqs3YYXiMNVU4RYXGTjXSsjkX84yOspLDkfZw0_9QkI32lCjtP3IdMwBh7mp7kY4ZDf_F7MgQEQG3i8yUwPsyzoPkJ15LyL60egXLznpCpABaqmB98USnmyujPPjvaBNKCfnkVBGkYkkXpkIGYFliuTuTDdzmBiSVIv0cb5wqfK3FkSRF2ANWJ-_T6Qfjthaqv9Kktq_XqHpfvbbZ5CEyi3m-0FlRZ4SgU",
                               content: post.content ?? '',
-                              imageUrl:
+                              images:
                                   post.media.isNotEmpty
-                                      ? (post.media.first.thumbnail ??
-                                          post.media.first.url)
+                                      ? post.media
+                                          .map((m) => m.thumbnail ?? m.url)
+                                          .cast<String>()
+                                          .toList()
                                       : null,
+                              postId: post.id,
                               tag:
                                   post.tags.isNotEmpty ? post.tags.first : null,
                               likesCount: post.counts.reactions.toString(),
-                              commentsCount:
-                                  "${post.counts.comments} ${AppLocalizations.of(context)!.comments}",
+                              commentsCount: post.counts.comments.toString(),
                               isCurrentUser:
                                   post.author.id == AuthService.currentUser?.id,
                               userType: post.author.userType,
+                              reacted: reacted,
+                              reactionType: reactionType,
                               onProfileTap: () {
                                 Navigator.push(
                                   context,

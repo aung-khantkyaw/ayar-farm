@@ -251,5 +251,8 @@
   "userTypeLivestockSpecialist": "Livestock Specialist",
   "userTypeOthers": "Others",
   "loadingTownships": "Loading Townships...",
-  "searchConversations": "Search conversations..."
+  "searchConversations": "Search conversations...",
+  "loadingAuthor": "Loading Author...",
+  "noComments": "No Comments",
+  "writeComment": "Write Comment"
 }

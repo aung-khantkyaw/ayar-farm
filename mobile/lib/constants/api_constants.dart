@@ -1,8 +1,19 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:3000/api',
-  );
+  static String _resolveBaseUrl() {
+    const env = String.fromEnvironment('API_BASE_URL');
+    if (env.isNotEmpty) return env;
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      // Android emulator cannot reach host's localhost; 10.0.2.2 points to host.
+      return 'http://10.0.2.2:3000/api';
+    }
+
+    return 'http://localhost:3000/api';
+  }
+
+  static final String baseUrl = _resolveBaseUrl();
 
   // Auth endpoints
   static const String register = '/auth/register';

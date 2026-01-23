@@ -741,4 +741,13 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get searchConversations => 'စကားပြောမှုများ ရှာဖွေရန်...';
+
+  @override
+  String get loadingAuthor => 'ရေးသားသူကို ရယူနေပါသည်...';
+
+  @override
+  String get noComments => 'မှတ်ချက်များ မရှိသေးပါ';
+
+  @override
+  String get writeComment => 'မှတ်ချက်ရေးပါ...';
 }

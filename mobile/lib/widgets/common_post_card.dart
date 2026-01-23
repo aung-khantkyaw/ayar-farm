@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../constants/user_types.dart';
+import '../screens/post_screen.dart';
+import '../services/api_service.dart';
+import '../constants/api_constants.dart';
 
-class CommonPostCard extends StatelessWidget {
+class CommonPostCard extends StatefulWidget {
   final Color surfaceColor;
   final Color borderColor;
   final Color textMainColor;
@@ -11,13 +14,16 @@ class CommonPostCard extends StatelessWidget {
   final String timeAgo;
   final String authorAvatarUrl;
   final String content;
-  final String? imageUrl;
+  final List<String>? images;
+  final String postId;
   final String? tag;
   final String likesCount;
   final String commentsCount;
   final bool isCurrentUser;
   final String? userType;
   final VoidCallback? onProfileTap;
+  final bool reacted;
+  final String? reactionType;
 
   const CommonPostCard({
     super.key,
@@ -30,14 +36,53 @@ class CommonPostCard extends StatelessWidget {
     required this.timeAgo,
     required this.authorAvatarUrl,
     required this.content,
-    this.imageUrl,
+    this.images,
+    required this.postId,
     this.tag,
     required this.likesCount,
     required this.commentsCount,
     this.isCurrentUser = false,
     this.userType,
     this.onProfileTap,
+    this.reacted = false,
+    this.reactionType,
   });
+
+  @override
+  State<CommonPostCard> createState() => _CommonPostCardState();
+}
+
+class _CommonPostCardState extends State<CommonPostCard> {
+  late bool _reacted;
+  late int _likes;
+  late int _comments;
+  String? _reactionType;
+
+  @override
+  void initState() {
+    super.initState();
+    _reacted = widget.reacted;
+    _likes = int.tryParse(widget.likesCount) ?? 0;
+    _comments = int.tryParse(widget.commentsCount) ?? 0;
+    _reactionType = widget.reactionType;
+  }
+
+  @override
+  void didUpdateWidget(covariant CommonPostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Keep state in sync if the parent provides new reaction info (e.g., on refresh)
+    if (oldWidget.reacted != widget.reacted ||
+        oldWidget.reactionType != widget.reactionType ||
+        oldWidget.likesCount != widget.likesCount ||
+        oldWidget.commentsCount != widget.commentsCount) {
+      setState(() {
+        _reacted = widget.reacted;
+        _reactionType = widget.reactionType;
+        _likes = int.tryParse(widget.likesCount) ?? _likes;
+        _comments = int.tryParse(widget.commentsCount) ?? _comments;
+      });
+    }
+  }
 
   IconData _getUserTypeIcon(String? type) {
     switch (type) {
@@ -83,14 +128,111 @@ class CommonPostCard extends StatelessWidget {
     }
   }
 
+  void _showReactionPicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _reactionOption('LIKE', Icons.thumb_up, 'Like'),
+              _reactionOption('UNLIKE', Icons.thumb_down, 'Unlike'),
+              _reactionOption('SUPPORT', Icons.volunteer_activism, 'Support'),
+              _reactionOption('CARE', Icons.favorite, 'Care'),
+              if (_reactionType != null)
+                ListTile(
+                  leading: const Icon(Icons.close),
+                  title: const Text('Remove reaction'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _setReaction(null);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _reactionOption(String type, IconData icon, String label) {
+    final isActive = _reactionType == type;
+    return ListTile(
+      leading: Icon(icon, color: isActive ? widget.primaryColor : null),
+      title: Text(label),
+      trailing: isActive ? Icon(Icons.check, color: widget.primaryColor) : null,
+      onTap: () {
+        Navigator.pop(context);
+        _setReaction(type);
+      },
+    );
+  }
+
+  Future<void> _setReaction(String? newType) async {
+    final hadReaction = _reactionType != null;
+    try {
+      if (newType == null) {
+        if (!hadReaction) return;
+        await ApiService.delete('${ApiConstants.posts}/${widget.postId}/react');
+        setState(() {
+          _reactionType = null;
+          _reacted = false;
+          _likes = (_likes - 1).clamp(0, 1 << 30);
+        });
+        return;
+      }
+
+      if (hadReaction && _reactionType == newType) {
+        await ApiService.delete('${ApiConstants.posts}/${widget.postId}/react');
+        setState(() {
+          _reactionType = null;
+          _reacted = false;
+          _likes = (_likes - 1).clamp(0, 1 << 30);
+        });
+        return;
+      }
+
+      // Switch or add reaction
+      await ApiService.post('${ApiConstants.posts}/${widget.postId}/react', {
+        'type': newType,
+      });
+
+      setState(() {
+        // If it was a new reaction, increment count; if switching types, keep count the same
+        if (!hadReaction) {
+          _likes = _likes + 1;
+        }
+        _reactionType = newType;
+        _reacted = true;
+      });
+    } catch (_) {
+      // silently fail for now; could show a snack bar if context available
+    }
+  }
+
+  IconData _currentReactionIcon() {
+    switch (_reactionType) {
+      case 'UNLIKE':
+        return Icons.thumb_down;
+      case 'SUPPORT':
+        return Icons.volunteer_activism;
+      case 'CARE':
+        return Icons.favorite;
+      case 'LIKE':
+      default:
+        return _reacted ? Icons.thumb_up : Icons.thumb_up_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: surfaceColor,
+        color: widget.surfaceColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: widget.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,134 +241,249 @@ class CommonPostCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: onProfileTap,
+                onTap: widget.onProfileTap,
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundImage: NetworkImage(authorAvatarUrl),
+                      backgroundImage: NetworkImage(widget.authorAvatarUrl),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          authorName,
+                          widget.authorName,
                           style: TextStyle(
-                            color: textMainColor,
+                            color: widget.textMainColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
                         Text(
-                          timeAgo,
-                          style: TextStyle(color: textSubColor, fontSize: 12),
+                          widget.timeAgo,
+                          style: TextStyle(
+                            color: widget.textSubColor,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              if (isCurrentUser)
-                Icon(Icons.more_horiz, color: textSubColor)
+              if (widget.isCurrentUser)
+                Icon(Icons.more_horiz, color: widget.textSubColor)
               else
                 Tooltip(
-                  message: userType ?? 'User',
+                  message: widget.userType ?? 'User',
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: _getUserTypeColor(userType).withOpacity(0.1),
+                      color: _getUserTypeColor(
+                        widget.userType,
+                      ).withOpacity(0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _getUserTypeColor(userType).withOpacity(0.2),
+                        color: _getUserTypeColor(
+                          widget.userType,
+                        ).withOpacity(0.2),
                         width: 1,
                       ),
                     ),
                     child: Icon(
-                      _getUserTypeIcon(userType),
+                      _getUserTypeIcon(widget.userType),
                       size: 16,
-                      color: _getUserTypeColor(userType),
+                      color: _getUserTypeColor(widget.userType),
                     ),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 12),
-          // if (tag != null)
-          //   Container(
-          //     margin: const EdgeInsets.only(bottom: 8),
-          //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          //     decoration: BoxDecoration(
-          //       color: primaryColor.withOpacity(0.2),
-          //       borderRadius: BorderRadius.circular(4),
-          //     ),
-          //     child: Text(
-          //       tag!,
-          //       style: TextStyle(
-          //         color: const Color(0xFF052E11),
-          //         fontSize: 12,
-          //         fontWeight: FontWeight.bold,
-          //       ),
-          //     ),
-          //   ),
-          Text(
-            content,
-            style: TextStyle(color: textMainColor, fontSize: 16, height: 1.5),
-          ),
-          if (imageUrl != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                imageUrl!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PostScreen(postId: widget.postId),
+                ),
+              );
+              if (mounted && result is int) {
+                setState(() {
+                  _comments = result;
+                });
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // if (tag != null)
+                //   Container(
+                //     margin: const EdgeInsets.only(bottom: 8),
+                //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                //     decoration: BoxDecoration(
+                //       color: primaryColor.withOpacity(0.2),
+                //       borderRadius: BorderRadius.circular(4),
+                //     ),
+                //     child: Text(
+                //       tag!,
+                //       style: TextStyle(
+                //         color: const Color(0xFF052E11),
+                //         fontSize: 12,
+                //         fontWeight: FontWeight.bold,
+                //       ),
+                //     ),
+                //   ),
+                Text(
+                  _truncateWords(widget.content, 100),
+                  style: TextStyle(
+                    color: widget.textMainColor,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+                if (widget.images != null && widget.images!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  if (widget.images!.length == 1)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        widget.images!.first,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children:
+                          widget.images!.map((img) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(img, fit: BoxFit.cover),
+                            );
+                          }).toList(),
+                    ),
+                ],
+              ],
             ),
-          ],
+          ),
           const SizedBox(height: 12),
-          Divider(color: borderColor, height: 1),
+          Divider(color: widget.borderColor, height: 1),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.thumb_up_outlined, size: 20, color: textSubColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    likesCount,
-                    style: TextStyle(
-                      color: textSubColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: _showReactionPicker,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.surfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: widget.borderColor.withOpacity(0.5),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _currentReactionIcon(),
+                          size: 20,
+                          color:
+                              _reacted
+                                  ? widget.primaryColor
+                                  : widget.textSubColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _likes.toString(),
+                          style: TextStyle(
+                            color:
+                                _reacted
+                                    ? widget.primaryColor
+                                    : widget.textSubColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 20,
-                    color: textSubColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    commentsCount,
-                    style: TextStyle(
-                      color: textSubColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PostScreen(postId: widget.postId),
+                      ),
+                    );
+                    if (mounted && result is int) {
+                      setState(() {
+                        _comments = result;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: widget.primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 20,
+                          color: widget.primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _comments.toString(),
+                          style: TextStyle(
+                            color: widget.primaryColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String _truncateWords(String text, int maxWords) {
+    final words = text.split(RegExp(r'\s+'));
+    if (words.length <= maxWords) return text;
+    return words.sublist(0, maxWords).join(' ') + '...';
   }
 }

@@ -727,4 +727,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchConversations => 'Search conversations...';
+
+  @override
+  String get loadingAuthor => 'Loading Author...';
+
+  @override
+  String get noComments => 'No Comments';
+
+  @override
+  String get writeComment => 'Write Comment';
 }
