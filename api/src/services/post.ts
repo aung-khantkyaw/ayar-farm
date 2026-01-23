@@ -295,26 +295,27 @@ export class PostService {
             if (existing) {
                 if (existing.type === type) {
                     await tx.commentReaction.delete({ where: { commentId_userId: { commentId, userId } } });
-                    return { action: "removed" as const, reaction: null };
+                    return { action: "removed" as const, reaction: null, postId: comment.postId };
                 }
 
                 const reaction = await tx.commentReaction.update({
                     where: { commentId_userId: { commentId, userId } },
                     data: { type },
                 });
-                return { action: "updated" as const, reaction };
+                return { action: "updated" as const, reaction, postId: comment.postId };
             }
 
             const reaction = await tx.commentReaction.create({ data: { commentId, userId, type } });
-            return { action: "added" as const, reaction };
+            return { action: "added" as const, reaction, postId: comment.postId };
         });
     }
 
     public static async deleteCommentReaction(commentId: string, userId: string) {
         const existing = await prisma.commentReaction.findUnique({ where: { commentId_userId: { commentId, userId } } });
-        if (!existing) return { deleted: false };
+        if (!existing) return { deleted: false, postId: undefined as string | undefined };
+        const comment = await prisma.postComment.findUnique({ where: { id: commentId }, select: { postId: true } });
         await prisma.commentReaction.delete({ where: { commentId_userId: { commentId, userId } } });
-        return { deleted: true };
+        return { deleted: true, postId: comment?.postId };
     }
 
     public static async updateComment(commentId: string, userId: string, content: string) {
@@ -354,7 +355,7 @@ export class PostService {
                 data: { commentCount: { decrement: deletedCount } },
             });
 
-            return { deletedCount };
+            return { deletedCount, postId: comment.postId };
         });
     }
 

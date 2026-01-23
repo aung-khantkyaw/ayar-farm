@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PostMediaType, PostVisibility, ReactionType } from "@prisma/client";
 import { PostMediaInput, PostService } from "../services/post";
+import { emitToAll } from "../socket";
 
 const parseTags = (value: any): string[] => {
     if (!value) return [];
@@ -154,6 +155,7 @@ export class PostController {
                 : ReactionType.LIKE;
 
             const { action, reaction } = await PostService.toggleReaction(postId, user.id, reactionType);
+            emitToAll("post:reaction", { postId, userId: user.id, action, reactionType, reaction });
             res.status(200).json({ message: `Reaction ${action}`, action, reaction });
         } catch (error) {
             res.status(500).json({ message: `Error reacting to post: ${error}` });
@@ -171,6 +173,9 @@ export class PostController {
 
             const { id: postId } = req.params;
             const { deleted } = await PostService.deleteReaction(postId, user.id);
+            if (deleted) {
+                emitToAll("post:reaction", { postId, userId: user.id, action: "removed", reactionType: null, reaction: null });
+            }
             res.status(200).json({ message: deleted ? "Reaction removed" : "No reaction to remove" });
         } catch (error) {
             res.status(500).json({ message: `Error deleting reaction: ${error}` });
@@ -195,6 +200,7 @@ export class PostController {
             }
 
             const { comment } = await PostService.addComment(postId, user.id, content, parentCommentId);
+            emitToAll("post:comment", { postId, comment });
             res.status(201).json({ message: "Comment added successfully", data: comment });
         } catch (error) {
             res.status(500).json({ message: `Error commenting on post: ${error}` });
@@ -218,6 +224,7 @@ export class PostController {
             }
 
             const { comment } = await PostService.updateComment(commentId, user.id, content);
+            emitToAll("post:comment:updated", { postId: comment.postId, comment });
             res.status(200).json({ message: "Comment updated successfully", data: comment });
         } catch (error) {
             const message = String(error);
@@ -245,7 +252,9 @@ export class PostController {
             }
 
             const isAdmin = (req as any).user?.user_type === "ADMIN";
-            const { deletedCount } = await PostService.deleteComment(commentId, isAdmin, user.id);
+            const { deletedCount, postId: deletedPostId } = await PostService.deleteComment(commentId, isAdmin, user.id);
+            const targetPostId = deletedPostId ?? postId;
+            emitToAll("post:comment:deleted", { postId: targetPostId, commentId, deletedCount });
             res.status(200).json({ message: "Comment deleted successfully", deletedCount });
         } catch (error) {
             const message = String(error);
@@ -270,7 +279,8 @@ export class PostController {
                 ? (type as ReactionType)
                 : ReactionType.LIKE;
 
-            const { action, reaction } = await PostService.toggleCommentReaction(commentId, user.id, reactionType);
+            const { action, reaction, postId } = await PostService.toggleCommentReaction(commentId, user.id, reactionType);
+            emitToAll("comment:reaction", { postId, commentId, userId: user.id, action, reactionType, reaction });
             res.status(200).json({ message: `Comment reaction ${action}`, action, reaction });
         } catch (error) {
             res.status(500).json({ message: `Error reacting to comment: ${error}` });
@@ -287,7 +297,10 @@ export class PostController {
             }
 
             const { commentId } = req.params as { commentId: string };
-            const { deleted } = await PostService.deleteCommentReaction(commentId, user.id);
+            const { deleted, postId } = await PostService.deleteCommentReaction(commentId, user.id);
+            if (deleted) {
+                emitToAll("comment:reaction", { postId, commentId, userId: user.id, action: "removed", reactionType: null, reaction: null });
+            }
             res.status(200).json({ message: deleted ? "Comment reaction removed" : "No reaction to remove" });
         } catch (error) {
             res.status(500).json({ message: `Error deleting comment reaction: ${error}` });
