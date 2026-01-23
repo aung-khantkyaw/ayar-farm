@@ -23,6 +23,7 @@ export class PostService {
             orderBy: { createdAt: "desc" },
             include: {
                 media: true,
+                reactions: { select: { userId: true, type: true } },
                 author: {
                     select: { id: true, name: true, profile_picture: true, user_type: true },
                 },
@@ -49,14 +50,18 @@ export class PostService {
                         author: {
                             select: { id: true, name: true, profile_picture: true, user_type: true },
                         },
+                        reactions: { select: { userId: true, type: true } },
                         replies: {
                             orderBy: { createdAt: "asc" },
                             include: {
                                 author: {
                                     select: { id: true, name: true, profile_picture: true },
                                 },
+                                reactions: { select: { userId: true, type: true } },
+                                _count: { select: { reactions: true } },
                             },
                         },
+                        _count: { select: { reactions: true, replies: true } },
                     },
                 },
                 _count: { select: { reactions: true, comments: true } },
@@ -71,7 +76,7 @@ export class PostService {
             where: { authorId: id },
             include: {
                 media: true,
-                reactions: true,
+                reactions: { select: { userId: true, type: true } },
                 author: {
                     select: { id: true, name: true, profile_picture: true, user_type: true },
                 },
@@ -82,14 +87,18 @@ export class PostService {
                         author: {
                             select: { id: true, name: true, profile_picture: true,  user_type: true },
                         },
+                        reactions: { select: { userId: true, type: true } },
                         replies: {
                             orderBy: { createdAt: "asc" },
                             include: {
                                 author: {
                                     select: { id: true, name: true, profile_picture: true,  user_type: true },
                                 },
+                                reactions: { select: { userId: true, type: true } },
+                                _count: { select: { reactions: true } },
                             },
                         },
+                        _count: { select: { reactions: true, replies: true } },
                     },
                 },
                 _count: { select: { reactions: true, comments: true } },
@@ -255,7 +264,15 @@ export class PostService {
                 },
                 include: {
                     author: { select: { id: true, name: true, profile_picture: true } },
-                    replies: true,
+                    replies: {
+                        include: {
+                            author: { select: { id: true, name: true, profile_picture: true } },
+                            reactions: { select: { userId: true, type: true } },
+                            _count: { select: { reactions: true } },
+                        },
+                    },
+                    reactions: { select: { userId: true, type: true } },
+                    _count: { select: { reactions: true, replies: true } },
                 },
             });
 
@@ -266,6 +283,38 @@ export class PostService {
 
             return { comment };
         });
+    }
+
+    public static async toggleCommentReaction(commentId: string, userId: string, type: ReactionType) {
+        return await prisma.$transaction(async (tx) => {
+            const comment = await tx.postComment.findUnique({ where: { id: commentId } });
+            if (!comment) throw new Error("Comment not found");
+
+            const existing = await tx.commentReaction.findUnique({ where: { commentId_userId: { commentId, userId } } });
+
+            if (existing) {
+                if (existing.type === type) {
+                    await tx.commentReaction.delete({ where: { commentId_userId: { commentId, userId } } });
+                    return { action: "removed" as const, reaction: null };
+                }
+
+                const reaction = await tx.commentReaction.update({
+                    where: { commentId_userId: { commentId, userId } },
+                    data: { type },
+                });
+                return { action: "updated" as const, reaction };
+            }
+
+            const reaction = await tx.commentReaction.create({ data: { commentId, userId, type } });
+            return { action: "added" as const, reaction };
+        });
+    }
+
+    public static async deleteCommentReaction(commentId: string, userId: string) {
+        const existing = await prisma.commentReaction.findUnique({ where: { commentId_userId: { commentId, userId } } });
+        if (!existing) return { deleted: false };
+        await prisma.commentReaction.delete({ where: { commentId_userId: { commentId, userId } } });
+        return { deleted: true };
     }
 
     public static async updateComment(commentId: string, userId: string, content: string) {

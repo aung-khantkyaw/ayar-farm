@@ -255,6 +255,46 @@ export class PostController {
         }
     }
 
+    public async reactToComment(req: Request, res: Response): Promise<void> {
+        try {
+            const user = (req as any).user;
+            if (!user?.id) {
+                res.status(401).json({ message: "Unauthorized" });
+                return;
+            }
+
+            const { commentId } = req.params as { commentId: string };
+            const { type } = req.body;
+
+            const reactionType = Object.values(ReactionType).includes(type)
+                ? (type as ReactionType)
+                : ReactionType.LIKE;
+
+            const { action, reaction } = await PostService.toggleCommentReaction(commentId, user.id, reactionType);
+            res.status(200).json({ message: `Comment reaction ${action}`, action, reaction });
+        } catch (error) {
+            res.status(500).json({ message: `Error reacting to comment: ${error}` });
+            console.error("Error reacting to comment:", error);
+        }
+    }
+
+    public async deleteCommentReaction(req: Request, res: Response): Promise<void> {
+        try {
+            const user = (req as any).user;
+            if (!user?.id) {
+                res.status(401).json({ message: "Unauthorized" });
+                return;
+            }
+
+            const { commentId } = req.params as { commentId: string };
+            const { deleted } = await PostService.deleteCommentReaction(commentId, user.id);
+            res.status(200).json({ message: deleted ? "Comment reaction removed" : "No reaction to remove" });
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting comment reaction: ${error}` });
+            console.error("Error deleting comment reaction:", error);
+        }
+    }
+
     public async updatePost(req: Request, res: Response): Promise<void> {
         try {
             const user = (req as any).user;

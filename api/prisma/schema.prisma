@@ -104,6 +104,7 @@ model Users {
   posts                    Post[]                    @relation("UserPosts")
   postReactions            PostReaction[]            @relation("UserPostReactions")
   postComments             PostComment[]             @relation("UserPostComments")
+  commentReactions         CommentReaction[]         @relation("UserCommentReactions")
 }
 
 model CropTypes {
@@ -371,12 +372,27 @@ model PostComment {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author        Users         @relation("UserPostComments", fields: [userId], references: [id])
-  parentComment PostComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies       PostComment[] @relation("CommentReplies")
+  post          Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        Users             @relation("UserPostComments", fields: [userId], references: [id])
+  parentComment PostComment?      @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies       PostComment[]     @relation("CommentReplies")
+  reactions     CommentReaction[]
 
   @@index([postId])
   @@index([userId])
   @@index([parentCommentId])
+}
+
+model CommentReaction {
+  id        String       @id @default(uuid())
+  commentId String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    Users       @relation("UserCommentReactions", fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
+  @@index([userId])
 }

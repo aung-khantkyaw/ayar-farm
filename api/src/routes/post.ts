@@ -14,11 +14,13 @@ post.get("/posts/user/:id", (req, res) => postController.getPostByUserId(req, re
 post.post("/posts", authenticate, uploadResource.array("media"), (req, res) => postController.createPost(req, res));
 post.post("/posts/:id/react", authenticate, (req, res) => postController.reactToPost(req, res));
 post.post("/posts/:id/comments", authenticate, (req, res) => postController.commentOnPost(req, res));
+post.post("/posts/:id/comments/:commentId/react", authenticate, (req, res) => postController.reactToComment(req, res));
 
 post.put("/posts/:id", authenticate, uploadResource.array("media"), (req, res) => postController.updatePost(req, res));
 post.put("/posts/:id/comments/:commentId", authenticate, (req, res) => postController.updateComment(req, res));
 
 post.delete("/posts/:id/react", authenticate, (req, res) => postController.deleteReaction(req, res));
+post.delete("/posts/:id/comments/:commentId/react", authenticate, (req, res) => postController.deleteCommentReaction(req, res));
 post.delete("/posts/:id/comments/:commentId", authenticate, (req, res) => postController.deleteComment(req, res));
 post.delete("/posts/:id", authenticate, (req, res) => postController.deletePost(req, res));
 
