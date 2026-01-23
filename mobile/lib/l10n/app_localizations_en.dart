@@ -736,4 +736,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get writeComment => 'Write Comment';
+
+  @override
+  String get deletePost => 'Delete post?';
+
+  @override
+  String get deletePostBody => 'This will permanently remove your post.';
+
+  @override
+  String get commonCancel => 'Cancel';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get postEdit => 'Edit Post';
+
+  @override
+  String get postDelete => 'Delete Post';
 }

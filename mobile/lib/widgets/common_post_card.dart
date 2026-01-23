@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../constants/user_types.dart';
 import '../screens/post_screen.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
+import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/post_service.dart';
 import '../models/post.dart';
 import '../screens/create_post_screen.dart';
+import 'package:ayar_farm/widgets/common_snackbar.dart';
 
 class CommonPostCard extends StatefulWidget {
   final Color surfaceColor;
@@ -13,6 +17,7 @@ class CommonPostCard extends StatefulWidget {
   final Color textMainColor;
   final Color textSubColor;
   final Color primaryColor;
+  final String authorId;
   final String authorName;
   final String timeAgo;
   final String authorAvatarUrl;
@@ -36,6 +41,7 @@ class CommonPostCard extends StatefulWidget {
     required this.textMainColor,
     required this.textSubColor,
     required this.primaryColor,
+    required this.authorId,
     required this.authorName,
     required this.timeAgo,
     required this.authorAvatarUrl,
@@ -143,20 +149,23 @@ class _CommonPostCardState extends State<CommonPostCard> {
   }
 
   Future<void> _deletePost() async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('Delete post?'),
-            content: const Text('This will permanently remove your post.'),
+            title: Text(l10n?.deletePost ?? 'Delete post?'),
+            content: Text(
+              l10n?.deletePostBody ?? 'This will permanently remove your post.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: Text(l10n?.commonCancel ?? 'Cancel'),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete'),
+                child: Text(l10n?.delete ?? 'Delete'),
               ),
             ],
           ),
@@ -166,14 +175,22 @@ class _CommonPostCardState extends State<CommonPostCard> {
       await ApiService.delete('${ApiConstants.posts}/${widget.postId}');
       if (!mounted) return;
       widget.onDeleted?.call();
-      ScaffoldMessenger.of(
+      CommonSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Post deleted')));
+        message: 'Post deleted successfully',
+        position: SnackBarPosition.bottom,
+        type: SnackBarType.info,
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      CommonSnackbar.show(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete post')));
+        message:
+            'l10n?.postDeletedError ?? '
+            'Failed to delete post',
+        position: SnackBarPosition.bottom,
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -262,6 +279,23 @@ class _CommonPostCardState extends State<CommonPostCard> {
     );
   }
 
+  Future<void> _sendReactionNotification(String reactionType) async {
+    final actor = AuthService.currentUser;
+    if (actor == null) return;
+    if (widget.authorId == actor.id) return;
+
+    final message = '${actor.name ?? 'Someone'} reacted to your post.';
+    await NotificationService().sendRemote(
+      userId: widget.authorId,
+      message: message,
+      data: {
+        'type': 'reaction',
+        'postId': widget.postId,
+        'reactionType': reactionType,
+      },
+    );
+  }
+
   Future<void> _setReaction(String? newType) async {
     final hadReaction = _reactionType != null;
     try {
@@ -299,6 +333,8 @@ class _CommonPostCardState extends State<CommonPostCard> {
         _reactionType = newType;
         _reacted = true;
       });
+
+      await _sendReactionNotification(newType);
     } catch (_) {
       // silently fail for now; could show a snack bar if context available
     }
@@ -373,11 +409,20 @@ class _CommonPostCardState extends State<CommonPostCard> {
                     if (value == 'delete') _deletePost();
                   },
                   itemBuilder:
-                      (ctx) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit post')),
+                      (ctx) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Text(
+                            AppLocalizations.of(context)?.postEdit ??
+                                'Edit post',
+                          ),
+                        ),
                         PopupMenuItem(
                           value: 'delete',
-                          child: Text('Delete post'),
+                          child: Text(
+                            AppLocalizations.of(context)?.postDelete ??
+                                'Delete post',
+                          ),
                         ),
                       ],
                 )

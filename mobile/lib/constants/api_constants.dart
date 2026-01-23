@@ -48,4 +48,7 @@ class ApiConstants {
   // Post endpoints
   static const String getPostsByUser = '/posts/user';
   static const String posts = '/post/posts';
+
+  // Notification endpoints
+  static const String notifications = '/notifications';
 }

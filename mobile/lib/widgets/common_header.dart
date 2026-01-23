@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
+import '../screens/notification_screen.dart';
+import '../services/notification_service.dart';
 
 class CommonHeader extends StatelessWidget {
-  const CommonHeader({super.key});
+  const CommonHeader({
+    super.key,
+    this.hasUnread = false,
+    this.onNotificationTap,
+  });
+
+  final bool hasUnread;
+  final VoidCallback? onNotificationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -12,8 +21,7 @@ class CommonHeader extends StatelessWidget {
     // Colors
     const primaryColor = Color(0xFF2BEE5B);
     const primaryContentColor = Color(0xFF052E11);
-    final backgroundColor =
-        isDark ? const Color(0xFF102215) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark ? const Color(0xFF102215) : Colors.white;
     final textMainColor =
         isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111813);
 
@@ -49,38 +57,91 @@ class CommonHeader extends StatelessWidget {
               ),
             ],
           ),
-          Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color:
-                      isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100],
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: textMainColor,
-                  size: 24,
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
+          ValueListenableBuilder<int>(
+            valueListenable: NotificationService().unreadCount,
+            builder: (context, count, _) {
+              final showDot = hasUnread || count > 0;
+              final controlBg =
+                  isDark ? Colors.white.withOpacity(0.06) : Colors.grey[100];
+
+              return GestureDetector(
+                onTap:
+                    onNotificationTap ??
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
                 child: Container(
-                  width: 10,
-                  height: 10,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF102215) : Colors.white,
-                      width: 2,
-                    ),
+                    color: controlBg,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (showDot) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  isDark
+                                      ? const Color(0xFF102215)
+                                      : Colors.white,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            count > 99 ? '99+' : count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.grey[100],
+                        ),
+                        child: Icon(
+                          showDot
+                              ? Icons.notifications
+                              : Icons.notifications_outlined,
+                          color: textMainColor,
+                          size: 26,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ],
       ),

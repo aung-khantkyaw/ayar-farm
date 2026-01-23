@@ -254,5 +254,13 @@
   "searchConversations": "Search conversations...",
   "loadingAuthor": "Loading Author...",
   "noComments": "No Comments",
-  "writeComment": "Write Comment"
+  "writeComment": "Write Comment",
+  "deletePost": "Delete post?",
+  "deletePostBody": "This will permanently remove your post.",
+  "commonCancel": "Cancel",
+  "delete": "Delete",
+  "postEdit": "Edit Post",
+  "postDelete": "Delete Post"
 }
+
+   

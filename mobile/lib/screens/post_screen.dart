@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
@@ -5,6 +7,7 @@ import '../constants/api_constants.dart';
 import '../services/auth_service.dart';
 import '../services/socket_service.dart';
 import '../services/user_service.dart';
+import '../services/notification_service.dart';
 
 class PostScreen extends StatefulWidget {
   final String postId;
@@ -220,6 +223,71 @@ class _PostScreenState extends State<PostScreen> {
     _reactionUserCache[userId] = cached;
   }
 
+  Future<void> _sendReactionNotification(String reactionType) async {
+    final actor = AuthService.currentUser;
+    if (actor == null) return;
+    final authorId =
+        (post?['author']?['id'] ?? post?['authorId'] ?? post?['author_id'])
+            ?.toString();
+    if (authorId == null || authorId == actor.id) return;
+
+    final message = '${actor.name ?? 'Someone'} reacted to your post.';
+    await NotificationService().sendRemote(
+      userId: authorId,
+      message: message,
+      data: {
+        'type': 'reaction',
+        'postId': widget.postId,
+        'reactionType': reactionType,
+      },
+    );
+  }
+
+  Future<void> _sendCommentNotification(Map<String, dynamic> comment) async {
+    final actor = AuthService.currentUser;
+    if (actor == null) return;
+
+    final parentId = comment['parentCommentId'] ?? comment['parent_comment_id'];
+    String? targetId;
+    String type = 'comment';
+
+    if (parentId != null) {
+      final parent = _findComment(parentId.toString());
+      final parentAuthorId =
+          (parent?['author']?['id'] ??
+                  parent?['authorId'] ??
+                  parent?['author_id'])
+              ?.toString();
+      if (parentAuthorId != null && parentAuthorId != actor.id) {
+        targetId = parentAuthorId;
+        type = 'reply';
+      }
+    }
+
+    if (targetId == null) {
+      final authorId =
+          (post?['author']?['id'] ?? post?['authorId'] ?? post?['author_id'])
+              ?.toString();
+      if (authorId == null || authorId == actor.id) return;
+      targetId = authorId;
+    }
+
+    final message =
+        type == 'reply'
+            ? '${actor.name ?? 'Someone'} replied to your comment.'
+            : '${actor.name ?? 'Someone'} commented on your post.';
+
+    await NotificationService().sendRemote(
+      userId: targetId,
+      message: message,
+      data: {
+        'type': type,
+        'postId': widget.postId,
+        'commentId': comment['id']?.toString(),
+      },
+    );
+  }
+
   Future<void> _ensureReactionUsersLoaded(List reactions) async {
     final missing = <String>[];
     for (final r in reactions) {
@@ -281,6 +349,8 @@ class _PostScreenState extends State<PostScreen> {
         _reactionType = newType;
         _reacted = true;
       });
+
+      await _sendReactionNotification(newType);
     } catch (_) {
       // optionally surface a snackbar
     }
@@ -764,6 +834,9 @@ class _PostScreenState extends State<PostScreen> {
         _replyToName = null;
         _editingCommentId = null;
       });
+      if (newComment is Map<String, dynamic>) {
+        await _sendCommentNotification(newComment);
+      }
       _commentController.clear();
     } catch (e) {
       ScaffoldMessenger.of(
@@ -1076,11 +1149,45 @@ class _PostScreenState extends State<PostScreen> {
     });
   }
 
+  String? _mediaEntryToUrl(dynamic entry) {
+    if (entry is Map) {
+      final url = entry['url'] ?? entry['thumbnail'];
+      if (url is String) return url;
+    }
+    if (entry is String) return entry;
+    return null;
+  }
+
+  dynamic _tryParseMediaJson(String raw) {
+    try {
+      return jsonDecode(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<String> _extractUrlsFromString(String text) {
+    final regex = RegExp(r'https?://[^\s"\\]+');
+    return regex.allMatches(text).map((m) => m.group(0)!).toList();
+  }
+
   List<String> _mediaUrls(dynamic media) {
     if (media is List) {
-      return media.map((m) => m.toString()).toList();
+      return media.map(_mediaEntryToUrl).whereType<String>().toList();
     }
-    if (media is String) return [media];
+    if (media is Map) {
+      final url = _mediaEntryToUrl(media);
+      if (url != null) return [url];
+    }
+    if (media is String) {
+      final parsed = _tryParseMediaJson(media);
+      if (parsed != null) {
+        return _mediaUrls(parsed);
+      }
+      final urls = _extractUrlsFromString(media);
+      if (urls.isNotEmpty) return urls;
+      return [media];
+    }
     return [];
   }
 
@@ -1192,6 +1299,18 @@ class _PostScreenState extends State<PostScreen> {
                                               width: double.infinity,
                                               height: 300,
                                               fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (_, __, ___) => Container(
+                                                    width: double.infinity,
+                                                    height: 300,
+                                                    color: Colors.grey[300],
+                                                    alignment: Alignment.center,
+                                                    child: const Icon(
+                                                      Icons.broken_image,
+                                                      size: 48,
+                                                      color: Colors.black45,
+                                                    ),
+                                                  ),
                                             ),
                                           ),
                                         ),

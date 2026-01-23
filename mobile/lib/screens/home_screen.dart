@@ -3,16 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../constants/api_constants.dart';
+import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_header.dart';
 import '../widgets/common_post_card.dart';
+import '../widgets/announcement_card.dart';
 import 'weather_screen.dart';
 import 'profile_screen.dart';
 import '../services/post_service.dart';
 import '../services/auth_service.dart';
 import '../models/post.dart';
 import '../services/socket_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  FlutterLocalNotificationsPlugin? _localNotifications;
   Map<String, dynamic>? _weather;
   bool _isLoadingWeather = true;
   String _locationError = '';
@@ -35,6 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showScrollToTop = false;
   bool _isScrollToTopInProgress = false;
 
+  // Announcement state
+  Map<String, dynamic>? _activeAnnouncement;
+  bool _showAnnouncement = true;
+
   final List<String> _availableHashtags = [
     "ကောက်ပဲသီးနှံများ",
     "ခြံမွေးတိရစ္ဆာန်များ",
@@ -47,9 +56,88 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _initLocalNotifications();
     _refreshAll();
     _setupRealtime();
     _scrollController.addListener(_handleScroll);
+    _fetchActiveAnnouncement();
+    _startAnnouncementPolling();
+  }
+
+  void _initLocalNotifications() async {
+    _localNotifications = FlutterLocalNotificationsPlugin();
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings();
+    await _localNotifications!.initialize(
+      const InitializationSettings(android: android, iOS: ios),
+    );
+  }
+
+  void _showLocalAnnouncementNotification(
+    Map<String, dynamic> announcement,
+  ) async {
+    if (_localNotifications == null) return;
+    const android = AndroidNotificationDetails(
+      'announcement_channel',
+      'Announcements',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const ios = DarwinNotificationDetails();
+    const details = NotificationDetails(android: android, iOS: ios);
+    await _localNotifications!.show(
+      0,
+      announcement['title'] ?? 'Announcement',
+      announcement['message'] ?? '',
+      details,
+    );
+  }
+
+  // Poll every 10 seconds for announcement changes
+  void _startAnnouncementPolling() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 10));
+      if (!mounted) return false;
+      await _fetchActiveAnnouncement(realTime: true);
+      return mounted;
+    });
+  }
+
+  Future<void> _fetchActiveAnnouncement({bool realTime = false}) async {
+    final user = AuthService.currentUser;
+    if (user == null) return;
+    try {
+      final response = await ApiService.get(
+        '/announcements',
+        queryParams: {'active': 'true', 'userId': user.id},
+      );
+      final announcements = response['data'] as List?;
+      final newAnnouncement =
+          (announcements != null && announcements.isNotEmpty)
+              ? announcements.first
+              : null;
+      final prevId = _activeAnnouncement?['id'];
+      final newId = newAnnouncement?['id'];
+      if (newAnnouncement != null) {
+        if (realTime && prevId != newId) {
+          _showLocalAnnouncementNotification(newAnnouncement);
+        }
+        setState(() {
+          _activeAnnouncement = newAnnouncement;
+          _showAnnouncement = true;
+        });
+      } else {
+        setState(() {
+          _activeAnnouncement = null;
+          _showAnnouncement = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _activeAnnouncement = null;
+        _showAnnouncement = false;
+      });
+    }
   }
 
   Future<void> _loadPosts() async {
@@ -81,6 +169,14 @@ class _HomeScreenState extends State<HomeScreen> {
     socket.on('post:reaction', _postReactionListener!);
     socket.on('post:comment', _postCommentListener!);
     socket.on('post:comment:deleted', _postCommentDeletedListener!);
+
+    // Listen for announcement events (requires backend to emit these events)
+    socket.on('announcement:updated', (data) {
+      _fetchActiveAnnouncement(realTime: true);
+    });
+    socket.on('announcement:deleted', (data) {
+      _fetchActiveAnnouncement(realTime: true);
+    });
   }
 
   String _timeAgo(DateTime date) {
@@ -348,6 +444,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  AnnouncementType _parseAnnouncementType(String? type) {
+    switch (type) {
+      case 'WARNING':
+        return AnnouncementType.warning;
+      case 'BREAKING_NEWS':
+        return AnnouncementType.breakingNews;
+      case 'INFORMATION':
+      default:
+        return AnnouncementType.information;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -381,6 +489,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Announcement Card (if any)
+                      if (_activeAnnouncement != null && _showAnnouncement)
+                        AnnouncementCard(
+                          title: _activeAnnouncement!["title"] ?? '',
+                          message: _activeAnnouncement!["message"] ?? '',
+                          type: _parseAnnouncementType(
+                            _activeAnnouncement!["type"],
+                          ),
+                          onClose: () {
+                            setState(() {
+                              _showAnnouncement = false;
+                            });
+                          },
+                        ),
+
                       // Weather Widget
                       GestureDetector(
                         onTap: () {
@@ -558,7 +681,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                       const SizedBox(height: 24),
-
                       // Categories
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -654,6 +776,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 textMainColor: textMainColor,
                                 textSubColor: textSubColor,
                                 primaryColor: primaryColor,
+                                authorId: post.author.id,
                                 authorName: post.author.name,
                                 timeAgo: _timeAgo(post.createdAt),
                                 authorAvatarUrl:

@@ -1,6 +1,7 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../constants/api_constants.dart';
 import '../models/user.dart';
+import 'notification_service.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -67,6 +68,8 @@ class SocketService {
       });
 
       _socket!.emit('get-online-users');
+
+      _bindNotificationChannel();
     });
 
     _socket!.onDisconnect((_) {
@@ -84,10 +87,24 @@ class SocketService {
 
   void disconnect() {
     if (_socket != null) {
+      _socket!.off('notify:post');
       _socket!.disconnect();
       _socket = null;
       _isConnected = false;
     }
+  }
+
+  void _bindNotificationChannel() {
+    _socket?.off('notify:post');
+    _socket?.on('notify:post', (data) {
+      if (data is Map<String, dynamic>) {
+        NotificationService().handleIncomingRemote(data);
+      } else if (data is Map) {
+        NotificationService().handleIncomingRemote(
+          Map<String, dynamic>.from(data),
+        );
+      }
+    });
   }
 
   void joinConversation(String conversationId) {

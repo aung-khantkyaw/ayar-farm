@@ -750,4 +750,22 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get writeComment => 'မှတ်ချက်ရေးပါ...';
+
+  @override
+  String get deletePost => 'ပို့စ်ကို ဖျက်မှာလား?';
+
+  @override
+  String get deletePostBody => 'ဤပို့စ်ကို အပြီးတိုင် ဖယ်ရှားပါလိမ့်မည်။';
+
+  @override
+  String get commonCancel => 'မလုပ်တော့';
+
+  @override
+  String get delete => 'ဖျက်မည်';
+
+  @override
+  String get postEdit => 'ပိုစ့်ကို ပြင်မည်';
+
+  @override
+  String get postDelete => 'ပိုစ့်ကို ဖျက်မည်';
 }

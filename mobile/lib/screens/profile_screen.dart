@@ -792,6 +792,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ? Colors.grey[400]!
                                   : const Color(0xFF61896B),
                           primaryColor: _primaryColor,
+                          authorId: post.author.id,
                           authorName: post.author.name,
                           timeAgo: _timeAgo(post.createdAt),
                           authorAvatarUrl:

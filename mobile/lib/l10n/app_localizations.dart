@@ -1531,6 +1531,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write Comment'**
   String get writeComment;
+
+  /// No description provided for @deletePost.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete post?'**
+  String get deletePost;
+
+  /// No description provided for @deletePostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove your post.'**
+  String get deletePostBody;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @postEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Post'**
+  String get postEdit;
+
+  /// No description provided for @postDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Post'**
+  String get postDelete;
 }
 
 class _AppLocalizationsDelegate

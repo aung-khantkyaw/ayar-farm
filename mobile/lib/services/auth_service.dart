@@ -4,6 +4,7 @@ import 'api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'socket_service.dart';
+import 'notification_service.dart';
 
 class AuthService {
   static User? currentUser;
@@ -19,6 +20,7 @@ class AuthService {
     currentUser = user;
     ApiService.setToken(token);
     SocketService().connect(token, user);
+    await NotificationService().fetchForUser(user.id?.toString() ?? '');
   }
 
   static Future<bool> loadSession() async {
@@ -31,6 +33,9 @@ class AuthService {
         ApiService.setToken(token);
         currentUser = User.fromJson(jsonDecode(userData));
         SocketService().connect(token, currentUser!);
+        await NotificationService().fetchForUser(
+          currentUser?.id?.toString() ?? '',
+        );
         return true;
       } catch (e) {
         print('Error loading session: $e');
