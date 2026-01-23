@@ -105,6 +105,7 @@ model Users {
   postReactions            PostReaction[]            @relation("UserPostReactions")
   postComments             PostComment[]             @relation("UserPostComments")
   commentReactions         CommentReaction[]         @relation("UserCommentReactions")
+  Notifications            Notifications[]           @relation("UserNotifications")
 }
 
 model CropTypes {
@@ -394,5 +395,20 @@ model CommentReaction {
   user    Users       @relation("UserCommentReactions", fields: [userId], references: [id])
 
   @@unique([commentId, userId])
+  @@index([userId])
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user Users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }

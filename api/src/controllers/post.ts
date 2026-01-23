@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { PostMediaType, PostVisibility, ReactionType } from "@prisma/client";
 import { PostMediaInput, PostService } from "../services/post";
-import { emitToAll } from "../socket";
+import { emitToAll, emitToUser } from "../socket";
+import { prisma } from "../prisma/client";
 
 const parseTags = (value: any): string[] => {
     if (!value) return [];
@@ -57,6 +58,44 @@ const parseMediaFromFiles = (files?: Express.Multer.File[]): PostMediaInput[] =>
                 : PostMediaType.FILE;
         return { url: file.path, type, thumbnail: null, metadata: { originalname: file.originalname, mimetype: file.mimetype, size: file.size } };
     });
+};
+
+const buildActor = async (user: any) => {
+    if (!user?.id) return { id: undefined, name: "Someone", avatar: null };
+
+    const dbUser = await prisma.users.findUnique({
+        where: { id: user.id },
+        select: { id: true, name: true, email: true, profile_picture: true },
+    });
+
+    return {
+        id: user.id,
+        name: dbUser?.name ?? dbUser?.email ?? user?.name ?? user?.email ?? "Someone",
+        avatar: dbUser?.profile_picture ?? user?.profile_picture ?? user?.profilePicture ?? null,
+    };
+};
+
+const persistAndNotify = async (authorId: string | undefined, actor: any, payload: any) => {
+    if (!authorId || !actor?.id || authorId === actor.id) return;
+
+    const message = payload?.message ?? "New notification";
+    const data = payload ?? {};
+    const title = payload?.title ?? payload?.type ?? "Activity";
+
+    try {
+        await prisma.notifications.create({
+            data: {
+                userId: authorId,
+                title,
+                message,
+                data,
+            },
+        });
+    } catch (err) {
+        console.error("Failed to persist notification", err);
+    }
+
+    emitToUser(authorId, "notify:post", payload);
 };
 
 export class PostController {
@@ -154,8 +193,19 @@ export class PostController {
                 ? (type as ReactionType)
                 : ReactionType.LIKE;
 
-            const { action, reaction } = await PostService.toggleReaction(postId, user.id, reactionType);
+            const { action, reaction, postAuthorId } = await PostService.toggleReaction(postId, user.id, reactionType);
             emitToAll("post:reaction", { postId, userId: user.id, action, reactionType, reaction });
+
+            if (action !== "removed") {
+                const actor = await buildActor(user);
+                await persistAndNotify(postAuthorId, actor, {
+                    type: "reaction",
+                    postId,
+                    fromUser: actor,
+                    message: `${actor.name} reacted to your post`,
+                    createdAt: Date.now(),
+                });
+            }
             res.status(200).json({ message: `Reaction ${action}`, action, reaction });
         } catch (error) {
             res.status(500).json({ message: `Error reacting to post: ${error}` });
@@ -199,8 +249,20 @@ export class PostController {
                 return;
             }
 
-            const { comment } = await PostService.addComment(postId, user.id, content, parentCommentId);
+            const { comment, postAuthorId } = await PostService.addComment(postId, user.id, content, parentCommentId);
             emitToAll("post:comment", { postId, comment });
+
+            const actor = await buildActor(user);
+            await persistAndNotify(postAuthorId, actor, {
+                type: parentCommentId ? "reply" : "comment",
+                postId,
+                commentId: comment.id,
+                fromUser: actor,
+                message: parentCommentId
+                    ? `${actor.name} replied to a comment on your post`
+                    : `${actor.name} commented on your post`,
+                createdAt: Date.now(),
+            });
             res.status(201).json({ message: "Comment added successfully", data: comment });
         } catch (error) {
             res.status(500).json({ message: `Error commenting on post: ${error}` });
@@ -279,8 +341,20 @@ export class PostController {
                 ? (type as ReactionType)
                 : ReactionType.LIKE;
 
-            const { action, reaction, postId } = await PostService.toggleCommentReaction(commentId, user.id, reactionType);
+            const { action, reaction, postId, postAuthorId } = await PostService.toggleCommentReaction(commentId, user.id, reactionType);
             emitToAll("comment:reaction", { postId, commentId, userId: user.id, action, reactionType, reaction });
+
+            if (action !== "removed") {
+                const actor = await buildActor(user);
+                await persistAndNotify(postAuthorId, actor, {
+                    type: "comment-reaction",
+                    postId,
+                    commentId,
+                    fromUser: actor,
+                    message: `${actor.name} reacted to a comment on your post`,
+                    createdAt: Date.now(),
+                });
+            }
             res.status(200).json({ message: `Comment reaction ${action}`, action, reaction });
         } catch (error) {
             res.status(500).json({ message: `Error reacting to comment: ${error}` });

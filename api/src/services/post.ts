@@ -200,7 +200,7 @@ export class PostService {
 
     public static async toggleReaction(postId: string, userId: string, type: ReactionType) {
         return await prisma.$transaction(async (tx) => {
-            const existingPost = await tx.post.findUnique({ where: { id: postId } });
+            const existingPost = await tx.post.findUnique({ where: { id: postId }, select: { id: true, authorId: true } });
             if (!existingPost) {
                 throw new Error("Post not found");
             }
@@ -216,7 +216,7 @@ export class PostService {
                         where: { id: postId },
                         data: { reactionCount: { decrement: 1 } },
                     });
-                    return { action: "removed" as const, reaction: null };
+                    return { action: "removed" as const, reaction: null, postAuthorId: existingPost.authorId };
                 }
 
                 const reaction = await tx.postReaction.update({
@@ -224,7 +224,7 @@ export class PostService {
                     data: { type },
                 });
 
-                return { action: "updated" as const, reaction };
+                return { action: "updated" as const, reaction, postAuthorId: existingPost.authorId };
             }
 
             const reaction = await tx.postReaction.create({ data: { postId, userId, type } });
@@ -233,7 +233,7 @@ export class PostService {
                 data: { reactionCount: { increment: 1 } },
             });
 
-            return { action: "added" as const, reaction };
+            return { action: "added" as const, reaction, postAuthorId: existingPost.authorId };
         });
     }
 
@@ -250,7 +250,7 @@ export class PostService {
 
     public static async addComment(postId: string, userId: string, content: string, parentCommentId?: string) {
         return await prisma.$transaction(async (tx) => {
-            const post = await tx.post.findUnique({ where: { id: postId } });
+            const post = await tx.post.findUnique({ where: { id: postId }, select: { id: true, authorId: true } });
             if (!post) {
                 throw new Error("Post not found");
             }
@@ -281,32 +281,37 @@ export class PostService {
                 data: { commentCount: { increment: 1 } },
             });
 
-            return { comment };
+            return { comment, postAuthorId: post.authorId };
         });
     }
 
     public static async toggleCommentReaction(commentId: string, userId: string, type: ReactionType) {
         return await prisma.$transaction(async (tx) => {
-            const comment = await tx.postComment.findUnique({ where: { id: commentId } });
+            const comment = await tx.postComment.findUnique({
+                where: { id: commentId },
+                select: { id: true, postId: true },
+            });
             if (!comment) throw new Error("Comment not found");
+
+            const post = await tx.post.findUnique({ where: { id: comment.postId }, select: { authorId: true } });
 
             const existing = await tx.commentReaction.findUnique({ where: { commentId_userId: { commentId, userId } } });
 
             if (existing) {
                 if (existing.type === type) {
                     await tx.commentReaction.delete({ where: { commentId_userId: { commentId, userId } } });
-                    return { action: "removed" as const, reaction: null, postId: comment.postId };
+                    return { action: "removed" as const, reaction: null, postId: comment.postId, postAuthorId: post?.authorId };
                 }
 
                 const reaction = await tx.commentReaction.update({
                     where: { commentId_userId: { commentId, userId } },
                     data: { type },
                 });
-                return { action: "updated" as const, reaction, postId: comment.postId };
+                return { action: "updated" as const, reaction, postId: comment.postId, postAuthorId: post?.authorId };
             }
 
             const reaction = await tx.commentReaction.create({ data: { commentId, userId, type } });
-            return { action: "added" as const, reaction, postId: comment.postId };
+            return { action: "added" as const, reaction, postId: comment.postId, postAuthorId: post?.authorId };
         });
     }
 
