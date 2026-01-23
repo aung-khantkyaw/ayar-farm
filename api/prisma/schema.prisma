@@ -75,6 +75,12 @@ enum PostMediaType {
   FILE
 }
 
+enum AnnouncementType {
+  INFORMATION
+  WARNING
+  BREAKING_NEWS
+}
+
 model Users {
   id           String   @id @unique @default(uuid())
   name         String
@@ -106,6 +112,8 @@ model Users {
   postComments             PostComment[]             @relation("UserPostComments")
   commentReactions         CommentReaction[]         @relation("UserCommentReactions")
   Notifications            Notifications[]           @relation("UserNotifications")
+  createdAnnouncements     Announcements[]           @relation("AnnouncementCreator")
+  announcementRecipients   AnnouncementRecipient[]
 }
 
 model CropTypes {
@@ -410,5 +418,35 @@ model Notifications {
 
   user Users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model Announcements {
+  id        String           @id @default(uuid())
+  creatorId String
+  title     String
+  message   String
+  type      AnnouncementType @default(INFORMATION)
+  data      Json?
+  isActive  Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  creator    Users                   @relation("AnnouncementCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  recipients AnnouncementRecipient[]
+
+  @@index([creatorId])
+}
+
+model AnnouncementRecipient {
+  id             String   @id @default(uuid())
+  announcementId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  announcement Announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
   @@index([userId])
 }

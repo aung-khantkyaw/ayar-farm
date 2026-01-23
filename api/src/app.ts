@@ -16,6 +16,7 @@ import resource from "./routes/resource";
 import chat from "./routes/chat";
 import post from "./routes/post";
 import notification from "./routes/notification";
+import announcement from "./routes/announcement";
 
 const app = express();
 
@@ -66,5 +67,6 @@ app.use("/api/resources", resource);
 app.use("/api/chat", chat);
 app.use("/api/post", post);
 app.use("/api/notifications", notification);
+app.use("/api/announcements", announcement);
 
 export default app;
