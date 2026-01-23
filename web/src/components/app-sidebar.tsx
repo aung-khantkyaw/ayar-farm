@@ -113,6 +113,11 @@ const data = {
       icon: IconVideo,
     },
     {
+      name: "Announcements",
+      url: "/admin/announcements",
+      icon: IconMessageCog,
+    },
+    {
       name: "Applications",
       url: "/admin/applications",
       icon: IconDeviceMobile,

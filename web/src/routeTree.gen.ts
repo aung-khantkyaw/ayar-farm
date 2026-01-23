@@ -26,6 +26,7 @@ import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -112,6 +113,11 @@ const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   path: '/admin/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin/announcements',
+  path: '/admin/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/admin/announcements'
     | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminChatRoomRoute: typeof AdminChatRoomRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -381,6 +401,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminApplicationsRoute: AdminApplicationsRoute,
   AdminChatRoomRoute: AdminChatRoomRoute,
   AdminUsersRoute: AdminUsersRoute,
