@@ -75,23 +75,35 @@ export function MarketWeather() {
     null,
   );
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
         const marketRes = await fetch("/api/market");
+        if (!marketRes.ok) throw new Error("Failed to fetch market data");
         const marketJson = await marketRes.json();
         setMarketData(marketJson);
 
-        const weatherYangonRes = await fetch("/v2/weather/yangon");
+        const weatherYangonRes = await fetch(
+          "https://getweatherbycityapi.laziestant.tech/v2/weather/yangon",
+        );
+        if (!weatherYangonRes.ok)
+          throw new Error("Failed to fetch weather data for Yangon");
         const weatherYangonJson = await weatherYangonRes.json();
         setWeatherYangon(weatherYangonJson);
 
-        const weatherMandalayRes = await fetch("/v2/weather/mandalay");
+        const weatherMandalayRes = await fetch(
+          "https://getweatherbycityapi.laziestant.tech/v2/weather/mandalay",
+        );
+        if (!weatherMandalayRes.ok)
+          throw new Error("Failed to fetch weather data for Mandalay");
         const weatherMandalayJson = await weatherMandalayRes.json();
         setWeatherMandalay(weatherMandalayJson);
       } catch (error) {
         console.error("Failed to fetch market/weather data", error);
+        setError(
+          "Failed to load market and weather data. Please try again later.",
+        );
       } finally {
         setLoading(false);
       }
@@ -132,6 +144,50 @@ export function MarketWeather() {
           </CardHeader>
           <CardContent className="flex-1 p-0 overflow-hidden relative z-10">
             <LoadingSpinner />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Market Prices */}
+        <Card className="h-[600px] flex flex-col relative overflow-hidden bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 border-0 shadow-lg hover:shadow-xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-green-500/10 rounded-bl-full"></div>
+          <CardHeader className="pb-3 border-b border-emerald-100/50 bg-white/50 backdrop-blur-sm relative z-10">
+            <CardTitle className="flex items-center gap-2 text-emerald-800">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <ShoppingCart className="h-5 w-5 text-emerald-600" />
+              </div>
+              Market Prices
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden p-0 relative z-10">
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2">
+              <ShoppingCart className="h-10 w-10 opacity-20" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weather */}
+        <Card className="h-[600px] flex flex-col relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 border-0 shadow-lg hover:shadow-xl">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-bl-full"></div>
+          <CardHeader className="pb-3 border-b border-blue-100/50 bg-white/50 backdrop-blur-sm relative z-10">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <CloudSun className="h-5 w-5 text-blue-600" />
+              </div>
+              Weather Forecast
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 p-0 overflow-hidden relative z-10">
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2">
+              <CloudSun className="h-10 w-10 opacity-20" />
+              <p>{error}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
