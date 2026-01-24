@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef, useCallback } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import type React from "react";
 import { Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/providers/auth-provider";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Send, Users, Paperclip, Image as ImageIcon, File } from "lucide-react";
+import { MessageCircle, Send, Users, Paperclip, File } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/lib/api";
@@ -96,14 +96,17 @@ export default function ChatRoomManagement() {
       const token = getToken();
       const body = await api.get(
         `/chat/conversations/${conversationId}/messages`,
-        token
+        token,
       );
       let data = Array.isArray(body?.data)
         ? body.data
         : body?.data?.messages || body?.messages || body || [];
 
       // Sort messages by creation date (oldest first)
-      data = data.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      data = data.sort(
+        (a: any, b: any) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
       setMessages(data);
     } catch (e) {
       console.error(e);
@@ -121,55 +124,58 @@ export default function ChatRoomManagement() {
       const formData = new FormData();
 
       if (input.trim()) {
-        formData.append('content', input);
+        formData.append("content", input);
       }
 
       // Determine message type based on content
-      const isVideo = mediaFile && mediaFile.type.startsWith('video/');
-      const messageType = isVideo ? 'VIDEO' : (mediaFile ? 'IMAGE' : 'TEXT');
-      formData.append('type', messageType);
+      const isVideo = mediaFile && mediaFile.type.startsWith("video/");
+      const messageType = isVideo ? "VIDEO" : mediaFile ? "IMAGE" : "TEXT";
+      formData.append("type", messageType);
 
       if (mediaFile) {
-        formData.append('file', mediaFile); // Changed from 'media' to 'file' to match backend expectation
+        formData.append("file", mediaFile); // Changed from 'media' to 'file' to match backend expectation
       }
 
       // Create a temporary message object to show immediately in UI
       const tempMessage = {
         id: `temp-${Date.now()}`,
-        content: input || (mediaFile ? '' : ''), // Only include content if it exists, or set to empty string for media-only
+        content: input || (mediaFile ? "" : ""), // Only include content if it exists, or set to empty string for media-only
         createdAt: new Date().toISOString(),
         user: {
           id: user?.id,
           name: user?.name || "You",
-          profile_picture: user?.profile_picture
+          profile_picture: user?.profile_picture,
         },
         // Include media preview if available
         ...(mediaFile && {
           mediaUrl: previewUrl, // Use the local preview URL temporarily
           mediaName: mediaFile.name,
-          mediaType: mediaFile.type
-        })
+          mediaType: mediaFile.type,
+        }),
       };
 
       // Add the temporary message to the UI immediately
-      setMessages(prev => [...prev, tempMessage]);
+      setMessages((prev) => [...prev, tempMessage]);
 
       // Send the message via API to ensure it's saved to the database
-      const response = await api.post(
+      await api.post(
         `/chat/conversations/${selectedConv.id}/messages`,
         formData,
-        token
+        token,
       );
 
       // If we have a socket connection, emit the message to notify other participants
       if (socket) {
         // Emit socket event to notify other participants
-        const isVideo = mediaFile && mediaFile.type.startsWith('video/');
+        const isVideo = mediaFile && mediaFile.type.startsWith("video/");
         socket.emit("send_message", {
           conversationId: selectedConv.id,
           content: input,
-          type: isVideo ? 'VIDEO' : (mediaFile ? 'IMAGE' : 'TEXT'),
-          ...(mediaFile && { fileName: mediaFile.name, fileType: mediaFile.type }),
+          type: isVideo ? "VIDEO" : mediaFile ? "IMAGE" : "TEXT",
+          ...(mediaFile && {
+            fileName: mediaFile.name,
+            fileType: mediaFile.type,
+          }),
           // The actual message with media info will come through the socket listener
         });
       }
@@ -181,7 +187,7 @@ export default function ChatRoomManagement() {
     } catch (e) {
       console.error(e);
       // Remove the temporary message if there was an error
-      setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+      setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")));
     }
   }
 
@@ -197,7 +203,7 @@ export default function ChatRoomManagement() {
     setMediaFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -209,7 +215,7 @@ export default function ChatRoomManagement() {
       await api.post(
         "/chat/conversations/direct",
         { userId: directUserName.trim() },
-        token
+        token,
       );
       setDirectUserName("");
       fetchConversations();
@@ -252,8 +258,13 @@ export default function ChatRoomManagement() {
       const token = getToken();
 
       // First, find the user by username/email/name to get their ID
-      const userResponse = await api.get(`/users/search?q=${encodeURIComponent(participantUserName.trim())}`, token);
-      const userData = Array.isArray(userResponse?.data) ? userResponse.data : userResponse?.users || [];
+      const userResponse = await api.get(
+        `/users/search?q=${encodeURIComponent(participantUserName.trim())}`,
+        token,
+      );
+      const userData = Array.isArray(userResponse?.data)
+        ? userResponse.data
+        : userResponse?.users || [];
 
       if (!userData || userData.length === 0) {
         alert(`User "${participantUserName.trim()}" not found`);
@@ -266,7 +277,7 @@ export default function ChatRoomManagement() {
       await api.post(
         `/chat/conversations/${selectedConv.id}/participants`,
         { participantIds: [userId] },
-        token
+        token,
       );
       setParticipantUserName("");
       fetchMessages(selectedConv.id);
@@ -292,8 +303,13 @@ export default function ChatRoomManagement() {
         const token = getToken();
 
         // First, find the user by username/email/name to get their ID
-        const userResponse = await api.get(`/users/search?q=${encodeURIComponent(participantUserName.trim())}`, token);
-        const userData = Array.isArray(userResponse?.data) ? userResponse.data : userResponse?.users || [];
+        const userResponse = await api.get(
+          `/users/search?q=${encodeURIComponent(participantUserName.trim())}`,
+          token,
+        );
+        const userData = Array.isArray(userResponse?.data)
+          ? userResponse.data
+          : userResponse?.users || [];
 
         if (!userData || userData.length === 0) {
           alert(`User "${participantUserName.trim()}" not found`);
@@ -315,7 +331,7 @@ export default function ChatRoomManagement() {
       const token = getToken();
       await api.delete(
         `/chat/conversations/${selectedConv.id}/participants/${targetUserId}`,
-        token
+        token,
       );
       // Only clear participantUserName if we weren't given a direct userId
       if (!userId) {
@@ -328,10 +344,13 @@ export default function ChatRoomManagement() {
         fetchGroupMembers(); // Refresh the member list if it's visible
       }
       // Also refresh the group details participant list if it's visible
-      if (showGroupDetails && selectedConv?.type === 'GROUP') {
+      if (showGroupDetails && selectedConv?.type === "GROUP") {
         // Update the selected conversation to trigger a re-render
         const token = getToken();
-        const updatedConv = await api.get(`/chat/conversations/${selectedConv.id}`, token);
+        const updatedConv = await api.get(
+          `/chat/conversations/${selectedConv.id}`,
+          token,
+        );
         setSelectedConv(updatedConv.data || updatedConv);
       }
 
@@ -384,7 +403,7 @@ export default function ChatRoomManagement() {
       const token = getToken();
       const body = await api.get(
         `/chat/groups/search?q=${encodeURIComponent(groupSearchTerm.trim())}`,
-        token
+        token,
       );
       const data = Array.isArray(body?.data)
         ? body.data
@@ -401,7 +420,11 @@ export default function ChatRoomManagement() {
   async function deleteConversation() {
     if (!selectedConv) return;
 
-    if (!window.confirm(`Are you sure you want to delete the conversation "${selectedConv.name}"? This action cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the conversation "${selectedConv.name}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -427,8 +450,7 @@ export default function ChatRoomManagement() {
     if (!selectedConv) return;
 
     try {
-      const token = getToken();
-      // The conversation data already includes participants, so we can use that
+      getToken();
       setGroupMembers(selectedConv.participants || []);
     } catch (e) {
       console.error("Error fetching group members:", e);
@@ -437,7 +459,7 @@ export default function ChatRoomManagement() {
   }
 
   const toggleShowMembers = () => {
-    if (selectedConv?.type === 'GROUP') {
+    if (selectedConv?.type === "GROUP") {
       const newState = !showMembers;
       setShowMembers(newState);
       if (newState) {
@@ -447,7 +469,7 @@ export default function ChatRoomManagement() {
   };
 
   const toggleGroupDetails = () => {
-    if (selectedConv?.type === 'GROUP') {
+    if (selectedConv?.type === "GROUP") {
       setShowGroupDetails(!showGroupDetails);
       // Initialize the edit fields when showing group details
       if (!showGroupDetails && selectedConv) {
@@ -478,24 +500,34 @@ export default function ChatRoomManagement() {
       const token = getToken();
       const updateData = {
         name: editedGroupName.trim(),
-        description: editedGroupDescription.trim()
+        description: editedGroupDescription.trim(),
       };
 
-      await api.patch(`/chat/conversations/${selectedConv.id}`, updateData, token);
+      await api.patch(
+        `/chat/conversations/${selectedConv.id}`,
+        updateData,
+        token,
+      );
 
       // Update the selected conversation with new info
       setSelectedConv({
         ...selectedConv,
         name: editedGroupName.trim(),
-        description: editedGroupDescription.trim()
+        description: editedGroupDescription.trim(),
       });
 
       // Also update in the conversations list
-      setConversations(prev => prev.map(conv =>
-        conv.id === selectedConv.id
-          ? { ...conv, name: editedGroupName.trim(), description: editedGroupDescription.trim() }
-          : conv
-      ));
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === selectedConv.id
+            ? {
+                ...conv,
+                name: editedGroupName.trim(),
+                description: editedGroupDescription.trim(),
+              }
+            : conv,
+        ),
+      );
 
       setEditingGroupInfo(false);
 
@@ -517,7 +549,7 @@ export default function ChatRoomManagement() {
         (u: any) =>
           (u.name || "").toLowerCase().includes(term) ||
           (u.username || "").toLowerCase().includes(term) ||
-          (u.email || "").toLowerCase().includes(term)
+          (u.email || "").toLowerCase().includes(term),
       )
       .slice(0, 5);
   }
@@ -531,9 +563,9 @@ export default function ChatRoomManagement() {
     if (!socket) return;
     const handler = (m: any) => {
       if (selectedConv && m.conversationId === selectedConv.id) {
-        setMessages(prev => {
+        setMessages((prev) => {
           // Check if this is a response to our temporary message
-          const tempIndex = prev.findIndex(msg => msg.id.startsWith('temp-'));
+          const tempIndex = prev.findIndex((msg) => msg.id.startsWith("temp-"));
 
           if (tempIndex !== -1) {
             // Replace the temporary message with the actual one from server
@@ -542,11 +574,12 @@ export default function ChatRoomManagement() {
             updatedMessages[tempIndex] = {
               ...m,
               // If the server response doesn't have media info but our temp message did, preserve it
-              ...(prev[tempIndex].mediaUrl && !(m.mediaUrl || m.fileUrl) && {
-                mediaUrl: prev[tempIndex].mediaUrl,
-                mediaName: prev[tempIndex].mediaName,
-                mediaType: prev[tempIndex].mediaType
-              })
+              ...(prev[tempIndex].mediaUrl &&
+                !(m.mediaUrl || m.fileUrl) && {
+                  mediaUrl: prev[tempIndex].mediaUrl,
+                  mediaName: prev[tempIndex].mediaName,
+                  mediaType: prev[tempIndex].mediaType,
+                }),
             };
             return updatedMessages;
           } else {
@@ -573,7 +606,7 @@ export default function ChatRoomManagement() {
   const groupMessagesByDate = (messages: any[]) => {
     const grouped: Record<string, any[]> = {};
 
-    messages.forEach(message => {
+    messages.forEach((message) => {
       const date = new Date(message.createdAt).toDateString();
       if (!grouped[date]) {
         grouped[date] = [];
@@ -645,7 +678,7 @@ export default function ChatRoomManagement() {
                   <CardContent className="max-h-[680px] overflow-auto space-y-2">
                     {conversations
                       .filter((c) =>
-                        (c.name || "").toLowerCase().includes(search)
+                        (c.name || "").toLowerCase().includes(search),
                       )
                       .map((c) => (
                         <div
@@ -665,7 +698,7 @@ export default function ChatRoomManagement() {
                               <MessageCircle className="w-4 h-4 text-gray-500" />
                               {c.name ||
                                 c.participants?.find(
-                                  (p: any) => p.user?.id !== user?.id
+                                  (p: any) => p.user?.id !== user?.id,
                                 )?.user?.name ||
                                 "Conversation"}
                             </div>
@@ -704,7 +737,7 @@ export default function ChatRoomManagement() {
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
-                        {selectedConv && selectedConv.type === 'GROUP' ? (
+                        {selectedConv && selectedConv.type === "GROUP" ? (
                           <Button
                             variant="outline"
                             size="sm"
@@ -723,27 +756,31 @@ export default function ChatRoomManagement() {
                             Mark as read
                           </Button>
                         )}
-                        {selectedConv && selectedConv.type === 'GROUP' && selectedConv.ownerId !== user?.id && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={leaveConversation}
-                            disabled={actionLoading || !selectedConv}
-                          >
-                            Leave
-                          </Button>
-                        )}
-                        {selectedConv && selectedConv.type === 'GROUP' && selectedConv.ownerId === user?.id && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={deleteConversation}
-                            disabled={actionLoading || !selectedConv}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                        {selectedConv && selectedConv.type === 'DIRECT' && (
+                        {selectedConv &&
+                          selectedConv.type === "GROUP" &&
+                          selectedConv.ownerId !== user?.id && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={leaveConversation}
+                              disabled={actionLoading || !selectedConv}
+                            >
+                              Leave
+                            </Button>
+                          )}
+                        {selectedConv &&
+                          selectedConv.type === "GROUP" &&
+                          selectedConv.ownerId === user?.id && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={deleteConversation}
+                              disabled={actionLoading || !selectedConv}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        {selectedConv && selectedConv.type === "DIRECT" && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -773,19 +810,24 @@ export default function ChatRoomManagement() {
                               {groupMessagesByDate(messages).map((group) => (
                                 <div key={group.date} className="mb-4">
                                   <div className="text-center text-xs text-muted-foreground my-2">
-                                    {new Date(group.date).toLocaleDateString('en-US', {
-                                      weekday: 'long',
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric'
-                                    })}
+                                    {new Date(group.date).toLocaleDateString(
+                                      "en-US",
+                                      {
+                                        weekday: "long",
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                      },
+                                    )}
                                   </div>
                                   <div className="space-y-3">
                                     {group.messages.map((m: any) => (
                                       <div
                                         key={m.id}
                                         className={`rounded-lg border bg-white p-3 shadow-xs max-w-[70%] min-w-[100px] w-fit break-words ${
-                                          m.user?.id === user?.id ? 'ml-auto bg-blue-50' : 'mr-auto'
+                                          m.user?.id === user?.id
+                                            ? "ml-auto bg-blue-50"
+                                            : "mr-auto"
                                         }`}
                                       >
                                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
@@ -794,7 +836,12 @@ export default function ChatRoomManagement() {
                                           </span>
                                           <span>
                                             {m.createdAt
-                                              ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                              ? new Date(
+                                                  m.createdAt,
+                                                ).toLocaleTimeString([], {
+                                                  hour: "2-digit",
+                                                  minute: "2-digit",
+                                                })
                                               : ""}
                                           </span>
                                         </div>
@@ -807,25 +854,32 @@ export default function ChatRoomManagement() {
                                           <div className="mt-2">
                                             {(() => {
                                               // Use the appropriate URL field depending on what's available
-                                              const mediaUrl = m.mediaUrl || m.fileUrl;
-                                              const mediaName = m.mediaName || m.fileName || 'File';
+                                              const mediaUrl =
+                                                m.mediaUrl || m.fileUrl;
+                                              const mediaName =
+                                                m.mediaName ||
+                                                m.fileName ||
+                                                "File";
 
-                                              const isImage = mediaUrl.endsWith('.jpg') ||
-                                                              mediaUrl.endsWith('.jpeg') ||
-                                                              mediaUrl.endsWith('.png') ||
-                                                              mediaUrl.endsWith('.gif') ||
-                                                              mediaUrl.endsWith('.webp');
+                                              const isImage =
+                                                mediaUrl.endsWith(".jpg") ||
+                                                mediaUrl.endsWith(".jpeg") ||
+                                                mediaUrl.endsWith(".png") ||
+                                                mediaUrl.endsWith(".gif") ||
+                                                mediaUrl.endsWith(".webp");
 
-                                              const isVideo = mediaUrl.endsWith('.mp4') ||
-                                                              mediaUrl.endsWith('.mov') ||
-                                                              mediaUrl.endsWith('.avi') ||
-                                                              mediaUrl.endsWith('.mkv') ||
-                                                              mediaUrl.endsWith('.wmv');
+                                              const isVideo =
+                                                mediaUrl.endsWith(".mp4") ||
+                                                mediaUrl.endsWith(".mov") ||
+                                                mediaUrl.endsWith(".avi") ||
+                                                mediaUrl.endsWith(".mkv") ||
+                                                mediaUrl.endsWith(".wmv");
 
-                                              const isAudio = mediaUrl.endsWith('.mp3') ||
-                                                              mediaUrl.endsWith('.wav') ||
-                                                              mediaUrl.endsWith('.ogg') ||
-                                                              mediaUrl.endsWith('.m4a');
+                                              const isAudio =
+                                                mediaUrl.endsWith(".mp3") ||
+                                                mediaUrl.endsWith(".wav") ||
+                                                mediaUrl.endsWith(".ogg") ||
+                                                mediaUrl.endsWith(".m4a");
 
                                               if (isImage) {
                                                 return (
@@ -833,7 +887,12 @@ export default function ChatRoomManagement() {
                                                     src={mediaUrl}
                                                     alt="Shared image"
                                                     className="max-w-full max-h-60 rounded-md object-contain cursor-pointer"
-                                                    onClick={() => window.open(mediaUrl, '_blank')}
+                                                    onClick={() =>
+                                                      window.open(
+                                                        mediaUrl,
+                                                        "_blank",
+                                                      )
+                                                    }
                                                   />
                                                 );
                                               } else if (isVideo) {
@@ -843,7 +902,8 @@ export default function ChatRoomManagement() {
                                                     controls
                                                     className="max-w-full max-h-60 rounded-md"
                                                   >
-                                                    Your browser does not support the video tag.
+                                                    Your browser does not
+                                                    support the video tag.
                                                   </video>
                                                 );
                                               } else if (isAudio) {
@@ -853,7 +913,8 @@ export default function ChatRoomManagement() {
                                                     controls
                                                     className="w-full"
                                                   >
-                                                    Your browser does not support the audio element.
+                                                    Your browser does not
+                                                    support the audio element.
                                                   </audio>
                                                 );
                                               } else {
@@ -894,8 +955,10 @@ export default function ChatRoomManagement() {
                           {previewUrl && (
                             <div className="mb-3 flex items-center justify-between p-2 bg-gray-100 rounded-md">
                               {(() => {
-                                const isImage = mediaFile?.type.startsWith('image/');
-                                const isVideo = mediaFile?.type.startsWith('video/');
+                                const isImage =
+                                  mediaFile?.type.startsWith("image/");
+                                const isVideo =
+                                  mediaFile?.type.startsWith("video/");
 
                                 if (isImage) {
                                   return (
@@ -919,7 +982,9 @@ export default function ChatRoomManagement() {
                                   return (
                                     <div className="flex items-center gap-2">
                                       <File className="w-6 h-6 text-blue-500" />
-                                      <span className="text-sm truncate max-w-xs">{mediaFile?.name}</span>
+                                      <span className="text-sm truncate max-w-xs">
+                                        {mediaFile?.name}
+                                      </span>
                                     </div>
                                   );
                                 }
@@ -986,7 +1051,7 @@ export default function ChatRoomManagement() {
                 </Card>
 
                 {/* Right: actions */}
-                {showGroupDetails && selectedConv?.type === 'GROUP' ? (
+                {showGroupDetails && selectedConv?.type === "GROUP" ? (
                   <Card className="shadow-sm border h-full">
                     <CardHeader>
                       <div className="flex justify-between items-center">
@@ -1017,20 +1082,28 @@ export default function ChatRoomManagement() {
                             placeholder="Group name"
                           />
                         ) : (
-                          <p className="text-gray-900">{selectedConv.name || 'N/A'}</p>
+                          <p className="text-gray-900">
+                            {selectedConv.name || "N/A"}
+                          </p>
                         )}
                       </div>
 
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-gray-700">Description</h4>
+                        <h4 className="font-semibold text-gray-700">
+                          Description
+                        </h4>
                         {editingGroupInfo ? (
                           <Input
                             value={editedGroupDescription}
-                            onChange={(e) => setEditedGroupDescription(e.target.value)}
+                            onChange={(e) =>
+                              setEditedGroupDescription(e.target.value)
+                            }
                             placeholder="Group description"
                           />
                         ) : (
-                          <p className="text-gray-900">{selectedConv.description || 'No description'}</p>
+                          <p className="text-gray-900">
+                            {selectedConv.description || "No description"}
+                          </p>
                         )}
                       </div>
 
@@ -1046,52 +1119,79 @@ export default function ChatRoomManagement() {
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                               <span className="text-xs font-medium">
-                                {selectedConv.owner?.name?.charAt(0)?.toUpperCase() || '?'}
+                                {selectedConv.owner?.name
+                                  ?.charAt(0)
+                                  ?.toUpperCase() || "?"}
                               </span>
                             </div>
                           )}
-                          <span>{selectedConv.owner?.name || 'Unknown'}</span>
+                          <span>{selectedConv.owner?.name || "Unknown"}</span>
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <h4 className="font-semibold text-gray-700">Participants ({selectedConv.participants?.length || 0})</h4>
+                          <h4 className="font-semibold text-gray-700">
+                            Participants (
+                            {selectedConv.participants?.length || 0})
+                          </h4>
                         </div>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {selectedConv.participants && selectedConv.participants.length > 0 ? (
-                            selectedConv.participants.map((participant: any) => (
-                              <div key={participant.userId || participant.user?.id} className="flex items-center justify-between p-2 border rounded-md">
-                                <div className="flex items-center gap-2">
-                                  {participant.user?.profile_picture ? (
-                                    <img
-                                      src={participant.user.profile_picture}
-                                      alt={participant.user.name}
-                                      className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                      <span className="text-xs font-medium">
-                                        {participant.user?.name?.charAt(0)?.toUpperCase() || '?'}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <span>{participant.user?.name || participant.user?.email || 'Unknown'}</span>
+                          {selectedConv.participants &&
+                          selectedConv.participants.length > 0 ? (
+                            selectedConv.participants.map(
+                              (participant: any) => (
+                                <div
+                                  key={
+                                    participant.userId || participant.user?.id
+                                  }
+                                  className="flex items-center justify-between p-2 border rounded-md"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {participant.user?.profile_picture ? (
+                                      <img
+                                        src={participant.user.profile_picture}
+                                        alt={participant.user.name}
+                                        className="w-8 h-8 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <span className="text-xs font-medium">
+                                          {participant.user?.name
+                                            ?.charAt(0)
+                                            ?.toUpperCase() || "?"}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <span>
+                                      {participant.user?.name ||
+                                        participant.user?.email ||
+                                        "Unknown"}
+                                    </span>
+                                  </div>
+                                  {selectedConv.ownerId === user?.id &&
+                                    participant.user?.id !==
+                                      selectedConv.ownerId && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() =>
+                                          removeParticipant(
+                                            participant.user?.id,
+                                          )
+                                        }
+                                        disabled={actionLoading}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
                                 </div>
-                                {selectedConv.ownerId === user?.id && participant.user?.id !== selectedConv.ownerId && (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => removeParticipant(participant.user?.id)}
-                                    disabled={actionLoading}
-                                  >
-                                    Remove
-                                  </Button>
-                                )}
-                              </div>
-                            ))
+                              ),
+                            )
                           ) : (
-                            <p className="text-sm text-gray-500">No participants found</p>
+                            <p className="text-sm text-gray-500">
+                              No participants found
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1110,7 +1210,9 @@ export default function ChatRoomManagement() {
                                 </Button>
                                 <Button
                                   onClick={saveEditedGroupInfo}
-                                  disabled={actionLoading || !editedGroupName.trim()}
+                                  disabled={
+                                    actionLoading || !editedGroupName.trim()
+                                  }
                                 >
                                   Save
                                 </Button>
@@ -1176,7 +1278,7 @@ export default function ChatRoomManagement() {
                                 className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
                                 onClick={() =>
                                   setDirectUserName(
-                                    u.name || u.username || u.email || ""
+                                    u.name || u.username || u.email || "",
                                   )
                                 }
                               >
@@ -1233,8 +1335,10 @@ export default function ChatRoomManagement() {
 
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <div className="text-sm font-semibold">Participants</div>
-                          {selectedConv?.type === 'GROUP' && (
+                          <div className="text-sm font-semibold">
+                            Participants
+                          </div>
+                          {selectedConv?.type === "GROUP" && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -1245,13 +1349,18 @@ export default function ChatRoomManagement() {
                           )}
                         </div>
 
-                        {selectedConv?.type === 'GROUP' && showMembers ? (
+                        {selectedConv?.type === "GROUP" && showMembers ? (
                           <div className="space-y-2">
-                            <h4 className="font-medium text-sm">Group Members ({groupMembers.length})</h4>
+                            <h4 className="font-medium text-sm">
+                              Group Members ({groupMembers.length})
+                            </h4>
                             <div className="max-h-60 overflow-y-auto space-y-2">
                               {groupMembers.length > 0 ? (
                                 groupMembers.map((member: any) => (
-                                  <div key={member.userId || member.user?.id} className="flex items-center justify-between p-2 border rounded-md">
+                                  <div
+                                    key={member.userId || member.user?.id}
+                                    className="flex items-center justify-between p-2 border rounded-md"
+                                  >
                                     <div className="flex items-center gap-2">
                                       {member.user?.profile_picture ? (
                                         <img
@@ -1262,26 +1371,37 @@ export default function ChatRoomManagement() {
                                       ) : (
                                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                                           <span className="text-xs font-medium">
-                                            {member.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                                            {member.user?.name
+                                              ?.charAt(0)
+                                              ?.toUpperCase() || "?"}
                                           </span>
                                         </div>
                                       )}
-                                      <span>{member.user?.name || member.user?.email || 'Unknown'}</span>
+                                      <span>
+                                        {member.user?.name ||
+                                          member.user?.email ||
+                                          "Unknown"}
+                                      </span>
                                     </div>
-                                    {selectedConv.ownerId === user?.id && member.user?.id !== user?.id && (
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => removeParticipant(member.user?.id)}
-                                        disabled={actionLoading}
-                                      >
-                                        Remove
-                                      </Button>
-                                    )}
+                                    {selectedConv.ownerId === user?.id &&
+                                      member.user?.id !== user?.id && (
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() =>
+                                            removeParticipant(member.user?.id)
+                                          }
+                                          disabled={actionLoading}
+                                        >
+                                          Remove
+                                        </Button>
+                                      )}
                                   </div>
                                 ))
                               ) : (
-                                <p className="text-sm text-muted-foreground">No members found</p>
+                                <p className="text-sm text-muted-foreground">
+                                  No members found
+                                </p>
                               )}
                             </div>
                           </div>
@@ -1290,7 +1410,9 @@ export default function ChatRoomManagement() {
                             <Input
                               placeholder="Participant user name"
                               value={participantUserName}
-                              onChange={(e) => setParticipantUserName(e.target.value)}
+                              onChange={(e) =>
+                                setParticipantUserName(e.target.value)
+                              }
                               disabled={!selectedConv}
                             />
                             <div className="flex gap-2">
@@ -1326,7 +1448,7 @@ export default function ChatRoomManagement() {
                                     className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
                                     onClick={() =>
                                       setParticipantUserName(
-                                        u.name || u.username || u.email || ""
+                                        u.name || u.username || u.email || "",
                                       )
                                     }
                                   >
@@ -1335,7 +1457,9 @@ export default function ChatRoomManagement() {
                                     </span>
                                     {(u.username || u.email) && (
                                       <span className="text-muted-foreground ml-1">
-                                        {u.username ? `(${u.username})` : u.email}
+                                        {u.username
+                                          ? `(${u.username})`
+                                          : u.email}
                                       </span>
                                     )}
                                   </button>
@@ -1354,14 +1478,19 @@ export default function ChatRoomManagement() {
                       <Separator />
 
                       <div className="space-y-2">
-                        <div className="text-sm font-semibold">Search groups</div>
+                        <div className="text-sm font-semibold">
+                          Search groups
+                        </div>
                         <div className="flex gap-2">
                           <Input
                             placeholder="Search term"
                             value={groupSearchTerm}
                             onChange={(e) => setGroupSearchTerm(e.target.value)}
                           />
-                          <Button onClick={searchGroups} disabled={actionLoading}>
+                          <Button
+                            onClick={searchGroups}
+                            disabled={actionLoading}
+                          >
                             Search
                           </Button>
                         </div>
@@ -1404,7 +1533,6 @@ export default function ChatRoomManagement() {
           </div>
         </div>
       </SidebarInset>
-
     </SidebarProvider>
   );
 }

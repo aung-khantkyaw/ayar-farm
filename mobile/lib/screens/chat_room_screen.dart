@@ -8,6 +8,7 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/socket_service.dart';
+import '../constants/user_types.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final Conversation conversation;
@@ -140,13 +141,180 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  void _showGroupDetails() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Group header with name and description
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.conversation.name ?? "Group Name",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    if (widget.conversation.description != null)
+                      Text(
+                        widget.conversation.description!,
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Participants section
+              Text(
+                "Participants (${widget.conversation.participants.length})",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+
+              SizedBox(height: 8),
+
+              // Participants list
+              Flexible(
+                child: Container(
+                  height: 300, // Fixed height for the list
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: widget.conversation.participants.length,
+                    itemBuilder: (context, index) {
+                      final participant =
+                          widget.conversation.participants[index];
+                      final user = participant.user;
+                      final isOwner =
+                          participant.userId == widget.conversation.ownerId;
+
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage:
+                              user?.profilePicture != null
+                                  ? NetworkImage(user!.profilePicture!)
+                                  : null,
+                          child:
+                              user?.profilePicture == null
+                                  ? Icon(Icons.person)
+                                  : null,
+                          backgroundColor: Colors.grey[300],
+                        ),
+                        title: Row(
+                          children: [
+                            Text(user?.name ?? "Unknown User"),
+                            if (isOwner)
+                              Container(
+                                margin: EdgeInsets.only(left: 8),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  "Admin",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (user?.userType != null)
+                              Text(
+                                userTypeLabels[user!.userType!] ??
+                                    user!.userType!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 16),
+
+              // Leave group button
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await _chatService.leaveGroup(widget.conversation.id);
+                      Navigator.pop(context); // Close bottom sheet
+                      Navigator.pop(context); // Return to previous screen
+                    } catch (e) {
+                      CommonSnackbar.show(
+                        context,
+                        message: 'Failed to leave group: $e',
+                        type: SnackBarType.error,
+                        position: SnackBarPosition.bottom,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text("Leave Group"),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Colors (using minimal/default for now, can be improved to match theme)
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
-      appBar: AppBar(title: Text(_getTitle()), actions: widget.actions),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(_getTitle()),
+        actions: [
+          if (widget.conversation.type == ConversationType.GROUP)
+            IconButton(
+              icon: Icon(Icons.info_outline),
+              onPressed: _showGroupDetails,
+              tooltip: 'View group details',
+            ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -188,14 +356,49 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (message.type == MessageType.IMAGE && message.fileUrl != null)
-              // Use NetworkImage directly or CachedNetworkImage if available.
-              // Need to handle full URL or relative.
-              // Assuming URL logic needed.
-              Image.network(
-                message.fileUrl!.startsWith('http')
-                    ? message.fileUrl!
-                    : 'http://10.0.2.2:3000/${message.fileUrl}', // Basic fix for emulator
-                errorBuilder: (c, e, s) => Icon(Icons.broken_image),
+              // Handle image messages with download button
+              Stack(
+                children: [
+                  Container(
+                    child: Image.network(
+                      message.fileUrl!.startsWith('http')
+                          ? message.fileUrl!
+                          : 'http://10.0.2.2:3000/${message.fileUrl}',
+                      errorBuilder: (c, e, s) => Icon(Icons.broken_image),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: 200,
+                          height: 150,
+                          color: Colors.black12,
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Download button for images
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.download,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        onPressed: () => _downloadMediaFile(message.fileUrl!),
+                        tooltip: 'Download image',
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
             if (message.type == MessageType.VIDEO && message.fileUrl != null)
@@ -217,47 +420,57 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Widget _buildVideoPlayer(Message message) {
-    // Construct the full URL for the video
-    String videoUrl = message.fileUrl!;
-    if (!videoUrl.startsWith('http')) {
-      videoUrl = 'http://10.0.2.2:3000/$videoUrl'; // Adjust for emulator
-    }
-
     return Container(
       width: 200,
       height: 150,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: FutureBuilder<VideoPlayerController>(
-          future: _createVideoController(videoUrl),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done &&
-                snapshot.hasData) {
-              VideoPlayerController controller = snapshot.data!;
-              return AspectRatio(
-                aspectRatio: controller.value.aspectRatio,
-                child: VideoPlayer(controller),
-              );
-            } else {
-              return Center(child: CircularProgressIndicator());
-            }
-          },
+        child: _VideoPlayerWithController(
+          videoUrl: _getVideoUrl(message),
+          key: ValueKey(message.id ?? message.fileUrl),
         ),
       ),
     );
   }
 
-  Future<VideoPlayerController> _createVideoController(String url) async {
-    final controller = VideoPlayerController.network(url);
-    await controller.initialize();
-    return controller;
+  String _getVideoUrl(Message message) {
+    String videoUrl = message.fileUrl!;
+    if (!videoUrl.startsWith('http')) {
+      videoUrl = 'http://10.0.2.2:3000/$videoUrl';
+    }
+    return videoUrl;
+  }
+
+  void _downloadMediaFile(String fileUrl) {
+    // Determine if it's an image or video based on file extension
+    String fullUrl = fileUrl;
+    if (!fullUrl.startsWith('http')) {
+      fullUrl = 'http://10.0.2.2:3000/$fileUrl';
+    }
+
+    String fileName = fileUrl.split('/').last;
+    String fileType = fileName.toLowerCase().split('.').last;
+
+    String message = 'Starting download of $fileName...';
+    if (['jpg', 'jpeg', 'png', 'gif'].contains(fileType)) {
+      message = 'Starting image download...';
+    } else if (['mp4', 'avi', 'mov', 'mkv', 'webm'].contains(fileType)) {
+      message = 'Starting video download...';
+    }
+
+    CommonSnackbar.show(
+      context,
+      message: message,
+      type: SnackBarType.info,
+      position: SnackBarPosition.bottom,
+    );
   }
 
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -293,5 +506,189 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ],
       ),
     );
+  }
+}
+
+// A StatefulWidget to properly manage the VideoPlayerController lifecycle
+class _VideoPlayerWithController extends StatefulWidget {
+  final String videoUrl;
+
+  const _VideoPlayerWithController({Key? key, required this.videoUrl})
+    : super(key: key);
+
+  @override
+  State<_VideoPlayerWithController> createState() =>
+      _VideoPlayerWithControllerState();
+}
+
+class _VideoPlayerWithControllerState
+    extends State<_VideoPlayerWithController> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+  bool _hasError = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideoPlayer();
+  }
+
+  @override
+  void didUpdateWidget(_VideoPlayerWithController oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-initialize if the video URL changes
+    if (widget.videoUrl != oldWidget.videoUrl) {
+      _disposeController();
+      _initializeVideoPlayer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  void _disposeController() {
+    if (_controller.value.isInitialized) {
+      _controller.dispose();
+    }
+  }
+
+  Future<void> _initializeVideoPlayer() async {
+    try {
+      _controller = VideoPlayerController.network(widget.videoUrl);
+
+      _controller.addListener(() {
+        if (_controller.value.hasError) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = _controller.value.errorDescription;
+          });
+        }
+      });
+
+      await _controller.initialize();
+
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+          _hasError = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return Container(
+        width: 200,
+        height: 150,
+        color: Colors.black12,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              'Video Error',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+            Text(
+              _errorMessage ?? 'Unknown error',
+              style: TextStyle(color: Colors.red, fontSize: 10),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return Container(
+        width: 200,
+        height: 150,
+        color: Colors.black12,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () {
+            // Toggle play/pause on tap
+            if (_controller.value.isPlaying) {
+              _controller.pause();
+            } else {
+              _controller.play();
+            }
+          },
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+              // Play/Pause overlay - only show when video is not playing
+              if (!_controller.value.isPlaying)
+                Container(
+                  color: Colors.black26,
+                  child: const Icon(
+                    Icons.play_arrow,
+                    color: Colors.white,
+                    size: 48,
+                  ),
+                ),
+              // Loading indicator when buffering
+              if (_controller.value.isBuffering)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // Download button positioned at top-right corner
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.download, color: Colors.white, size: 18),
+              onPressed: () => _downloadMedia(),
+              tooltip: 'Download video',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _downloadMedia() {
+    // Call the shared download method from the parent widget
+    final parentState = context.findAncestorStateOfType<_ChatRoomScreenState>();
+    if (parentState != null) {
+      parentState._downloadMediaFile(widget.videoUrl);
+    }
   }
 }

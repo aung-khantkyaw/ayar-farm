@@ -136,4 +136,8 @@ class ChatService {
   Future<void> markAsRead(String conversationId) async {
     await ApiService.post('/chat/conversations/$conversationId/read', {});
   }
+
+  Future<void> leaveGroup(String conversationId) async {
+    await ApiService.post('/chat/conversations/$conversationId/leave', {});
+  }
 }

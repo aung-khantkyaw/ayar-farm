@@ -187,14 +187,44 @@ class _ChattingScreenState extends State<ChattingScreen> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    CommonSnackbar.show(
-                      context,
-                      message: 'Join group feature coming soon',
-                      type: SnackBarType.info,
-                      position: SnackBarPosition.bottom,
-                    );
+                  onPressed: () async {
+                    try {
+                      // Check if user is already authenticated
+                      if (AuthService.currentUser?.id == null) {
+                        Navigator.pop(context);
+                        CommonSnackbar.show(
+                          context,
+                          message: 'You must be logged in to join a group.',
+                          type: SnackBarType.error,
+                          position: SnackBarPosition.bottom,
+                        );
+                        return;
+                      }
+
+                      // Call the API to add the current user as a participant to the group
+                      await ApiService.post(
+                        '/chat/conversations/${group.id}/participants',
+                        {
+                          'participantIds': [AuthService.currentUser!.id],
+                        },
+                      );
+
+                      Navigator.pop(context);
+                      CommonSnackbar.show(
+                        context,
+                        message: 'Successfully joined the group!',
+                        type: SnackBarType.info,
+                        position: SnackBarPosition.bottom,
+                      );
+                    } catch (e) {
+                      Navigator.pop(context);
+                      CommonSnackbar.show(
+                        context,
+                        message: 'Failed to join group: $e',
+                        type: SnackBarType.error,
+                        position: SnackBarPosition.bottom,
+                      );
+                    }
                   },
                   child: const Text('Join'),
                 ),
