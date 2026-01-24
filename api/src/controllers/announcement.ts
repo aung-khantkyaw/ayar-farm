@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma/client';
 import { PushService } from '../services/push';
+import { emitToAll } from '../socket';
 
 export class AnnouncementController {
   public async create(req: Request, res: Response): Promise<void> {
@@ -75,6 +76,15 @@ export class AnnouncementController {
           }
         }
       }
+
+      // Emit socket event to notify all clients that an announcement was updated
+      // This ensures that even if push notifications fail, clients will check for new announcements
+      emitToAll('announcement:updated', {
+        announcementId: announcement.id,
+        title: announcement.title,
+        message: announcement.message,
+        isActive: announcement.isActive
+      });
 
       res.status(201).json({ data: announcement });
     } catch (error) {
@@ -208,6 +218,15 @@ export class AnnouncementController {
         }
       }
 
+      // Emit socket event to notify all clients that an announcement was updated
+      // This ensures that even if push notifications fail, clients will check for new announcements
+      emitToAll('announcement:updated', {
+        announcementId: announcement.id,
+        title: announcement.title,
+        message: announcement.message,
+        isActive: announcement.isActive
+      });
+
       res.status(200).json({ data: announcement });
     } catch (error) {
       res.status(500).json({ message: 'Failed to update announcement', error: String(error) });
@@ -219,6 +238,12 @@ export class AnnouncementController {
 
     try {
       await prisma.announcements.delete({ where: { id } });
+
+      // Emit socket event to notify all clients that an announcement was deleted
+      emitToAll('announcement:deleted', {
+        announcementId: id
+      });
+
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete announcement', error: String(error) });

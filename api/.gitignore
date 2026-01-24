@@ -3,3 +3,5 @@ dist/
 .env
 *.log
 .DS_Store
+google-services.json
+PUSH_NOTIFICATIONS.md

@@ -1,6 +1,7 @@
 import { messaging } from '../config/firebase';
 import { prisma } from '../prisma/client';
 import { logger } from '../utils/logger';
+import { emitToUser } from '../socket'; // Import socket function to emit to specific user
 
 export interface PushNotificationData {
   [key: string]: string;
@@ -20,12 +21,19 @@ export class PushService {
    */
   static async sendToUser(userId: string, title: string, body: string, data?: PushNotificationData): Promise<boolean> {
     try {
-      const tokens = await prisma.deviceToken.findMany({ 
-        where: { userId } 
+      const tokens = await prisma.deviceToken.findMany({
+        where: { userId }
       });
 
       if (tokens.length === 0) {
         logger.warn(`No device tokens found for user: ${userId}`);
+        // Emit a socket event to notify the user's client to check for announcements
+        emitToUser(userId, 'announcement_notification_missing_token', {
+          title,
+          body,
+          data,
+          timestamp: new Date().toISOString()
+        });
         return false;
       }
 
