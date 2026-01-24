@@ -125,8 +125,22 @@ export class ChatController {
             const { conversationId } = req.params;
             const userId = (req as any).user.id;
             const { participantIds } = req.body;
-            
-            await ChatService.addParticipants(conversationId, userId, participantIds);
+
+            // Check if it's a self-join request (user adding themselves)
+            const isSelfJoin = participantIds &&
+                             Array.isArray(participantIds) &&
+                             participantIds.length === 1 &&
+                             participantIds[0] === userId;
+
+            if (isSelfJoin) {
+                // For self-joining, we don't need moderator privileges
+                // Just verify the user is not already a participant
+                await ChatService.addParticipants(conversationId, userId, participantIds, true);
+            } else {
+                // For adding other participants, check if user has moderator privileges
+                await ChatService.addParticipants(conversationId, userId, participantIds);
+            }
+
             res.status(200).json({ message: "Participants added" });
         } catch (error) {
             res.status(500).json({ message: `Error adding participants: ${error}` });

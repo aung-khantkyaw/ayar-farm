@@ -289,34 +289,56 @@ export class ChatService {
         return message;
     }
 
-    public static async addParticipants(conversationId: string, userId: string, participantIds: string[]) {
-        // Verify user is moderator or owner
-        const conversation = await prisma.conversation.findUnique({
-            where: { id: conversationId },
-            include: { moderators: true }
-        });
+    public static async addParticipants(conversationId: string, userId: string, participantIds: string[], isSelfJoin: boolean = false) {
+        if (isSelfJoin) {
+            // For self-joining, only check if user is not already a participant
+            const existingParticipant = await prisma.conversationParticipant.findFirst({
+                where: {
+                    conversationId,
+                    userId
+                }
+            });
 
-        if (!conversation || (conversation.ownerId !== userId && !conversation.moderators.some(m => m.userId === userId))) {
-            throw new Error("Not authorized");
+            if (existingParticipant) {
+                throw new Error("User is already a participant in this conversation");
+            }
+
+            // Allow self-joining without requiring moderator privileges
+            await prisma.conversationParticipant.create({
+                data: {
+                    conversationId,
+                    userId
+                }
+            });
+        } else {
+            // For adding other participants, verify user is moderator or owner
+            const conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                include: { moderators: true }
+            });
+
+            if (!conversation || (conversation.ownerId !== userId && !conversation.moderators.some(m => m.userId === userId))) {
+                throw new Error("Not authorized to add other participants");
+            }
+
+            // Validate that all participant IDs exist in the users table
+            const existingUsers = await prisma.users.findMany({
+                where: { id: { in: participantIds } },
+                select: { id: true }
+            });
+
+            const existingUserIds = existingUsers.map(user => user.id);
+            const invalidUserIds = participantIds.filter(id => !existingUserIds.includes(id));
+
+            if (invalidUserIds.length > 0) {
+                throw new Error(`Invalid user IDs: ${invalidUserIds.join(', ')}`);
+            }
+
+            await prisma.conversationParticipant.createMany({
+                data: existingUserIds.map(id => ({ conversationId, userId: id })),
+                skipDuplicates: true
+            });
         }
-
-        // Validate that all participant IDs exist in the users table
-        const existingUsers = await prisma.users.findMany({
-            where: { id: { in: participantIds } },
-            select: { id: true }
-        });
-
-        const existingUserIds = existingUsers.map(user => user.id);
-        const invalidUserIds = participantIds.filter(id => !existingUserIds.includes(id));
-
-        if (invalidUserIds.length > 0) {
-            throw new Error(`Invalid user IDs: ${invalidUserIds.join(', ')}`);
-        }
-
-        await prisma.conversationParticipant.createMany({
-            data: existingUserIds.map(id => ({ conversationId, userId: id })),
-            skipDuplicates: true
-        });
     }
 
     public static async removeParticipant(conversationId: string, userId: string, participantId: string) {
