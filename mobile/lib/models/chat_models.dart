@@ -2,7 +2,7 @@ import 'user.dart';
 
 enum ConversationType { DIRECT, GROUP }
 
-enum MessageType { TEXT, IMAGE, FILE }
+enum MessageType { TEXT, IMAGE, FILE, VIDEO }
 
 class Conversation {
   final String id;

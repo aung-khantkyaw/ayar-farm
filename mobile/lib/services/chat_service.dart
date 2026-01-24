@@ -82,10 +82,35 @@ class ChatService {
     if (filePath != null) {
       final fields = <String, String>{};
       if (content != null) fields['content'] = content;
-      fields['type'] =
-          type == 'TEXT'
-              ? 'IMAGE'
-              : type; // Default to IMAGE if file present and type is TEXT
+
+      // Determine the correct type based on file extension if not specified
+      String messageType = type;
+      if (type == 'TEXT') {
+        // Check file extension to determine if it's a video
+        String lowerFilePath = filePath.toLowerCase();
+        if (lowerFilePath.endsWith('.mp4') ||
+            lowerFilePath.endsWith('.mov') ||
+            lowerFilePath.endsWith('.avi') ||
+            lowerFilePath.endsWith('.mkv') ||
+            lowerFilePath.endsWith('.wmv') ||
+            lowerFilePath.endsWith('.flv') ||
+            lowerFilePath.endsWith('.webm')) {
+          messageType = 'VIDEO';
+        } else if (lowerFilePath.endsWith('.jpg') ||
+                   lowerFilePath.endsWith('.jpeg') ||
+                   lowerFilePath.endsWith('.png') ||
+                   lowerFilePath.endsWith('.gif') ||
+                   lowerFilePath.endsWith('.bmp') ||
+                   lowerFilePath.endsWith('.webp')) {
+          messageType = 'IMAGE';
+        } else {
+          messageType = 'FILE';
+        }
+      } else {
+        messageType = type;
+      }
+
+      fields['type'] = messageType;
 
       final response = await ApiService.postMultipart(
         '/chat/conversations/$conversationId/messages',

@@ -2,6 +2,7 @@ import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 import '../models/chat_models.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -116,9 +117,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickFile() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickMedia();
     if (pickedFile != null) {
       await _sendMessage(imagePath: pickedFile.path);
     }
@@ -197,6 +198,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 errorBuilder: (c, e, s) => Icon(Icons.broken_image),
               ),
 
+            if (message.type == MessageType.VIDEO && message.fileUrl != null)
+              // Handle video messages
+              _buildVideoPlayer(message),
+
             if (message.content != null && message.content!.isNotEmpty)
               Text(message.content!, style: TextStyle(color: Colors.black87)),
 
@@ -209,6 +214,43 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildVideoPlayer(Message message) {
+    // Construct the full URL for the video
+    String videoUrl = message.fileUrl!;
+    if (!videoUrl.startsWith('http')) {
+      videoUrl = 'http://10.0.2.2:3000/$videoUrl'; // Adjust for emulator
+    }
+
+    return Container(
+      width: 200,
+      height: 150,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: FutureBuilder<VideoPlayerController>(
+          future: _createVideoController(videoUrl),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done &&
+                snapshot.hasData) {
+              VideoPlayerController controller = snapshot.data!;
+              return AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(controller),
+              );
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<VideoPlayerController> _createVideoController(String url) async {
+    final controller = VideoPlayerController.network(url);
+    await controller.initialize();
+    return controller;
   }
 
   Widget _buildInputArea() {
@@ -226,7 +268,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       ),
       child: Row(
         children: [
-          IconButton(icon: Icon(Icons.photo), onPressed: _pickImage),
+          IconButton(icon: Icon(Icons.attach_file), onPressed: _pickFile),
           Expanded(
             child: TextField(
               controller: _messageController,

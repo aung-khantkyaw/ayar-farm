@@ -52,7 +52,8 @@ class _MainScreenState extends State<MainScreen> {
             title: message.user?.name ?? "New Message",
             body:
                 message.content ??
-                (message.type == MessageType.IMAGE ? "Image" : "File"),
+                (message.type == MessageType.IMAGE ? "Image" :
+                 (message.type == MessageType.VIDEO ? "Video" : "File")),
             payload: message.conversationId,
           );
         }
