@@ -108,24 +108,19 @@ export class AnnouncementController {
       // 1. General announcements (no specific recipients), OR
       // 2. Specific to this user
       if (userId) {
-        // Find announcements that either have no recipients or include this user
-        const announcementsForUser = await prisma.announcements.findMany({
+        // Get announcements that are either general (no recipients) or specific to this user
+        // Using a UNION-like approach with two separate queries and combining results
+
+        // First, get general announcements (those with no recipients)
+        const generalAnnouncements = await prisma.announcements.findMany({
           where: {
-            AND: [
-              whereClause, // Apply active status filter if present
-              {
-                OR: [
-                  // Announcements with no recipients
-                  {
-                    recipients: { none: {} }
-                  },
-                  // Announcements that include this user as recipient
-                  {
-                    recipients: { some: { userId: String(userId) } }
-                  }
-                ]
+            isActive: whereClause.isActive,
+            // Announcement has no recipients by checking if no matching records exist in AnnouncementRecipient
+            NOT: {
+              recipients: {
+                some: {}
               }
-            ]
+            }
           },
           include: {
             creator: {
@@ -144,7 +139,38 @@ export class AnnouncementController {
           orderBy: { createdAt: 'desc' },
         });
 
-        res.status(200).json({ data: announcementsForUser });
+        // Then, get announcements specific to this user
+        const userSpecificAnnouncements = await prisma.announcements.findMany({
+          where: {
+            isActive: whereClause.isActive,
+            recipients: {
+              some: {
+                userId: String(userId)
+              }
+            }
+          },
+          include: {
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                user_type: true
+              }
+            },
+            recipients: {
+              select: {
+                userId: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        // Combine and sort the results
+        const combinedAnnouncements = [...generalAnnouncements, ...userSpecificAnnouncements]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        res.status(200).json({ data: combinedAnnouncements });
         return;
       }
 
