@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useState, useRef, useCallback } from "react";
 import type React from "react";
 import { Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/providers/auth-provider";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Send, Users } from "lucide-react";
+import { MessageCircle, Send, Users, Paperclip, Image as ImageIcon, File } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/lib/api";
@@ -29,6 +29,8 @@ export default function ChatRoomManagement() {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [directUserName, setDirectUserName] = useState("");
   const [groupName, setGroupName] = useState("");
@@ -38,6 +40,9 @@ export default function ChatRoomManagement() {
   const [groupResults, setGroupResults] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getToken = () => {
     try {
@@ -86,9 +91,12 @@ export default function ChatRoomManagement() {
         `/chat/conversations/${conversationId}/messages`,
         token
       );
-      const data = Array.isArray(body?.data)
+      let data = Array.isArray(body?.data)
         ? body.data
         : body?.data?.messages || body?.messages || body || [];
+
+      // Sort messages by creation date (oldest first)
+      data = data.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       setMessages(data);
     } catch (e) {
       console.error(e);
@@ -99,26 +107,92 @@ export default function ChatRoomManagement() {
   }
 
   async function sendMessage() {
-    if (!selectedConv || !input.trim()) return;
-    const payload = { conversationId: selectedConv.id, content: input };
+    if (!selectedConv || (!input.trim() && !mediaFile)) return;
+
     try {
-      if (socket) {
-        socket.emit("send_message", payload);
-        setInput("");
-        return;
-      }
       const token = getToken();
-      await api.post(
+      const formData = new FormData();
+
+      if (input.trim()) {
+        formData.append('content', input);
+      }
+
+      // Determine message type based on content
+      const isVideo = mediaFile && mediaFile.type.startsWith('video/');
+      const messageType = isVideo ? 'VIDEO' : (mediaFile ? 'IMAGE' : 'TEXT');
+      formData.append('type', messageType);
+
+      if (mediaFile) {
+        formData.append('file', mediaFile); // Changed from 'media' to 'file' to match backend expectation
+      }
+
+      // Create a temporary message object to show immediately in UI
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        content: input || (mediaFile ? '' : ''), // Only include content if it exists, or set to empty string for media-only
+        createdAt: new Date().toISOString(),
+        user: {
+          id: user?.id,
+          name: user?.name || "You",
+          profile_picture: user?.profile_picture
+        },
+        // Include media preview if available
+        ...(mediaFile && {
+          mediaUrl: previewUrl, // Use the local preview URL temporarily
+          mediaName: mediaFile.name,
+          mediaType: mediaFile.type
+        })
+      };
+
+      // Add the temporary message to the UI immediately
+      setMessages(prev => [...prev, tempMessage]);
+
+      // Send the message via API to ensure it's saved to the database
+      const response = await api.post(
         `/chat/conversations/${selectedConv.id}/messages`,
-        { content: input },
+        formData,
         token
       );
+
+      // If we have a socket connection, emit the message to notify other participants
+      if (socket) {
+        // Emit socket event to notify other participants
+        const isVideo = mediaFile && mediaFile.type.startsWith('video/');
+        socket.emit("send_message", {
+          conversationId: selectedConv.id,
+          content: input,
+          type: isVideo ? 'VIDEO' : (mediaFile ? 'IMAGE' : 'TEXT'),
+          ...(mediaFile && { fileName: mediaFile.name, fileType: mediaFile.type }),
+          // The actual message with media info will come through the socket listener
+        });
+      }
+
+      // Clear inputs
       setInput("");
-      fetchMessages(selectedConv.id);
+      setMediaFile(null);
+      setPreviewUrl(null);
     } catch (e) {
       console.error(e);
+      // Remove the temporary message if there was an error
+      setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
     }
   }
+
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMediaFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const removeMedia = () => {
+    setMediaFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   async function createDirectConversation() {
     if (!directUserName.trim()) return;
@@ -250,6 +324,31 @@ export default function ChatRoomManagement() {
     }
   }
 
+  async function deleteConversation() {
+    if (!selectedConv) return;
+
+    if (!window.confirm(`Are you sure you want to delete the conversation "${selectedConv.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const token = getToken();
+      await api.delete(`/chat/conversations/${selectedConv.id}`, token);
+
+      // Reset state after deletion
+      setSelectedConv(null);
+      setMessages([]);
+
+      // Refresh conversations list
+      fetchConversations();
+    } catch (e) {
+      console.error("Error deleting conversation:", e);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   function getUserSuggestions(query: string) {
     const term = query.trim().toLowerCase();
     if (!term) return [] as any[];
@@ -271,12 +370,62 @@ export default function ChatRoomManagement() {
   useEffect(() => {
     if (!socket) return;
     const handler = (m: any) => {
-      if (selectedConv && m.conversationId === selectedConv.id)
-        setMessages((s) => [...s, m]);
+      if (selectedConv && m.conversationId === selectedConv.id) {
+        setMessages(prev => {
+          // Check if this is a response to our temporary message
+          const tempIndex = prev.findIndex(msg => msg.id.startsWith('temp-'));
+
+          if (tempIndex !== -1) {
+            // Replace the temporary message with the actual one from server
+            const updatedMessages = [...prev];
+            // Preserve any media information that might be in the server response
+            updatedMessages[tempIndex] = {
+              ...m,
+              // If the server response doesn't have media info but our temp message did, preserve it
+              ...(prev[tempIndex].mediaUrl && !(m.mediaUrl || m.fileUrl) && {
+                mediaUrl: prev[tempIndex].mediaUrl,
+                mediaName: prev[tempIndex].mediaName,
+                mediaType: prev[tempIndex].mediaType
+              })
+            };
+            return updatedMessages;
+          } else {
+            // Add as a new message from another user
+            return [...prev, m];
+          }
+        });
+      }
     };
     socket.on("message", handler);
     return () => void socket.off("message", handler);
   }, [socket, selectedConv]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Helper function to group messages by date
+  const groupMessagesByDate = (messages: any[]) => {
+    const grouped: Record<string, any[]> = {};
+
+    messages.forEach(message => {
+      const date = new Date(message.createdAt).toDateString();
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(message);
+    });
+
+    return Object.entries(grouped).map(([date, msgs]) => ({
+      date,
+      messages: msgs,
+    }));
+  };
 
   if (isLoading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" />;
@@ -360,16 +509,6 @@ export default function ChatRoomManagement() {
                                 )?.user?.name ||
                                 "Conversation"}
                             </div>
-                            <Badge
-                              variant={
-                                selectedConv?.id === c.id
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {c._count?.messages ?? c.messages?.length ?? 0}{" "}
-                              messages
-                            </Badge>
                           </div>
                           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                             <Users className="w-3 h-3" />
@@ -400,7 +539,7 @@ export default function ChatRoomManagement() {
                         </CardTitle>
                         <CardDescription>
                           {selectedConv
-                            ? `${selectedConv?._count?.members ?? selectedConv?.participants?.length ?? 0} members · ${selectedConv?._count?.messages ?? selectedConv?.messages?.length ?? 0} messages`
+                            ? `${selectedConv?._count?.members ?? selectedConv?.participants?.length ?? 0} members`
                             : "Choose a conversation to view messages"}
                         </CardDescription>
                       </div>
@@ -413,59 +552,242 @@ export default function ChatRoomManagement() {
                         >
                           Mark as read
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={leaveConversation}
-                          disabled={actionLoading || !selectedConv}
-                        >
-                          Leave
-                        </Button>
+                        {selectedConv && selectedConv.type === 'GROUP' && selectedConv.ownerId !== user?.id && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={leaveConversation}
+                            disabled={actionLoading || !selectedConv}
+                          >
+                            Leave
+                          </Button>
+                        )}
+                        {selectedConv && selectedConv.type === 'GROUP' && selectedConv.ownerId === user?.id && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={deleteConversation}
+                            disabled={actionLoading || !selectedConv}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                        {selectedConv && selectedConv.type === 'DIRECT' && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={leaveConversation}
+                            disabled={actionLoading || !selectedConv}
+                          >
+                            Leave
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
                     {selectedConv ? (
                       <div className="flex flex-col h-[520px]">
-                        <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-3">
+                        <div className="flex-1 overflow-auto bg-gray-50 p-4 flex flex-col">
                           {loading ? (
                             <div className="text-center text-sm text-muted-foreground">
                               Loading messages...
                             </div>
                           ) : messages.length === 0 ? (
-                            <div className="text-center text-sm text-muted-foreground">
+                            <div className="text-center text-sm text-muted-foreground flex-grow flex items-center justify-center">
                               No messages yet
                             </div>
                           ) : (
-                            messages.map((m: any) => (
-                              <div
-                                key={m.id}
-                                className="rounded-lg border bg-white p-3 shadow-xs"
-                              >
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                  <span className="font-medium text-gray-900">
-                                    {m.user?.name || "Unknown"}
-                                  </span>
-                                  <span>
-                                    {m.createdAt
-                                      ? new Date(m.createdAt).toLocaleString()
-                                      : ""}
-                                  </span>
+                            <>
+                              {groupMessagesByDate(messages).map((group) => (
+                                <div key={group.date} className="mb-4">
+                                  <div className="text-center text-xs text-muted-foreground my-2">
+                                    {new Date(group.date).toLocaleDateString('en-US', {
+                                      weekday: 'long',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                  <div className="space-y-3">
+                                    {group.messages.map((m: any) => (
+                                      <div
+                                        key={m.id}
+                                        className={`rounded-lg border bg-white p-3 shadow-xs max-w-[70%] min-w-[100px] w-fit break-words ${
+                                          m.user?.id === user?.id ? 'ml-auto bg-blue-50' : 'mr-auto'
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                                          <span className="font-medium text-gray-900">
+                                            {m.user?.name || "Unknown"}
+                                          </span>
+                                          <span>
+                                            {m.createdAt
+                                              ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                              : ""}
+                                          </span>
+                                        </div>
+                                        {m.content && (
+                                          <div className="text-sm leading-relaxed text-gray-900 mt-1 break-words">
+                                            {m.content}
+                                          </div>
+                                        )}
+                                        {(m.mediaUrl || m.fileUrl) && (
+                                          <div className="mt-2">
+                                            {(() => {
+                                              // Use the appropriate URL field depending on what's available
+                                              const mediaUrl = m.mediaUrl || m.fileUrl;
+                                              const mediaName = m.mediaName || m.fileName || 'File';
+
+                                              const isImage = mediaUrl.endsWith('.jpg') ||
+                                                              mediaUrl.endsWith('.jpeg') ||
+                                                              mediaUrl.endsWith('.png') ||
+                                                              mediaUrl.endsWith('.gif') ||
+                                                              mediaUrl.endsWith('.webp');
+
+                                              const isVideo = mediaUrl.endsWith('.mp4') ||
+                                                              mediaUrl.endsWith('.mov') ||
+                                                              mediaUrl.endsWith('.avi') ||
+                                                              mediaUrl.endsWith('.mkv') ||
+                                                              mediaUrl.endsWith('.wmv');
+
+                                              const isAudio = mediaUrl.endsWith('.mp3') ||
+                                                              mediaUrl.endsWith('.wav') ||
+                                                              mediaUrl.endsWith('.ogg') ||
+                                                              mediaUrl.endsWith('.m4a');
+
+                                              if (isImage) {
+                                                return (
+                                                  <img
+                                                    src={mediaUrl}
+                                                    alt="Shared image"
+                                                    className="max-w-full max-h-60 rounded-md object-contain cursor-pointer"
+                                                    onClick={() => window.open(mediaUrl, '_blank')}
+                                                  />
+                                                );
+                                              } else if (isVideo) {
+                                                return (
+                                                  <video
+                                                    src={mediaUrl}
+                                                    controls
+                                                    className="max-w-full max-h-60 rounded-md"
+                                                  >
+                                                    Your browser does not support the video tag.
+                                                  </video>
+                                                );
+                                              } else if (isAudio) {
+                                                return (
+                                                  <audio
+                                                    src={mediaUrl}
+                                                    controls
+                                                    className="w-full"
+                                                  >
+                                                    Your browser does not support the audio element.
+                                                  </audio>
+                                                );
+                                              } else {
+                                                // For documents and other files, show download link
+                                                return (
+                                                  <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-md break-words">
+                                                    <File className="w-5 h-5 text-blue-500" />
+                                                    <div className="flex flex-col min-w-0">
+                                                      <a
+                                                        href={mediaUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-500 hover:underline truncate"
+                                                      >
+                                                        {mediaName}
+                                                      </a>
+                                                      <span className="text-xs text-gray-500">
+                                                        Click to download
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              }
+                                            })()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                                <Separator className="my-2" />
-                                <div className="text-sm leading-relaxed text-gray-900">
-                                  {m.content}
-                                </div>
-                              </div>
-                            ))
+                              ))}
+                              <div ref={messagesEndRef} />
+                            </>
                           )}
                         </div>
                         <div className="border-t bg-white p-4">
+                          {/* Media preview */}
+                          {previewUrl && (
+                            <div className="mb-3 flex items-center justify-between p-2 bg-gray-100 rounded-md">
+                              {(() => {
+                                const isImage = mediaFile?.type.startsWith('image/');
+                                const isVideo = mediaFile?.type.startsWith('video/');
+
+                                if (isImage) {
+                                  return (
+                                    <img
+                                      src={previewUrl}
+                                      alt="Preview"
+                                      className="h-20 w-20 object-cover rounded-md"
+                                    />
+                                  );
+                                } else if (isVideo) {
+                                  return (
+                                    <video
+                                      src={previewUrl}
+                                      className="h-20 w-20 object-cover rounded-md"
+                                      muted
+                                    >
+                                      Video preview
+                                    </video>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <File className="w-6 h-6 text-blue-500" />
+                                      <span className="text-sm truncate max-w-xs">{mediaFile?.name}</span>
+                                    </div>
+                                  );
+                                }
+                              })()}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={removeMedia}
+                                className="h-8 w-8 p-0"
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          )}
+
                           <div className="flex gap-3">
+                            <div className="flex gap-2">
+                              <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleMediaChange}
+                                className="hidden"
+                                accept="*/*"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </Button>
+                            </div>
+
                             <Input
                               value={input}
                               onChange={(e) => setInput(e.target.value)}
-                              placeholder="Type a message"
+                              placeholder="Type a message or attach media"
                               className="flex-1"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
@@ -476,7 +798,7 @@ export default function ChatRoomManagement() {
                             />
                             <Button
                               onClick={sendMessage}
-                              disabled={!input.trim()}
+                              disabled={!input.trim() && !mediaFile}
                             >
                               <Send className="w-4 h-4 mr-1" />
                               Send
