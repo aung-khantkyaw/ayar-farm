@@ -11,6 +11,7 @@ import 'screens/main_screen.dart';
 import 'widgets/auth_guard.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
+import 'services/firebase_service.dart';
 
 final ValueNotifier<Locale> appLocaleNotifier = ValueNotifier(
   const Locale('my'),
@@ -19,6 +20,7 @@ final ValueNotifier<Locale> appLocaleNotifier = ValueNotifier(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().init();
+  await FirebaseService().init(); // Initialize Firebase
   await AuthService.loadSession();
   runApp(const MyApp());
 }

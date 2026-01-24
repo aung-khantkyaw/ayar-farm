@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'socket_service.dart';
 import 'notification_service.dart';
+import 'firebase_service.dart';
 
 class AuthService {
   static User? currentUser;
@@ -21,6 +22,13 @@ class AuthService {
     ApiService.setToken(token);
     SocketService().connect(token, user);
     await NotificationService().fetchForUser(user.id?.toString() ?? '');
+
+    // Register device token if Firebase is initialized
+    try {
+      await FirebaseService().registerDeviceTokenAfterLogin();
+    } catch (e) {
+      print('Error registering device token after login: $e');
+    }
   }
 
   static Future<bool> loadSession() async {
@@ -36,6 +44,14 @@ class AuthService {
         await NotificationService().fetchForUser(
           currentUser?.id?.toString() ?? '',
         );
+
+        // Register device token if Firebase is initialized
+        try {
+          await FirebaseService().registerDeviceTokenAfterLogin();
+        } catch (e) {
+          print('Error registering device token after session load: $e');
+        }
+
         return true;
       } catch (e) {
         print('Error loading session: $e');

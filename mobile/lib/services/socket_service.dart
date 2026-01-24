@@ -1,4 +1,5 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/foundation.dart'; // for kIsWeb
 import '../constants/api_constants.dart';
 import '../models/user.dart';
 import 'notification_service.dart';
@@ -68,6 +69,11 @@ class SocketService {
       });
 
       _socket!.emit('get-online-users');
+
+      // Join user-specific room for direct notifications (not on web)
+      if (!kIsWeb) {
+        _socket!.emit('join_user_room', {'userId': user.id});
+      }
 
       _bindNotificationChannel();
     });

@@ -49,6 +49,7 @@ class NotificationService {
   }
 
   void handleIncomingRemote(Map<String, dynamic> data) {
+    // Create a notification object from the incoming data
     final notification = AppNotification.fromMap(data);
 
     // Persist in-memory list for badge + screen
@@ -68,6 +69,7 @@ class NotificationService {
         'postId': notification.postId,
         'commentId': notification.commentId,
         'type': notification.type,
+        'announcementId': data['announcementId'], // Include announcement ID if present
       }),
     );
   }
@@ -170,6 +172,8 @@ class NotificationService {
         return 'New reply on your post';
       case 'comment-reaction':
         return 'Reaction on your post comment';
+      case 'announcement':
+        return 'New Announcement';
       default:
         return 'New activity';
     }
@@ -224,10 +228,17 @@ class AppNotification {
         '${DateTime.now().millisecondsSinceEpoch}-${data['postId'] ?? payload['postId'] ?? 'post'}';
     final isRead = data['isRead'] == true || data['is_read'] == true;
     final type = (data['type'] ?? payload['type'] ?? 'activity').toString();
+
+    // Handle announcement-specific data
+    String postId = (data['postId'] ?? payload['postId'] ?? '').toString();
+    if (type == 'announcement' && data.containsKey('announcementId')) {
+      postId = data['announcementId'].toString();
+    }
+
     return AppNotification(
       id: id,
       type: type,
-      postId: (data['postId'] ?? payload['postId'] ?? '').toString(),
+      postId: postId,
       commentId: (data['commentId'] ?? payload['commentId'])?.toString(),
       message:
           data['message']?.toString() ??

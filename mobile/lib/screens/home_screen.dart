@@ -71,6 +71,26 @@ class _HomeScreenState extends State<HomeScreen> {
     await _localNotifications!.initialize(
       const InitializationSettings(android: android, iOS: ios),
     );
+
+    // Create notification channel for Android
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'announcement_channel',
+      'Announcements',
+      description: 'Channel for announcements',
+      importance: Importance.max,
+    );
+    await _localNotifications!
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
+
+    // Request permission for Android 13+
+    await _localNotifications!
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestNotificationsPermission();
   }
 
   void _showLocalAnnouncementNotification(
@@ -104,21 +124,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchActiveAnnouncement({bool realTime = false}) async {
-    final user = AuthService.currentUser;
-    if (user == null) return;
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
     try {
+      // Fetch announcements that are active and either have no specific recipients
+      // or the current user is among the recipients
       final response = await ApiService.get(
         '/announcements',
-        queryParams: {'active': 'true', 'userId': user.id},
+        queryParams: {'active': 'true', 'userId': currentUser.id},
       );
       final announcements = response['data'] as List?;
+
+      // Since the server already filters for active and user-specific announcements
       final newAnnouncement =
           (announcements != null && announcements.isNotEmpty)
               ? announcements.first
               : null;
+
+      debugPrint('Filtered announcements count: ${announcements?.length}');
+      debugPrint('New announcement: ${newAnnouncement?['title']}');
+      debugPrint('_activeAnnouncement before: ${_activeAnnouncement?['title']}');
+      debugPrint('_showAnnouncement before: $_showAnnouncement');
+
       final prevId = _activeAnnouncement?['id'];
       final newId = newAnnouncement?['id'];
       if (newAnnouncement != null) {
+        debugPrint('Processing new announcement with ID: $newId');
         if (realTime && prevId != newId) {
           _showLocalAnnouncementNotification(newAnnouncement);
         }
@@ -127,12 +158,16 @@ class _HomeScreenState extends State<HomeScreen> {
           _showAnnouncement = true;
         });
       } else {
+        debugPrint('No active announcement found, hiding card');
         setState(() {
           _activeAnnouncement = null;
           _showAnnouncement = false;
         });
       }
+      debugPrint('_activeAnnouncement after: ${_activeAnnouncement?['title']}');
+      debugPrint('_showAnnouncement after: $_showAnnouncement');
     } catch (e) {
+      debugPrint('Error fetching active announcements: $e');
       setState(() {
         _activeAnnouncement = null;
         _showAnnouncement = false;
@@ -176,6 +211,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     socket.on('announcement:deleted', (data) {
       _fetchActiveAnnouncement(realTime: true);
+    });
+    // Listen for announcement notification when device token is missing
+    socket.on('announcement_notification_missing_token', (data) {
+      _fetchActiveAnnouncement(realTime: true);
+      // Show local notification as fallback
+      _showLocalAnnouncementNotification({
+        'title': data['title'] ?? 'New Announcement',
+        'message': data['message'] ?? 'An announcement has been published',
+      });
     });
   }
 

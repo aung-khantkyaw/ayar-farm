@@ -182,6 +182,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
         return 'Reply on your post';
       case 'comment-reaction':
         return 'Reaction on a comment of your post';
+      case 'announcement':
+        return 'New announcement';
       default:
         return 'New activity';
     }
