@@ -79,6 +79,14 @@ export function registerSocketHandlers(io: Server) {
       socket.emit("online-users", Array.from(onlineUsers.keys()));
     });
 
+    socket.on("join_user_room", (data) => {
+      const { userId } = data;
+      if (userId) {
+        socket.join(`user:${userId}`);
+        console.log(`Socket ${socket.id} joined user room: user:${userId}`);
+      }
+    });
+
     socket.on("ping", (cb) => cb?.({ ok: true, time: Date.now() }));
 
     socket.on("disconnect", (reason) => {

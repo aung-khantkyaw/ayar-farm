@@ -92,9 +92,64 @@ export class AnnouncementController {
     }
   }
 
-  public async list(_req: Request, res: Response): Promise<void> {
+  public async list(req: Request, res: Response): Promise<void> {
     try {
+      const { active, userId } = req.query;
+      let whereClause: any = {};
+
+      // Filter by active status if specified
+      if (active === 'true') {
+        whereClause.isActive = true;
+      } else if (active === 'false') {
+        whereClause.isActive = false;
+      }
+
+      // If userId is provided, find announcements that are either:
+      // 1. General announcements (no specific recipients), OR
+      // 2. Specific to this user
+      if (userId) {
+        // Find announcements that either have no recipients or include this user
+        const announcementsForUser = await prisma.announcements.findMany({
+          where: {
+            AND: [
+              whereClause, // Apply active status filter if present
+              {
+                OR: [
+                  // Announcements with no recipients
+                  {
+                    recipients: { none: {} }
+                  },
+                  // Announcements that include this user as recipient
+                  {
+                    recipients: { some: { userId: String(userId) } }
+                  }
+                ]
+              }
+            ]
+          },
+          include: {
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                user_type: true
+              }
+            },
+            recipients: {
+              select: {
+                userId: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        res.status(200).json({ data: announcementsForUser });
+        return;
+      }
+
       const announcements = await prisma.announcements.findMany({
+        where: whereClause,
         include: {
           creator: {
             select: {
