@@ -34,12 +34,19 @@ export default function ChatRoomManagement() {
   const [search, setSearch] = useState("");
   const [directUserName, setDirectUserName] = useState("");
   const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [groupFile, setGroupFile] = useState<File | null>(null);
   const [participantUserName, setParticipantUserName] = useState("");
   const [groupSearchTerm, setGroupSearchTerm] = useState("");
   const [groupResults, setGroupResults] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
+  const [showMembers, setShowMembers] = useState(false);
+  const [showGroupDetails, setShowGroupDetails] = useState(false);
+  const [editingGroupInfo, setEditingGroupInfo] = useState(false);
+  const [editedGroupName, setEditedGroupName] = useState("");
+  const [editedGroupDescription, setEditedGroupDescription] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -220,11 +227,15 @@ export default function ChatRoomManagement() {
       const token = getToken();
       const formData = new FormData();
       formData.append("name", groupName.trim());
+      if (groupDescription.trim()) {
+        formData.append("description", groupDescription.trim());
+      }
       if (groupFile) {
         formData.append("image", groupFile);
       }
       await api.post("/chat/conversations/group", formData, token);
       setGroupName("");
+      setGroupDescription("");
       setGroupFile(null);
       fetchConversations();
     } catch (e) {
@@ -239,13 +250,30 @@ export default function ChatRoomManagement() {
     setActionLoading(true);
     try {
       const token = getToken();
+
+      // First, find the user by username/email/name to get their ID
+      const userResponse = await api.get(`/users/search?q=${encodeURIComponent(participantUserName.trim())}`, token);
+      const userData = Array.isArray(userResponse?.data) ? userResponse.data : userResponse?.users || [];
+
+      if (!userData || userData.length === 0) {
+        alert(`User "${participantUserName.trim()}" not found`);
+        return;
+      }
+
+      // Get the first matching user's ID
+      const userId = userData[0].id;
+
       await api.post(
         `/chat/conversations/${selectedConv.id}/participants`,
-        { participantIds: [participantUserName.trim()] },
+        { participantIds: [userId] },
         token
       );
       setParticipantUserName("");
       fetchMessages(selectedConv.id);
+
+      // Refetch the group and user data after adding participant
+      fetchConversations();
+      fetchUsers();
     } catch (e) {
       console.error(e);
     } finally {
@@ -253,17 +281,63 @@ export default function ChatRoomManagement() {
     }
   }
 
-  async function removeParticipant() {
-    if (!selectedConv || !participantUserName.trim()) return;
+  async function removeParticipant(userId?: string) {
+    if (!selectedConv) return;
+
+    let targetUserId = userId;
+
+    // If no userId is provided, try to resolve from participantUserName
+    if (!targetUserId && participantUserName.trim()) {
+      try {
+        const token = getToken();
+
+        // First, find the user by username/email/name to get their ID
+        const userResponse = await api.get(`/users/search?q=${encodeURIComponent(participantUserName.trim())}`, token);
+        const userData = Array.isArray(userResponse?.data) ? userResponse.data : userResponse?.users || [];
+
+        if (!userData || userData.length === 0) {
+          alert(`User "${participantUserName.trim()}" not found`);
+          return;
+        }
+
+        // Get the first matching user's ID
+        targetUserId = userData[0].id;
+      } catch (e) {
+        console.error("Error resolving user:", e);
+        return;
+      }
+    } else if (!targetUserId) {
+      return; // No user specified
+    }
+
     setActionLoading(true);
     try {
       const token = getToken();
       await api.delete(
-        `/chat/conversations/${selectedConv.id}/participants/${participantUserName.trim()}`,
+        `/chat/conversations/${selectedConv.id}/participants/${targetUserId}`,
         token
       );
-      setParticipantUserName("");
+      // Only clear participantUserName if we weren't given a direct userId
+      if (!userId) {
+        setParticipantUserName("");
+      }
+
+      // Refresh the conversation data to reflect the removal
       fetchMessages(selectedConv.id);
+      if (showMembers) {
+        fetchGroupMembers(); // Refresh the member list if it's visible
+      }
+      // Also refresh the group details participant list if it's visible
+      if (showGroupDetails && selectedConv?.type === 'GROUP') {
+        // Update the selected conversation to trigger a re-render
+        const token = getToken();
+        const updatedConv = await api.get(`/chat/conversations/${selectedConv.id}`, token);
+        setSelectedConv(updatedConv.data || updatedConv);
+      }
+
+      // Refetch the group and user data after removing participant
+      fetchConversations();
+      fetchUsers();
     } catch (e) {
       console.error(e);
     } finally {
@@ -309,7 +383,7 @@ export default function ChatRoomManagement() {
     try {
       const token = getToken();
       const body = await api.get(
-        `/chat/groups/search?query=${encodeURIComponent(groupSearchTerm.trim())}`,
+        `/chat/groups/search?q=${encodeURIComponent(groupSearchTerm.trim())}`,
         token
       );
       const data = Array.isArray(body?.data)
@@ -348,6 +422,92 @@ export default function ChatRoomManagement() {
       setActionLoading(false);
     }
   }
+
+  async function fetchGroupMembers() {
+    if (!selectedConv) return;
+
+    try {
+      const token = getToken();
+      // The conversation data already includes participants, so we can use that
+      setGroupMembers(selectedConv.participants || []);
+    } catch (e) {
+      console.error("Error fetching group members:", e);
+      setGroupMembers([]);
+    }
+  }
+
+  const toggleShowMembers = () => {
+    if (selectedConv?.type === 'GROUP') {
+      const newState = !showMembers;
+      setShowMembers(newState);
+      if (newState) {
+        fetchGroupMembers();
+      }
+    }
+  };
+
+  const toggleGroupDetails = () => {
+    if (selectedConv?.type === 'GROUP') {
+      setShowGroupDetails(!showGroupDetails);
+      // Initialize the edit fields when showing group details
+      if (!showGroupDetails && selectedConv) {
+        setEditedGroupName(selectedConv.name || "");
+        setEditedGroupDescription(selectedConv.description || "");
+      }
+    }
+  };
+
+  const startEditingGroupInfo = () => {
+    setEditingGroupInfo(true);
+  };
+
+  const cancelEditingGroupInfo = () => {
+    setEditingGroupInfo(false);
+    // Reset to original values
+    if (selectedConv) {
+      setEditedGroupName(selectedConv.name || "");
+      setEditedGroupDescription(selectedConv.description || "");
+    }
+  };
+
+  const saveEditedGroupInfo = async () => {
+    if (!selectedConv) return;
+
+    setActionLoading(true);
+    try {
+      const token = getToken();
+      const updateData = {
+        name: editedGroupName.trim(),
+        description: editedGroupDescription.trim()
+      };
+
+      await api.patch(`/chat/conversations/${selectedConv.id}`, updateData, token);
+
+      // Update the selected conversation with new info
+      setSelectedConv({
+        ...selectedConv,
+        name: editedGroupName.trim(),
+        description: editedGroupDescription.trim()
+      });
+
+      // Also update in the conversations list
+      setConversations(prev => prev.map(conv =>
+        conv.id === selectedConv.id
+          ? { ...conv, name: editedGroupName.trim(), description: editedGroupDescription.trim() }
+          : conv
+      ));
+
+      setEditingGroupInfo(false);
+
+      // Refetch the group and user data after update
+      fetchConversations();
+      fetchUsers();
+    } catch (e) {
+      console.error("Error updating group info:", e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   function getUserSuggestions(query: string) {
     const term = query.trim().toLowerCase();
@@ -544,14 +704,25 @@ export default function ChatRoomManagement() {
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={markAsRead}
-                          disabled={actionLoading || !selectedConv}
-                        >
-                          Mark as read
-                        </Button>
+                        {selectedConv && selectedConv.type === 'GROUP' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={toggleGroupDetails}
+                            disabled={!selectedConv}
+                          >
+                            Group Details
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={markAsRead}
+                            disabled={actionLoading || !selectedConv}
+                          >
+                            Mark as read
+                          </Button>
+                        )}
                         {selectedConv && selectedConv.type === 'GROUP' && selectedConv.ownerId !== user?.id && (
                           <Button
                             variant="destructive"
@@ -815,201 +986,425 @@ export default function ChatRoomManagement() {
                 </Card>
 
                 {/* Right: actions */}
-                <Card className="shadow-sm border h-full">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold">
-                      Actions
-                    </CardTitle>
-                    <CardDescription>
-                      Create, manage, and search
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold">
-                        Direct message
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Target user name"
-                          value={directUserName}
-                          onChange={(e) => setDirectUserName(e.target.value)}
-                        />
+                {showGroupDetails && selectedConv?.type === 'GROUP' ? (
+                  <Card className="shadow-sm border h-full">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg font-semibold">
+                            Group Details
+                          </CardTitle>
+                          <CardDescription>
+                            Manage group information
+                          </CardDescription>
+                        </div>
                         <Button
-                          variant="secondary"
-                          onClick={createDirectConversation}
-                          disabled={actionLoading || !directUserName.trim()}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowGroupDetails(false)}
                         >
-                          Create
+                          Back
                         </Button>
                       </div>
-                      {directUserName && (
-                        <div className="space-y-1">
-                          {directSuggestions.map((u) => (
-                            <button
-                              key={u.id || u.username || u.email}
-                              type="button"
-                              className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
-                              onClick={() =>
-                                setDirectUserName(
-                                  u.name || u.username || u.email || ""
-                                )
-                              }
-                            >
-                              <span className="font-medium text-gray-900">
-                                {u.name || u.username || "User"}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-gray-700">Name</h4>
+                        {editingGroupInfo ? (
+                          <Input
+                            value={editedGroupName}
+                            onChange={(e) => setEditedGroupName(e.target.value)}
+                            placeholder="Group name"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{selectedConv.name || 'N/A'}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-gray-700">Description</h4>
+                        {editingGroupInfo ? (
+                          <Input
+                            value={editedGroupDescription}
+                            onChange={(e) => setEditedGroupDescription(e.target.value)}
+                            placeholder="Group description"
+                          />
+                        ) : (
+                          <p className="text-gray-900">{selectedConv.description || 'No description'}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-gray-700">Admin</h4>
+                        <div className="flex items-center gap-2">
+                          {selectedConv.owner?.profile_picture ? (
+                            <img
+                              src={selectedConv.owner.profile_picture}
+                              alt={selectedConv.owner.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {selectedConv.owner?.name?.charAt(0)?.toUpperCase() || '?'}
                               </span>
-                              {(u.username || u.email) && (
-                                <span className="text-muted-foreground ml-1">
-                                  {u.username ? `(${u.username})` : u.email}
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                          {directSuggestions.length === 0 && (
-                            <div className="px-1 text-xs text-muted-foreground">
-                              No matches
                             </div>
                           )}
+                          <span>{selectedConv.owner?.name || 'Unknown'}</span>
                         </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold">New group</div>
-                      <Input
-                        placeholder="Group name"
-                        value={groupName}
-                        onChange={(e) => setGroupName(e.target.value)}
-                      />
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          setGroupFile(file || null);
-                        }}
-                      />
-                      <Button
-                        onClick={createGroupConversation}
-                        disabled={actionLoading || !groupName.trim()}
-                      >
-                        Create group
-                      </Button>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold">Participants</div>
-                      <Input
-                        placeholder="Participant user name"
-                        value={participantUserName}
-                        onChange={(e) => setParticipantUserName(e.target.value)}
-                        disabled={!selectedConv}
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          onClick={addParticipant}
-                          disabled={
-                            actionLoading ||
-                            !selectedConv ||
-                            !participantUserName.trim()
-                          }
-                        >
-                          Add
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={removeParticipant}
-                          disabled={
-                            actionLoading ||
-                            !selectedConv ||
-                            !participantUserName.trim()
-                          }
-                        >
-                          Remove
-                        </Button>
                       </div>
-                      {participantUserName && (
-                        <div className="space-y-1">
-                          {participantSuggestions.map((u) => (
-                            <button
-                              key={u.id || u.username || u.email}
-                              type="button"
-                              className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
-                              onClick={() =>
-                                setParticipantUserName(
-                                  u.name || u.username || u.email || ""
-                                )
-                              }
-                            >
-                              <span className="font-medium text-gray-900">
-                                {u.name || u.username || "User"}
-                              </span>
-                              {(u.username || u.email) && (
-                                <span className="text-muted-foreground ml-1">
-                                  {u.username ? `(${u.username})` : u.email}
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                          {participantSuggestions.length === 0 && (
-                            <div className="px-1 text-xs text-muted-foreground">
-                              No matches
-                            </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-semibold text-gray-700">Participants ({selectedConv.participants?.length || 0})</h4>
+                        </div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {selectedConv.participants && selectedConv.participants.length > 0 ? (
+                            selectedConv.participants.map((participant: any) => (
+                              <div key={participant.userId || participant.user?.id} className="flex items-center justify-between p-2 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                  {participant.user?.profile_picture ? (
+                                    <img
+                                      src={participant.user.profile_picture}
+                                      alt={participant.user.name}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                      <span className="text-xs font-medium">
+                                        {participant.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <span>{participant.user?.name || participant.user?.email || 'Unknown'}</span>
+                                </div>
+                                {selectedConv.ownerId === user?.id && participant.user?.id !== selectedConv.ownerId && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => removeParticipant(participant.user?.id)}
+                                    disabled={actionLoading}
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500">No participants found</p>
                           )}
                         </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold">Search groups</div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Search term"
-                          value={groupSearchTerm}
-                          onChange={(e) => setGroupSearchTerm(e.target.value)}
-                        />
-                        <Button onClick={searchGroups} disabled={actionLoading}>
-                          Search
-                        </Button>
                       </div>
-                      <div className="space-y-1 max-h-40 overflow-auto text-sm text-gray-700">
-                        {groupResults.map((g) => (
-                          <div
-                            key={g.id || g.name}
-                            className="rounded border border-dashed p-2"
+
+                      <div className="flex gap-2 pt-2">
+                        {selectedConv.ownerId === user?.id && (
+                          <>
+                            {editingGroupInfo ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  onClick={cancelEditingGroupInfo}
+                                  disabled={actionLoading}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={saveEditedGroupInfo}
+                                  disabled={actionLoading || !editedGroupName.trim()}
+                                >
+                                  Save
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                onClick={startEditingGroupInfo}
+                                disabled={actionLoading}
+                              >
+                                Edit Info
+                              </Button>
+                            )}
+                          </>
+                        )}
+
+                        {selectedConv.ownerId === user?.id && (
+                          <Button
+                            variant="destructive"
+                            onClick={deleteConversation}
+                            disabled={actionLoading}
                           >
-                            <div className="font-semibold">
-                              {g.name || g.title || "Group"}
-                            </div>
-                            {g.description && (
-                              <div className="text-xs text-muted-foreground">
-                                {g.description}
+                            Delete Group
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="shadow-sm border h-full">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Actions
+                      </CardTitle>
+                      <CardDescription>
+                        Create, manage, and search
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold">
+                          Direct message
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Target user name"
+                            value={directUserName}
+                            onChange={(e) => setDirectUserName(e.target.value)}
+                          />
+                          <Button
+                            variant="secondary"
+                            onClick={createDirectConversation}
+                            disabled={actionLoading || !directUserName.trim()}
+                          >
+                            Create
+                          </Button>
+                        </div>
+                        {directUserName && (
+                          <div className="space-y-1">
+                            {directSuggestions.map((u) => (
+                              <button
+                                key={u.id || u.username || u.email}
+                                type="button"
+                                className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
+                                onClick={() =>
+                                  setDirectUserName(
+                                    u.name || u.username || u.email || ""
+                                  )
+                                }
+                              >
+                                <span className="font-medium text-gray-900">
+                                  {u.name || u.username || "User"}
+                                </span>
+                                {(u.username || u.email) && (
+                                  <span className="text-muted-foreground ml-1">
+                                    {u.username ? `(${u.username})` : u.email}
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                            {directSuggestions.length === 0 && (
+                              <div className="px-1 text-xs text-muted-foreground">
+                                No matches
                               </div>
                             )}
                           </div>
-                        ))}
-                        {groupResults.length === 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            No group results
-                          </div>
                         )}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold">New group</div>
+                        <Input
+                          placeholder="Group name"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Group description (optional)"
+                          value={groupDescription}
+                          onChange={(e) => setGroupDescription(e.target.value)}
+                        />
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            setGroupFile(file || null);
+                          }}
+                        />
+                        <Button
+                          onClick={createGroupConversation}
+                          disabled={actionLoading || !groupName.trim()}
+                        >
+                          Create group
+                        </Button>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="text-sm font-semibold">Participants</div>
+                          {selectedConv?.type === 'GROUP' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={toggleShowMembers}
+                            >
+                              {showMembers ? "Hide" : "Show"} Members
+                            </Button>
+                          )}
+                        </div>
+
+                        {selectedConv?.type === 'GROUP' && showMembers ? (
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-sm">Group Members ({groupMembers.length})</h4>
+                            <div className="max-h-60 overflow-y-auto space-y-2">
+                              {groupMembers.length > 0 ? (
+                                groupMembers.map((member: any) => (
+                                  <div key={member.userId || member.user?.id} className="flex items-center justify-between p-2 border rounded-md">
+                                    <div className="flex items-center gap-2">
+                                      {member.user?.profile_picture ? (
+                                        <img
+                                          src={member.user.profile_picture}
+                                          alt={member.user.name}
+                                          className="w-8 h-8 rounded-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                          <span className="text-xs font-medium">
+                                            {member.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                                          </span>
+                                        </div>
+                                      )}
+                                      <span>{member.user?.name || member.user?.email || 'Unknown'}</span>
+                                    </div>
+                                    {selectedConv.ownerId === user?.id && member.user?.id !== user?.id && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => removeParticipant(member.user?.id)}
+                                        disabled={actionLoading}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No members found</p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Input
+                              placeholder="Participant user name"
+                              value={participantUserName}
+                              onChange={(e) => setParticipantUserName(e.target.value)}
+                              disabled={!selectedConv}
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                variant="secondary"
+                                onClick={addParticipant}
+                                disabled={
+                                  actionLoading ||
+                                  !selectedConv ||
+                                  !participantUserName.trim()
+                                }
+                              >
+                                Add
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => removeParticipant()}
+                                disabled={
+                                  actionLoading ||
+                                  !selectedConv ||
+                                  !participantUserName.trim()
+                                }
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                            {participantUserName && (
+                              <div className="space-y-1">
+                                {participantSuggestions.map((u) => (
+                                  <button
+                                    key={u.id || u.username || u.email}
+                                    type="button"
+                                    className="w-full rounded border px-2 py-1 text-left text-xs transition hover:bg-gray-50"
+                                    onClick={() =>
+                                      setParticipantUserName(
+                                        u.name || u.username || u.email || ""
+                                      )
+                                    }
+                                  >
+                                    <span className="font-medium text-gray-900">
+                                      {u.name || u.username || "User"}
+                                    </span>
+                                    {(u.username || u.email) && (
+                                      <span className="text-muted-foreground ml-1">
+                                        {u.username ? `(${u.username})` : u.email}
+                                      </span>
+                                    )}
+                                  </button>
+                                ))}
+                                {participantSuggestions.length === 0 && (
+                                  <div className="px-1 text-xs text-muted-foreground">
+                                    No matches
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold">Search groups</div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Search term"
+                            value={groupSearchTerm}
+                            onChange={(e) => setGroupSearchTerm(e.target.value)}
+                          />
+                          <Button onClick={searchGroups} disabled={actionLoading}>
+                            Search
+                          </Button>
+                        </div>
+                        <div className="space-y-1 max-h-40 overflow-auto text-sm text-gray-700">
+                          {groupResults.map((g) => (
+                            <div
+                              key={g.id || g.name}
+                              className="rounded border border-dashed p-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => {
+                                // Set the selected conversation to the clicked group
+                                setSelectedConv(g);
+                                // Fetch the messages for this group
+                                fetchMessages(g.id);
+                                // Close the member list if it's open
+                                setShowMembers(false);
+                              }}
+                            >
+                              <div className="font-semibold">
+                                {g.name || g.title || "Group"}
+                              </div>
+                              {g.description && (
+                                <div className="text-xs text-muted-foreground">
+                                  {g.description}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {groupResults.length === 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              No group results
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
         </div>
       </SidebarInset>
+
     </SidebarProvider>
   );
 }
