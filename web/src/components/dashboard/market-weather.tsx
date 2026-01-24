@@ -72,22 +72,22 @@ export function MarketWeather() {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [weatherYangon, setWeatherYangon] = useState<WeatherData | null>(null);
   const [weatherMandalay, setWeatherMandalay] = useState<WeatherData | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const marketRes = await fetch('/api/market');
+        const marketRes = await fetch("/api/market");
         const marketJson = await marketRes.json();
         setMarketData(marketJson);
 
-        const weatherYangonRes = await fetch('/v2/weather/yangon');
+        const weatherYangonRes = await fetch("/v2/weather/yangon");
         const weatherYangonJson = await weatherYangonRes.json();
         setWeatherYangon(weatherYangonJson);
 
-        const weatherMandalayRes = await fetch('/v2/weather/mandalay');
+        const weatherMandalayRes = await fetch("/v2/weather/mandalay");
         const weatherMandalayJson = await weatherMandalayRes.json();
         setWeatherMandalay(weatherMandalayJson);
       } catch (error) {
