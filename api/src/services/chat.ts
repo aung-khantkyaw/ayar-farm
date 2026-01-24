@@ -300,8 +300,21 @@ export class ChatService {
             throw new Error("Not authorized");
         }
 
+        // Validate that all participant IDs exist in the users table
+        const existingUsers = await prisma.users.findMany({
+            where: { id: { in: participantIds } },
+            select: { id: true }
+        });
+
+        const existingUserIds = existingUsers.map(user => user.id);
+        const invalidUserIds = participantIds.filter(id => !existingUserIds.includes(id));
+
+        if (invalidUserIds.length > 0) {
+            throw new Error(`Invalid user IDs: ${invalidUserIds.join(', ')}`);
+        }
+
         await prisma.conversationParticipant.createMany({
-            data: participantIds.map(id => ({ conversationId, userId: id })),
+            data: existingUserIds.map(id => ({ conversationId, userId: id })),
             skipDuplicates: true
         });
     }
@@ -326,6 +339,19 @@ export class ChatService {
         await prisma.conversationParticipant.deleteMany({
             where: { conversationId, userId }
         });
+    }
+
+    public static async updateConversation(conversationId: string, name?: string, description?: string) {
+        const updateData: any = {};
+        if (name) updateData.name = name;
+        if (description) updateData.description = description;
+
+        const updatedConversation = await prisma.conversation.update({
+            where: { id: conversationId },
+            data: updateData
+        });
+
+        return updatedConversation;
     }
 
     public static async deleteConversation(conversationId: string, userId: string) {

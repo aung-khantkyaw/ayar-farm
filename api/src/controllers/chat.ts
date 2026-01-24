@@ -228,6 +228,29 @@ export class ChatController {
         }
     }
 
+    public async updateConversation(req: Request, res: Response): Promise<void> {
+        try {
+            const { conversationId } = req.params;
+            const userId = (req as any).user.id;
+            const { name, description } = req.body;
+
+            // Only allow updating if user is the owner of the conversation
+            const conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+            });
+
+            if (!conversation || conversation.ownerId !== userId) {
+                res.status(403).json({ message: "Only the owner can update this conversation" });
+                return;
+            }
+
+            const updatedConversation = await ChatService.updateConversation(conversationId, name, description);
+            res.status(200).json({ message: "Conversation updated successfully", data: updatedConversation });
+        } catch (error) {
+            res.status(500).json({ message: `Error updating conversation: ${error}` });
+        }
+    }
+
     public async deleteConversation(req: Request, res: Response): Promise<void> {
         try {
             const { conversationId } = req.params;
