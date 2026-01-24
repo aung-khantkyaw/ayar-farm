@@ -1,64 +1,80 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma/client';
-
-const ANNOUNCEMENT_TYPES = ['INFORMATION', 'WARNING', 'BREAKING_NEWS'] as const;
-
-type AnnouncementType = (typeof ANNOUNCEMENT_TYPES)[number];
+import { PushService } from '../services/push';
 
 export class AnnouncementController {
-  private normalizeType(raw?: string): AnnouncementType | undefined {
-    if (!raw) return undefined;
-    const upper = raw.toUpperCase();
-    return ANNOUNCEMENT_TYPES.includes(upper as AnnouncementType)
-      ? (upper as AnnouncementType)
-      : undefined;
-  }
-
   public async create(req: Request, res: Response): Promise<void> {
-    const { title, message, data, type } = req.body;
-    const creatorId = (req as any).user?.id as string | undefined;
-
-    const rawUserIds = (req.body.userIds ?? req.body.userId) as string | string[] | undefined;
-    const targetUserIds = Array.isArray(rawUserIds)
-      ? rawUserIds
-      : rawUserIds
-        ? [rawUserIds]
-        : [];
-    const uniqueTargetUserIds = [...new Set(targetUserIds.filter(Boolean))];
-
-    if (!creatorId) {
-      res.status(401).json({ message: 'Unauthorized' });
-      return;
-    }
+    const { title, message, type, data, recipientIds } = req.body;
+    const userId = (req as any).user.id;
 
     if (!title || !message) {
-      res.status(400).json({ message: 'title and message are required' });
+      res.status(400).json({ message: 'Title and message are required' });
       return;
     }
 
-    const normalizedType = this.normalizeType(type) ?? 'INFORMATION';
-
     try {
-      const announcement = await prisma.$transaction(async (tx) => {
-        const created = await tx.announcements.create({
-          data: {
-            creatorId,
-            title,
-            message,
-            data,
-            type: normalizedType,
-          },
-        });
-
-        if (uniqueTargetUserIds.length > 0) {
-          await tx.announcementRecipient.createMany({
-            data: uniqueTargetUserIds.map((userId) => ({ announcementId: created.id, userId })),
-            skipDuplicates: true,
-          });
+      // Create the announcement
+      const announcement = await prisma.announcements.create({
+        data: {
+          title,
+          message,
+          type: type || 'INFORMATION',
+          data,
+          creatorId: userId,
+          recipients: recipientIds ? {
+            create: recipientIds.map((userId: string) => ({
+              userId
+            }))
+          } : undefined
+        },
+        include: {
+          creator: true,
+          recipients: {
+            include: {
+              user: true
+            }
+          }
         }
-
-        return created;
       });
+
+      // Send push notifications to all recipients if announcement is active
+      if (announcement.isActive) {
+        // Send to specific recipients if they exist
+        if (announcement.recipients && announcement.recipients.length > 0) {
+          for (const recipient of announcement.recipients) {
+            try {
+              await PushService.sendToUser(
+                recipient.userId,
+                announcement.title,
+                announcement.message,
+                {
+                  announcementId: announcement.id,
+                  type: 'announcement',
+                  ...data
+                }
+              );
+            } catch (error) {
+              console.error(`Failed to send notification to user ${recipient.userId}:`, error);
+            }
+          }
+        } else {
+          // If no specific recipients, send to a general announcement topic
+          try {
+            await PushService.sendToTopic(
+              'announcements',
+              announcement.title,
+              announcement.message,
+              {
+                announcementId: announcement.id,
+                type: 'announcement',
+                ...data
+              }
+            );
+          } catch (error) {
+            console.error('Failed to send notification to announcements topic:', error);
+          }
+        }
+      }
 
       res.status(201).json({ data: announcement });
     } catch (error) {
@@ -66,36 +82,22 @@ export class AnnouncementController {
     }
   }
 
-  public async list(req: Request, res: Response): Promise<void> {
-    const { type, active: activeRaw } = req.query;
-    const normalizedType = this.normalizeType(type as string);
-    const userId = (req as any).user?.id as string;
-    const isAdmin = (req as any).user?.user_type === 'ADMIN';
-
-    let activeFilter: boolean | 'all' = true; // default to active only
-    if (typeof activeRaw === 'string') {
-      const lower = activeRaw.toLowerCase();
-      if (lower === 'true') activeFilter = true;
-      else if (lower === 'false') activeFilter = false;
-      else if (lower === 'all') activeFilter = 'all';
-    } else if (Array.isArray(activeRaw)) {
-      if (activeRaw.some((v) => typeof v === 'string' && v.toLowerCase() === 'all')) {
-        activeFilter = 'all';
-      } else if (activeRaw.some((v) => typeof v === 'string' && v.toLowerCase() === 'false')) {
-        activeFilter = false;
-      } else {
-        activeFilter = true;
-      }
-    }
-
+  public async list(_req: Request, res: Response): Promise<void> {
     try {
       const announcements = await prisma.announcements.findMany({
-        where: {
-          AND: [
-            ...(normalizedType ? [{ type: normalizedType }] : []),
-            ...(activeFilter === 'all' ? [] : [{ isActive: activeFilter }]),
-            ...(isAdmin ? [] : [{ recipients: { some: { userId } } }]),
-          ],
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              user_type: true
+            }
+          },
+          recipients: {
+            select: {
+              userId: true
+            }
+          }
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -108,12 +110,31 @@ export class AnnouncementController {
 
   public async getById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
+
     try {
-      const announcement = await prisma.announcements.findUnique({ where: { id } });
+      const announcement = await prisma.announcements.findUnique({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              user_type: true
+            }
+          },
+          recipients: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      });
+
       if (!announcement) {
         res.status(404).json({ message: 'Announcement not found' });
         return;
       }
+
       res.status(200).json({ data: announcement });
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch announcement', error: String(error) });
@@ -122,26 +143,70 @@ export class AnnouncementController {
 
   public async update(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const { title, message, data, isActive, type } = req.body;
-    const normalizedType = this.normalizeType(type as string);
+    const { title, message, type, data, isActive, recipientIds } = req.body;
 
     try {
-      const existing = await prisma.announcements.findUnique({ where: { id } });
-      if (!existing) {
-        res.status(404).json({ message: 'Announcement not found' });
-        return;
-      }
-
       const announcement = await prisma.announcements.update({
         where: { id },
         data: {
-          ...(title !== undefined ? { title } : {}),
-          ...(message !== undefined ? { message } : {}),
-          ...(data !== undefined ? { data } : {}),
-          ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
-          ...(normalizedType ? { type: normalizedType } : {}),
+          title,
+          message,
+          type,
+          data,
+          isActive,
+          ...(recipientIds !== undefined && {
+            recipients: {
+              deleteMany: {}, // Remove all existing recipients
+              create: recipientIds.map((userId: string) => ({
+                userId
+              }))
+            }
+          })
         },
+        include: {
+          creator: true,
+          recipients: true
+        }
       });
+
+      // If announcement is active, send push notifications
+      if (announcement.isActive) {
+        // Send to specific recipients if they exist
+        if (announcement.recipients && announcement.recipients.length > 0) {
+          for (const recipient of announcement.recipients) {
+            try {
+              await PushService.sendToUser(
+                recipient.userId,
+                announcement.title,
+                announcement.message,
+                {
+                  announcementId: announcement.id,
+                  type: 'announcement',
+                  ...data
+                }
+              );
+            } catch (error) {
+              console.error(`Failed to send notification to user ${recipient.userId}:`, error);
+            }
+          }
+        } else {
+          // If no specific recipients, send to a general announcement topic
+          try {
+            await PushService.sendToTopic(
+              'announcements',
+              announcement.title,
+              announcement.message,
+              {
+                announcementId: announcement.id,
+                type: 'announcement',
+                ...data
+              }
+            );
+          } catch (error) {
+            console.error('Failed to send notification to announcements topic:', error);
+          }
+        }
+      }
 
       res.status(200).json({ data: announcement });
     } catch (error) {
@@ -151,12 +216,8 @@ export class AnnouncementController {
 
   public async delete(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
+
     try {
-      const existing = await prisma.announcements.findUnique({ where: { id } });
-      if (!existing) {
-        res.status(404).json({ message: 'Announcement not found' });
-        return;
-      }
       await prisma.announcements.delete({ where: { id } });
       res.status(204).send();
     } catch (error) {

@@ -17,6 +17,8 @@ import chat from "./routes/chat";
 import post from "./routes/post";
 import notification from "./routes/notification";
 import announcement from "./routes/announcement";
+import pushNotification from "./routes/push-notification";
+import deviceToken from "./routes/device-token";
 
 const app = express();
 
@@ -68,5 +70,7 @@ app.use("/api/chat", chat);
 app.use("/api/post", post);
 app.use("/api/notifications", notification);
 app.use("/api/announcements", announcement);
+app.use("/api/push", pushNotification);
+app.use("/api/device-tokens", deviceToken);
 
 export default app;

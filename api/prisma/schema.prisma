@@ -114,6 +114,7 @@ model Users {
   Notifications            Notifications[]           @relation("UserNotifications")
   createdAnnouncements     Announcements[]           @relation("AnnouncementCreator")
   announcementRecipients   AnnouncementRecipient[]
+  deviceTokens             DeviceToken[]             @relation("UserDeviceTokens")
 }
 
 model CropTypes {
@@ -448,5 +449,19 @@ model AnnouncementRecipient {
   user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([announcementId, userId])
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String // 'android' or 'ios'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user Users @relation("UserDeviceTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
   @@index([userId])
 }
