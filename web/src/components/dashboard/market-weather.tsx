@@ -79,24 +79,15 @@ export function MarketWeather() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const marketApi =
-          import.meta.env.VITE_MARKET_API ||
-          "https://myanmarmarketapi.laziestant.tech";
-        const weatherApi =
-          import.meta.env.VITE_WEATHER_API ||
-          "https://getweatherbycityapi.laziestant.tech";
-
-        const marketRes = await fetch(`${marketApi}/api/market`);
+        const marketRes = await fetch('/api/market');
         const marketJson = await marketRes.json();
         setMarketData(marketJson);
 
-        const weatherYangonRes = await fetch(`${weatherApi}/v2/weather/yangon`);
+        const weatherYangonRes = await fetch('/v2/weather/yangon');
         const weatherYangonJson = await weatherYangonRes.json();
         setWeatherYangon(weatherYangonJson);
 
-        const weatherMandalayRes = await fetch(
-          `${weatherApi}/v2/weather/mandalay`
-        );
+        const weatherMandalayRes = await fetch('/v2/weather/mandalay');
         const weatherMandalayJson = await weatherMandalayRes.json();
         setWeatherMandalay(weatherMandalayJson);
       } catch (error) {
@@ -166,52 +157,59 @@ export function MarketWeather() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0 relative z-10">
-          <Tabs
-            defaultValue={marketData[0]?.market}
-            className="h-full flex flex-col"
-          >
-            <div className="px-4 pt-4">
-              <TabsList className="w-full justify-start overflow-x-auto bg-white/30 backdrop-blur-md border border-emerald-100/50 rounded-xl p-1.5 h-auto gap-2">
-                {marketData.map((m) => (
-                  <TabsTrigger
-                    key={m.market}
-                    value={m.market}
-                    className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md text-slate-600 px-4 py-2 rounded-lg transition-all hover:bg-white/40 font-medium"
-                  >
-                    {m.market}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            {marketData.map((m) => (
-              <TabsContent
-                key={m.market}
-                value={m.market}
-                className="flex-1 overflow-y-auto p-4 mt-0"
-              >
-                <div className="grid gap-3">
-                  {m.items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center p-3 bg-white/80 backdrop-blur-sm border border-emerald-100/50 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group"
+          {marketData.length > 0 ? (
+            <Tabs
+              defaultValue={marketData[0]?.market}
+              className="h-full flex flex-col"
+            >
+              <div className="px-4 pt-4">
+                <TabsList className="w-full justify-start overflow-x-auto bg-white/30 backdrop-blur-md border border-emerald-100/50 rounded-xl p-1.5 h-auto gap-2">
+                  {marketData.map((m) => (
+                    <TabsTrigger
+                      key={m.market}
+                      value={m.market}
+                      className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md text-slate-600 px-4 py-2 rounded-lg transition-all hover:bg-white/40 font-medium"
                     >
-                      <div className="flex flex-col gap-1">
-                        <span className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                          {item.product}
-                        </span>
-                        <span className="text-xs font-medium text-slate-500 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
-                          {item.unit}
-                        </span>
-                      </div>
-                      <div className="font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                        {item.price}
-                      </div>
-                    </div>
+                      {m.market}
+                    </TabsTrigger>
                   ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+                </TabsList>
+              </div>
+              {marketData.map((m) => (
+                <TabsContent
+                  key={m.market}
+                  value={m.market}
+                  className="flex-1 overflow-y-auto p-4 mt-0"
+                >
+                  <div className="grid gap-3">
+                    {m.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center p-3 bg-white/80 backdrop-blur-sm border border-emerald-100/50 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group"
+                      >
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                            {item.product}
+                          </span>
+                          <span className="text-xs font-medium text-slate-500 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
+                            {item.unit}
+                          </span>
+                        </div>
+                        <div className="font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                          {item.price}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2">
+              <ShoppingCart className="h-10 w-10 opacity-20" />
+              <p>No market data available</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

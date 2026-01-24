@@ -1,19 +1,20 @@
 import * as React from "react";
 import {
-  IconVideo,
+  IconVideoMinus,
   IconWheat,
   // IconFileAi,
   // IconFileDescription,
-  IconBulldozer,
+  IconTractor,
   IconHelp,
   IconLeaf,
-  IconMeat,
+  IconBuildingCottage,
   IconSearch,
   IconSettings,
   IconFishHook,
   IconUsers,
   IconDeviceMobile,
   IconMessageCog,
+  IconNews,
 } from "@tabler/icons-react";
 
 import { NavCategories } from "@/components/nav-category";
@@ -31,54 +32,6 @@ import {
 import { useAuth } from "@/providers/auth-provider.tsx";
 
 const data = {
-  // navClouds: [
-  //   {
-  //     title: "Capture",
-  //     icon: IconVideo,
-  //     isActive: true,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Proposal",
-  //     icon: IconFileDescription,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Prompts",
-  //     icon: IconFileAi,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  // ],
   navSecondary: [
     {
       title: "Settings",
@@ -98,32 +51,34 @@ const data = {
   ],
   main: [
     {
-      name: "Users Management",
+      name: "Users",
       url: "/admin/users",
       icon: IconUsers,
     },
     {
-      name: "Chat Rooms Management",
+      name: "Chat Rooms",
       url: "/admin/chat-room",
       icon: IconMessageCog,
     },
     {
-      name: "Videos Management",
-      url: "/admin/videos",
-      icon: IconVideo,
-    },
-    {
       name: "Announcements",
       url: "/admin/announcements",
-      icon: IconMessageCog,
+      icon: IconNews,
+    },
+  ],
+  resources: [
+    {
+      name: "Videos",
+      url: "/resource/videos",
+      icon: IconVideoMinus,
     },
     {
       name: "Applications",
-      url: "/admin/applications",
+      url: "/resource/applications",
       icon: IconDeviceMobile,
     },
   ],
-  category: [
+  categories: [
     {
       name: "Crops",
       url: "/category/crops",
@@ -132,7 +87,7 @@ const data = {
     {
       name: "Livestock",
       url: "/category/livestock",
-      icon: IconMeat,
+      icon: IconBuildingCottage,
     },
     {
       name: "Fisheries",
@@ -140,9 +95,9 @@ const data = {
       icon: IconFishHook,
     },
     {
-      name: "Machine",
-      url: "/category/machine",
-      icon: IconBulldozer,
+      name: "Machines",
+      url: "/category/machines",
+      icon: IconTractor,
     },
   ],
 };
@@ -176,8 +131,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.main} />
-        <NavCategories items={data.category} />
+        <NavMain items={[]} />
+        <NavCategories title="System Managements" items={data.main} />
+        <NavCategories title="Resource Managements" items={data.resources} />
+        <NavCategories title="Category Managements" items={data.categories} />
         {/*<NavSecondary items={data.navSecondary} className="mt-auto" />*/}
       </SidebarContent>
       <SidebarFooter>

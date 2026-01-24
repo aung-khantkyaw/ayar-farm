@@ -20,6 +20,18 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    proxy: {
+      '/api/market': {
+        target: 'https://myanmarmarketapi.laziestant.tech',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/market/, '/api/market')
+      },
+      '/v2/weather': {
+        target: 'https://getweatherbycityapi.laziestant.tech',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/v2\/weather/, '/v2/weather')
+      }
+    }
   },
   preview: {
     port: 5173,

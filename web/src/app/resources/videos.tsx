@@ -561,7 +561,7 @@ function VideoManagement() {
   );
 }
 
-function AdminVideosPage() {
+function ResourceVideosPage() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -598,4 +598,4 @@ function AdminVideosPage() {
   );
 }
 
-export default AdminVideosPage;
+export default ResourceVideosPage;

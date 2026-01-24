@@ -14,7 +14,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CategoryMachineRouteImport } from './routes/category.machine'
+import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
+import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
+import { Route as CategoryMachinesRouteImport } from './routes/category.machines'
 import { Route as CategoryLivestockRouteImport } from './routes/category.livestock'
 import { Route as CategoryFisheriesRouteImport } from './routes/category.fisheries'
 import { Route as CategoryCropsRouteImport } from './routes/category.crops'
@@ -22,10 +24,8 @@ import { Route as AuthUnauthorizedRouteImport } from './routes/auth.unauthorized
 import { Route as AuthSuccessRouteImport } from './routes/auth.success'
 import { Route as AuthErrorRouteImport } from './routes/auth.error'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
-import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
-import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -53,9 +53,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategoryMachineRoute = CategoryMachineRouteImport.update({
-  id: '/category/machine',
-  path: '/category/machine',
+const ResourceVideosRoute = ResourceVideosRouteImport.update({
+  id: '/resource/videos',
+  path: '/resource/videos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourceApplicationsRoute = ResourceApplicationsRouteImport.update({
+  id: '/resource/applications',
+  path: '/resource/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryMachinesRoute = CategoryMachinesRouteImport.update({
+  id: '/category/machines',
+  path: '/category/machines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoryLivestockRoute = CategoryLivestockRouteImport.update({
@@ -93,11 +103,6 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminVideosRoute = AdminVideosRouteImport.update({
-  id: '/admin/videos',
-  path: '/admin/videos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -106,11 +111,6 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminChatRoomRoute = AdminChatRoomRouteImport.update({
   id: '/admin/chat-room',
   path: '/admin/chat-room',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
-  id: '/admin/applications',
-  path: '/admin/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
@@ -126,10 +126,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
-  '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/videos': typeof AdminVideosRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -137,7 +135,9 @@ export interface FileRoutesByFullPath {
   '/category/crops': typeof CategoryCropsRoute
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
-  '/category/machine': typeof CategoryMachineRoute
+  '/category/machines': typeof CategoryMachinesRoute
+  '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -146,10 +146,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
-  '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/videos': typeof AdminVideosRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -157,7 +155,9 @@ export interface FileRoutesByTo {
   '/category/crops': typeof CategoryCropsRoute
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
-  '/category/machine': typeof CategoryMachineRoute
+  '/category/machines': typeof CategoryMachinesRoute
+  '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,10 +167,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
-  '/admin/applications': typeof AdminApplicationsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/videos': typeof AdminVideosRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -178,7 +176,9 @@ export interface FileRoutesById {
   '/category/crops': typeof CategoryCropsRoute
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
-  '/category/machine': typeof CategoryMachineRoute
+  '/category/machines': typeof CategoryMachinesRoute
+  '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,10 +189,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/announcements'
-    | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
-    | '/admin/videos'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -200,7 +198,9 @@ export interface FileRouteTypes {
     | '/category/crops'
     | '/category/fisheries'
     | '/category/livestock'
-    | '/category/machine'
+    | '/category/machines'
+    | '/resource/applications'
+    | '/resource/videos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,10 +209,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/announcements'
-    | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
-    | '/admin/videos'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -220,7 +218,9 @@ export interface FileRouteTypes {
     | '/category/crops'
     | '/category/fisheries'
     | '/category/livestock'
-    | '/category/machine'
+    | '/category/machines'
+    | '/resource/applications'
+    | '/resource/videos'
   id:
     | '__root__'
     | '/'
@@ -229,10 +229,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/admin/announcements'
-    | '/admin/applications'
     | '/admin/chat-room'
     | '/admin/users'
-    | '/admin/videos'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -240,7 +238,9 @@ export interface FileRouteTypes {
     | '/category/crops'
     | '/category/fisheries'
     | '/category/livestock'
-    | '/category/machine'
+    | '/category/machines'
+    | '/resource/applications'
+    | '/resource/videos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -250,10 +250,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
-  AdminApplicationsRoute: typeof AdminApplicationsRoute
   AdminChatRoomRoute: typeof AdminChatRoomRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AdminVideosRoute: typeof AdminVideosRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   AuthErrorRoute: typeof AuthErrorRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
@@ -261,7 +259,9 @@ export interface RootRouteChildren {
   CategoryCropsRoute: typeof CategoryCropsRoute
   CategoryFisheriesRoute: typeof CategoryFisheriesRoute
   CategoryLivestockRoute: typeof CategoryLivestockRoute
-  CategoryMachineRoute: typeof CategoryMachineRoute
+  CategoryMachinesRoute: typeof CategoryMachinesRoute
+  ResourceApplicationsRoute: typeof ResourceApplicationsRoute
+  ResourceVideosRoute: typeof ResourceVideosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,11 +301,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/category/machine': {
-      id: '/category/machine'
-      path: '/category/machine'
-      fullPath: '/category/machine'
-      preLoaderRoute: typeof CategoryMachineRouteImport
+    '/resource/videos': {
+      id: '/resource/videos'
+      path: '/resource/videos'
+      fullPath: '/resource/videos'
+      preLoaderRoute: typeof ResourceVideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/applications': {
+      id: '/resource/applications'
+      path: '/resource/applications'
+      fullPath: '/resource/applications'
+      preLoaderRoute: typeof ResourceApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/machines': {
+      id: '/category/machines'
+      path: '/category/machines'
+      fullPath: '/category/machines'
+      preLoaderRoute: typeof CategoryMachinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/livestock': {
@@ -357,13 +371,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/videos': {
-      id: '/admin/videos'
-      path: '/admin/videos'
-      fullPath: '/admin/videos'
-      preLoaderRoute: typeof AdminVideosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -376,13 +383,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/chat-room'
       fullPath: '/admin/chat-room'
       preLoaderRoute: typeof AdminChatRoomRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/applications': {
-      id: '/admin/applications'
-      path: '/admin/applications'
-      fullPath: '/admin/applications'
-      preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/announcements': {
@@ -402,10 +402,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
-  AdminApplicationsRoute: AdminApplicationsRoute,
   AdminChatRoomRoute: AdminChatRoomRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AdminVideosRoute: AdminVideosRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   AuthErrorRoute: AuthErrorRoute,
   AuthSuccessRoute: AuthSuccessRoute,
@@ -413,7 +411,9 @@ const rootRouteChildren: RootRouteChildren = {
   CategoryCropsRoute: CategoryCropsRoute,
   CategoryFisheriesRoute: CategoryFisheriesRoute,
   CategoryLivestockRoute: CategoryLivestockRoute,
-  CategoryMachineRoute: CategoryMachineRoute,
+  CategoryMachinesRoute: CategoryMachinesRoute,
+  ResourceApplicationsRoute: ResourceApplicationsRoute,
+  ResourceVideosRoute: ResourceVideosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

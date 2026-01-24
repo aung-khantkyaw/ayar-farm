@@ -3,7 +3,7 @@ import AdminMachinePage from "@/app/categories/machine-page";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/providers/auth-provider";
 
-export const Route = createFileRoute("/category/machine")({
+export const Route = createFileRoute("/category/machines")({
   component: RouteComponent,
 });
 

@@ -534,7 +534,7 @@ function ApplicationManagement() {
   );
 }
 
-function AdminApplicationsPage() {
+function ResourceApplicationsPage() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -571,4 +571,4 @@ function AdminApplicationsPage() {
   );
 }
 
-export default AdminApplicationsPage;
+export default ResourceApplicationsPage;

@@ -12,8 +12,10 @@ import {
 import { useRouter } from "@tanstack/react-router";
 
 export function NavCategories({
+  title,
   items,
 }: {
+  title: string;
   items: {
     name: string;
     url: string;
@@ -24,7 +26,7 @@ export function NavCategories({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Categories</SidebarGroupLabel>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
