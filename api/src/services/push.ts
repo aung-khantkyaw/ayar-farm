@@ -3,6 +3,9 @@ import { prisma } from '../prisma/client';
 import { logger } from '../utils/logger';
 import { emitToUser } from '../socket'; // Import socket function to emit to specific user
 
+// Check if messaging is available
+const isMessagingAvailable = !!messaging;
+
 export interface PushNotificationData {
   [key: string]: string;
 }
@@ -22,8 +25,8 @@ export class PushService {
   static async sendToUser(userId: string, title: string, body: string, data?: PushNotificationData): Promise<boolean> {
     try {
       // Check if Firebase messaging is properly initialized
-      if (!messaging) {
-        logger.error('Firebase Messaging is not properly initialized');
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Notification not sent.');
         return false;
       }
 
@@ -55,7 +58,7 @@ export class PushService {
 
       for (const message of messages) {
         try {
-          await messaging.send(message);
+          await messaging!.send(message);
           successCount++;
         } catch (error) {
           failureCount++;
@@ -78,11 +81,12 @@ export class PushService {
   static async sendToDeviceToken(deviceToken: string, title: string, body: string, data?: PushNotificationData): Promise<string> {
     try {
       // Check if Firebase messaging is properly initialized
-      if (!messaging) {
-        throw new Error('Firebase Messaging is not properly initialized');
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Notification not sent.');
+        throw new Error('Firebase Messaging is not available');
       }
 
-      const response = await messaging.send({
+      const response = await messaging!.send({
         token: deviceToken,
         notification: { title, body },
         data: data || {},
@@ -102,11 +106,12 @@ export class PushService {
   static async sendToTopic(topic: string, title: string, body: string, data?: PushNotificationData): Promise<string> {
     try {
       // Check if Firebase messaging is properly initialized
-      if (!messaging) {
-        throw new Error('Firebase Messaging is not properly initialized');
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Notification not sent.');
+        throw new Error('Firebase Messaging is not available');
       }
 
-      const response = await messaging.send({
+      const response = await messaging!.send({
         topic: topic,
         notification: { title, body },
         data: data || {},
@@ -125,7 +130,12 @@ export class PushService {
    */
   static async subscribeToTopic(tokens: string[], topic: string): Promise<void> {
     try {
-      await messaging.subscribeToTopic(tokens, topic);
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Subscription not performed.');
+        return;
+      }
+
+      await messaging!.subscribeToTopic(tokens, topic);
       logger.info(`Successfully subscribed ${tokens.length} devices to topic: ${topic}`);
     } catch (error) {
       logger.error(`Error subscribing devices to topic ${topic}:`, error);
@@ -138,7 +148,12 @@ export class PushService {
    */
   static async unsubscribeFromTopic(tokens: string[], topic: string): Promise<void> {
     try {
-      await messaging.unsubscribeFromTopic(tokens, topic);
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Unsubscription not performed.');
+        return;
+      }
+
+      await messaging!.unsubscribeFromTopic(tokens, topic);
       logger.info(`Successfully unsubscribed ${tokens.length} devices from topic: ${topic}`);
     } catch (error) {
       logger.error(`Error unsubscribing devices from topic ${topic}:`, error);
@@ -151,8 +166,13 @@ export class PushService {
    */
   static async validateToken(token: string): Promise<boolean> {
     try {
+      if (!isMessagingAvailable) {
+        logger.warn('Firebase Messaging is not available. Token validation not performed.');
+        return false;
+      }
+
       // Try to send a minimal message to validate the token
-      await messaging.send({
+      await messaging!.send({
         token: token,
         data: { validation: 'true' },
       }, true); // dryRun = true to validate without actually sending

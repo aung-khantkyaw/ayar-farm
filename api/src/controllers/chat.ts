@@ -227,5 +227,17 @@ export class ChatController {
             res.status(500).json({ message: `Error removing moderator: ${error}` });
         }
     }
+
+    public async deleteConversation(req: Request, res: Response): Promise<void> {
+        try {
+            const { conversationId } = req.params;
+            const userId = (req as any).user.id;
+
+            await ChatService.deleteConversation(conversationId, userId);
+            res.status(200).json({ message: "Conversation deleted successfully" });
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting conversation: ${error}` });
+        }
+    }
 }
 

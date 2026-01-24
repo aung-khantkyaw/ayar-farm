@@ -26,6 +26,7 @@ chat.post("/conversations/:conversationId/participants", authenticate, (req, res
 chat.delete("/conversations/:conversationId/participants/:participantId", authenticate, (req, res) => chatController.removeParticipant(req, res));
 chat.post("/conversations/:conversationId/leave", authenticate, (req, res) => chatController.leaveConversation(req, res));
 chat.post("/conversations/:conversationId/read", authenticate, (req, res) => chatController.markAsRead(req, res));
+chat.delete("/conversations/:conversationId", authenticate, (req, res) => chatController.deleteConversation(req, res));
 
 // Moderators
 chat.post("/groups/:groupId/moderators", authenticate, (req, res) => chatController.addModerator(req, res));

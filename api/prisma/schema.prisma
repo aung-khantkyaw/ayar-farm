@@ -1,17 +1,356 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Users {
+  id                         String                    @id @unique @default(uuid())
+  name                       String
+  phone_number               String                    @unique
+  email                      String?                   @unique
+  password                   String
+  gender                     Gender                    @default(OTHER)
+  user_type                  UserType                  @default(OTHERS)
+  profile_picture            String?
+  location                   String?
+  isVerified                 Boolean                   @default(false)
+  verificationToken          String?
+  verificationTokenExpiresAt DateTime?
+  last_login                 DateTime                  @default(now())
+  created_at                 DateTime                  @default(now())
+  updated_at                 DateTime                  @updatedAt
+  resetPasswordExpiresAt     DateTime?
+  resetPasswordToken         String?
+  announcementRecipients     AnnouncementRecipient[]
+  createdAnnouncements       Announcements[]           @relation("AnnouncementCreator")
+  commentReactions           CommentReaction[]         @relation("UserCommentReactions")
+  ownedConversations         Conversation[]            @relation("ConversationOwner")
+  conversationModerators     ConversationModerator[]   @relation("ConversationModerators")
+  conversationParticipants   ConversationParticipant[] @relation("ConversationParticipants")
+  deviceTokens               DeviceToken[]             @relation("UserDeviceTokens")
+  messages                   Message[]                 @relation("Messages")
+  Notifications              Notifications[]           @relation("UserNotifications")
+  posts                      Post[]                    @relation("UserPosts")
+  postComments               PostComment[]             @relation("UserPostComments")
+  postReactions              PostReaction[]            @relation("UserPostReactions")
+}
+
+model CropTypes {
+  id          String      @id @unique @default(uuid())
+  name        String
+  description String?
+  image_urls  String[]
+  category    Category    @default(CROPS_AND_PULSES)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  crops       Crops[]     @relation("CropTypeToCrops")
+  documents   Documents[] @relation("CropTypeToDocuments")
+}
+
+model MachineTypes {
+  id          String      @id @unique @default(uuid())
+  name        String
+  description String?
+  image_urls  String[]
+  category    Category    @default(AGRI_INDUSTRY)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  documents   Documents[] @relation("MachineTypeToDocuments")
+  machines    Machines[]  @relation("MachineTypeToMachines")
+}
+
+model Crops {
+  id           String      @id @unique @default(uuid())
+  crop_type_id String
+  name         String
+  description  String?
+  image_urls   String[]
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+  CropTypes    CropTypes   @relation("CropTypeToCrops", fields: [crop_type_id], references: [id])
+  documents    Documents[] @relation("CropToDocuments")
+
+  @@index([crop_type_id])
+}
+
+model Livestocks {
+  id          String      @id @unique @default(uuid())
+  name        String
+  description String?
+  image_urls  String[]
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  documents   Documents[] @relation("LivestockToDocuments")
+}
+
+model Machines {
+  id              String       @id @unique @default(uuid())
+  machine_type_id String
+  name            String
+  description     String?
+  image_urls      String[]
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  documents       Documents[]  @relation("MachineToDocuments")
+  MachineTypes    MachineTypes @relation("MachineTypeToMachines", fields: [machine_type_id], references: [id])
+
+  @@index([machine_type_id])
+}
+
+model Fishs {
+  id          String      @id @unique @default(uuid())
+  name        String
+  description String?
+  image_urls  String[]
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  documents   Documents[] @relation("FishToDocuments")
+}
+
+model Documents {
+  id              String        @id @unique @default(uuid())
+  title           String
+  author          String
+  file_urls       String[]
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  crop_type_id    String?
+  machine_type_id String?
+  crop_id         String?
+  livestock_id    String?
+  machine_id      String?
+  fish_id         String?
+  size            Int?
+  Crops           Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
+  CropTypes       CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
+  Fishs           Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
+  Livestocks      Livestocks?   @relation("LivestockToDocuments", fields: [livestock_id], references: [id])
+  Machines        Machines?     @relation("MachineToDocuments", fields: [machine_id], references: [id])
+  MachineTypes    MachineTypes? @relation("MachineTypeToDocuments", fields: [machine_type_id], references: [id])
+
+  @@index([crop_type_id])
+  @@index([machine_type_id])
+  @@index([crop_id])
+  @@index([livestock_id])
+  @@index([machine_id])
+  @@index([fish_id])
+}
+
+model Resources {
+  id             String       @id @unique @default(uuid())
+  type           ResourceType
+  title          String
+  content        String?
+  description    String?
+  author         String?
+  filename       String?
+  size           Int?
+  version        String?
+  platform       String?
+  download_count Int?         @default(0)
+  is_active      Boolean      @default(false)
+  uploaded_at    DateTime?    @default(now())
+  created_at     DateTime     @default(now())
+  resource_url   String[]
+  image_url      String[]
+}
+
+model Conversation {
+  id              String                    @id @default(uuid())
+  type            ConversationType
+  name            String?
+  description     String?
+  imageUrl        String?
+  ownerId         String?
+  lastMessage     String?
+  lastMessageTime DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  owner           Users?                    @relation("ConversationOwner", fields: [ownerId], references: [id])
+  moderators      ConversationModerator[]
+  participants    ConversationParticipant[]
+  messages        Message[]
+
+  @@index([type])
+  @@index([ownerId])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           Users        @relation("ConversationParticipants", fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model ConversationModerator {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  assignedAt     DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           Users        @relation("ConversationModerators", fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  type           MessageType  @default(TEXT)
+  content        String?
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           Users        @relation("Messages", fields: [userId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@index([userId])
+}
+
+model Post {
+  id            String         @id @default(uuid())
+  authorId      String
+  content       String?
+  visibility    PostVisibility @default(PUBLIC)
+  tags          String[]       @default([])
+  reactionCount Int            @default(0)
+  commentCount  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  author        Users          @relation("UserPosts", fields: [authorId], references: [id])
+  comments      PostComment[]
+  media         PostMedia[]
+  reactions     PostReaction[]
+
+  @@index([authorId])
+  @@index([visibility])
+}
+
+model PostMedia {
+  id        String        @id @default(uuid())
+  postId    String
+  type      PostMediaType @default(IMAGE)
+  url       String
+  thumbnail String?
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model PostReaction {
+  id        String       @id @default(uuid())
+  postId    String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      Users        @relation("UserPostReactions", fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model PostComment {
+  id              String            @id @default(uuid())
+  postId          String
+  userId          String
+  content         String
+  parentCommentId String?
+  isEdited        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  reactions       CommentReaction[]
+  parentComment   PostComment?      @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies         PostComment[]     @relation("CommentReplies")
+  post            Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author          Users             @relation("UserPostComments", fields: [userId], references: [id])
+
+  @@index([postId])
+  @@index([userId])
+  @@index([parentCommentId])
+}
+
+model CommentReaction {
+  id        String       @id @default(uuid())
+  commentId String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+  comment   PostComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      Users        @relation("UserCommentReactions", fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
+  @@index([userId])
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      Users    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Announcements {
+  id         String                  @id @default(uuid())
+  creatorId  String
+  title      String
+  message    String
+  type       AnnouncementType        @default(INFORMATION)
+  data       Json?
+  isActive   Boolean                 @default(true)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  recipients AnnouncementRecipient[]
+  creator    Users                   @relation("AnnouncementCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+}
+
+model AnnouncementRecipient {
+  id             String        @id @default(uuid())
+  announcementId String
+  userId         String
+  createdAt      DateTime      @default(now())
+  announcement   Announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      Users    @relation("UserDeviceTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
 }
 
 enum UserType {
@@ -54,6 +393,7 @@ enum MessageType {
   TEXT
   IMAGE
   FILE
+  VIDEO
 }
 
 enum PostVisibility {
@@ -79,389 +419,4 @@ enum AnnouncementType {
   INFORMATION
   WARNING
   BREAKING_NEWS
-}
-
-model Users {
-  id           String   @id @unique @default(uuid())
-  name         String
-  phone_number String   @unique
-  email        String?  @unique
-  password     String
-  gender       Gender   @default(OTHER)
-  user_type    UserType @default(OTHERS)
-
-  profile_picture String?
-  location        String?
-
-  isVerified                 Boolean   @default(false)
-  verificationToken          String?
-  verificationTokenExpiresAt DateTime?
-  resetPasswordToken         String?
-  resetPasswordExpiresAt     DateTime?
-
-  last_login DateTime @default(now())
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  ownedConversations       Conversation[]            @relation("ConversationOwner")
-  conversationParticipants ConversationParticipant[] @relation("ConversationParticipants")
-  conversationModerators   ConversationModerator[]   @relation("ConversationModerators")
-  messages                 Message[]                 @relation("Messages")
-  posts                    Post[]                    @relation("UserPosts")
-  postReactions            PostReaction[]            @relation("UserPostReactions")
-  postComments             PostComment[]             @relation("UserPostComments")
-  commentReactions         CommentReaction[]         @relation("UserCommentReactions")
-  Notifications            Notifications[]           @relation("UserNotifications")
-  createdAnnouncements     Announcements[]           @relation("AnnouncementCreator")
-  announcementRecipients   AnnouncementRecipient[]
-  deviceTokens             DeviceToken[]             @relation("UserDeviceTokens")
-}
-
-model CropTypes {
-  id          String   @id @unique @default(uuid())
-  name        String
-  description String?
-  image_urls  String[]
-  category    Category @default(CROPS_AND_PULSES)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  crops     Crops[]     @relation("CropTypeToCrops")
-  documents Documents[] @relation("CropTypeToDocuments")
-}
-
-model MachineTypes {
-  id          String   @id @unique @default(uuid())
-  name        String
-  description String?
-  image_urls  String[]
-  category    Category @default(AGRI_INDUSTRY)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  machines  Machines[]  @relation("MachineTypeToMachines")
-  documents Documents[] @relation("MachineTypeToDocuments")
-}
-
-model Crops {
-  id           String   @id @unique @default(uuid())
-  crop_type_id String
-  name         String
-  description  String?
-  image_urls   String[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  documents Documents[] @relation("CropToDocuments")
-
-  CropTypes CropTypes? @relation("CropTypeToCrops", fields: [crop_type_id], references: [id])
-
-  @@index([crop_type_id])
-}
-
-model Livestocks {
-  id          String   @id @unique @default(uuid())
-  name        String
-  description String?
-  image_urls  String[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  documents Documents[] @relation("LivestockToDocuments")
-}
-
-model Machines {
-  id              String   @id @unique @default(uuid())
-  machine_type_id String
-  name            String
-  description     String?
-  image_urls      String[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  documents Documents[] @relation("MachineToDocuments")
-
-  MachineTypes MachineTypes? @relation("MachineTypeToMachines", fields: [machine_type_id], references: [id])
-
-  @@index([machine_type_id])
-}
-
-model Fishs {
-  id          String   @id @unique @default(uuid())
-  name        String
-  description String?
-  image_urls  String[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  documents Documents[] @relation("FishToDocuments")
-}
-
-model Documents {
-  id        String   @id @unique @default(uuid())
-  title     String
-  author    String
-  file_urls String[]
-  size      Int?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  crop_type_id    String?
-  machine_type_id String?
-  crop_id         String?
-  livestock_id    String?
-  machine_id      String?
-  fish_id         String?
-
-  CropTypes    CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
-  MachineTypes MachineTypes? @relation("MachineTypeToDocuments", fields: [machine_type_id], references: [id])
-  Crops        Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
-  Livestocks   Livestocks?   @relation("LivestockToDocuments", fields: [livestock_id], references: [id])
-  Machines     Machines?     @relation("MachineToDocuments", fields: [machine_id], references: [id])
-  Fishs        Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
-
-  @@index([crop_type_id])
-  @@index([machine_type_id])
-  @@index([crop_id])
-  @@index([livestock_id])
-  @@index([machine_id])
-  @@index([fish_id])
-}
-
-model Resources {
-  id   String       @id @unique @default(uuid())
-  type ResourceType
-
-  title       String
-  content     String?
-  description String?
-  author      String?
-
-  resource_url String[]
-  image_url    String[]
-
-  filename String?
-  size     Int?
-
-  version        String?
-  platform       String?
-  download_count Int?    @default(0)
-
-  is_active   Boolean   @default(false)
-  uploaded_at DateTime? @default(now())
-  created_at  DateTime  @default(now())
-}
-
-model Conversation {
-  id              String           @id @default(uuid())
-  type            ConversationType
-  name            String?
-  description     String?
-  imageUrl        String?
-  ownerId         String?
-  lastMessage     String?
-  lastMessageTime DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  owner        Users?                    @relation("ConversationOwner", fields: [ownerId], references: [id])
-  participants ConversationParticipant[]
-  moderators   ConversationModerator[]
-  messages     Message[]
-
-  @@index([type])
-  @@index([ownerId])
-}
-
-model ConversationParticipant {
-  id             String   @id @default(uuid())
-  conversationId String
-  userId         String
-  joinedAt       DateTime @default(now())
-  lastReadAt     DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         Users        @relation("ConversationParticipants", fields: [userId], references: [id])
-
-  @@unique([conversationId, userId])
-  @@index([userId])
-}
-
-model ConversationModerator {
-  id             String   @id @default(uuid())
-  conversationId String
-  userId         String
-  assignedAt     DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         Users        @relation("ConversationModerators", fields: [userId], references: [id])
-
-  @@unique([conversationId, userId])
-}
-
-model Message {
-  id             String      @id @default(uuid())
-  conversationId String
-  userId         String
-  type           MessageType @default(TEXT)
-  content        String?
-  fileUrl        String?
-  fileName       String?
-  fileSize       Int?
-  createdAt      DateTime    @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         Users        @relation("Messages", fields: [userId], references: [id])
-
-  @@index([conversationId, createdAt])
-  @@index([userId])
-}
-
-model Post {
-  id            String         @id @default(uuid())
-  authorId      String
-  content       String?
-  visibility    PostVisibility @default(PUBLIC)
-  tags          String[]       @default([])
-  reactionCount Int            @default(0)
-  commentCount  Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  author    Users          @relation("UserPosts", fields: [authorId], references: [id])
-  media     PostMedia[]
-  reactions PostReaction[]
-  comments  PostComment[]
-
-  @@index([authorId])
-  @@index([visibility])
-}
-
-model PostMedia {
-  id        String        @id @default(uuid())
-  postId    String
-  type      PostMediaType @default(IMAGE)
-  url       String
-  thumbnail String?
-  metadata  Json?
-  createdAt DateTime      @default(now())
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
-}
-
-model PostReaction {
-  id        String       @id @default(uuid())
-  postId    String
-  userId    String
-  type      ReactionType @default(LIKE)
-  createdAt DateTime     @default(now())
-
-  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user Users @relation("UserPostReactions", fields: [userId], references: [id])
-
-  @@unique([postId, userId])
-  @@index([userId])
-}
-
-model PostComment {
-  id              String   @id @default(uuid())
-  postId          String
-  userId          String
-  content         String
-  parentCommentId String?
-  isEdited        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  post          Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author        Users             @relation("UserPostComments", fields: [userId], references: [id])
-  parentComment PostComment?      @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies       PostComment[]     @relation("CommentReplies")
-  reactions     CommentReaction[]
-
-  @@index([postId])
-  @@index([userId])
-  @@index([parentCommentId])
-}
-
-model CommentReaction {
-  id        String       @id @default(uuid())
-  commentId String
-  userId    String
-  type      ReactionType @default(LIKE)
-  createdAt DateTime     @default(now())
-
-  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user    Users       @relation("UserCommentReactions", fields: [userId], references: [id])
-
-  @@unique([commentId, userId])
-  @@index([userId])
-}
-
-model Notifications {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String?
-  message   String
-  data      Json?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user Users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model Announcements {
-  id        String           @id @default(uuid())
-  creatorId String
-  title     String
-  message   String
-  type      AnnouncementType @default(INFORMATION)
-  data      Json?
-  isActive  Boolean          @default(true)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  creator    Users                   @relation("AnnouncementCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  recipients AnnouncementRecipient[]
-
-  @@index([creatorId])
-}
-
-model AnnouncementRecipient {
-  id             String   @id @default(uuid())
-  announcementId String
-  userId         String
-  createdAt      DateTime @default(now())
-
-  announcement Announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  user         Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([announcementId, userId])
-  @@index([userId])
-}
-
-model DeviceToken {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  platform  String // 'android' or 'ios'
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user Users @relation("UserDeviceTokens", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, platform])
-  @@index([userId])
 }

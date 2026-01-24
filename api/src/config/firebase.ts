@@ -1,6 +1,8 @@
 import * as admin from 'firebase-admin';
 import { logger } from '../utils/logger';
 
+let messagingInstance: admin.messaging.Messaging | null = null;
+
 // Check if Firebase Admin is already initialized to prevent multiple initializations
 if (!admin.apps.length) {
   try {
@@ -18,6 +20,9 @@ if (!admin.apps.length) {
           privateKey: privateKey,
         }),
       });
+
+      messagingInstance = admin.messaging();
+      logger.info('Firebase Admin SDK initialized successfully');
     } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GCLOUD_PROJECT) {
       // Fallback to application default credentials if service account info is not available
       // but application default credentials are configured
@@ -25,19 +30,30 @@ if (!admin.apps.length) {
         credential: admin.credential.applicationDefault(),
         projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT,
       });
+
+      messagingInstance = admin.messaging();
+      logger.info('Firebase Admin SDK initialized with application default credentials');
     } else {
-      // If no credentials are available, throw a more descriptive error
-      throw new Error(
-        'Firebase configuration is incomplete. Please set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables.'
+      // If no credentials are available, log a warning but don't throw an error
+      // This allows the app to continue running even without Firebase
+      logger.warn(
+        'Firebase configuration is incomplete. Push notifications will be disabled. ' +
+        'Please set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables.'
       );
     }
-
-    logger.info('Firebase Admin SDK initialized successfully');
   } catch (error) {
     logger.error('Error initializing Firebase Admin SDK:', error);
-    throw error;
+    // Don't throw the error, just log it and continue without Firebase
+    logger.warn('Firebase will be disabled due to configuration error. Push notifications will not work.');
+  }
+} else {
+  // If already initialized, get the existing messaging instance
+  try {
+    messagingInstance = admin.messaging();
+  } catch (error) {
+    logger.warn('Could not get Firebase messaging instance:', error);
   }
 }
 
 export const firebaseAdmin = admin;
-export const messaging = admin.messaging();
+export const messaging = messagingInstance;

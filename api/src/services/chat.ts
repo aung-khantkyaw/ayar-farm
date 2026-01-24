@@ -327,4 +327,47 @@ export class ChatService {
             where: { conversationId, userId }
         });
     }
+
+    public static async deleteConversation(conversationId: string, userId: string) {
+        // Find the conversation
+        const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: {
+                participants: {
+                    select: {
+                        userId: true
+                    }
+                }
+            }
+        });
+
+        if (!conversation) {
+            throw new Error("Conversation not found");
+        }
+
+        // Check if user is the owner of the conversation (only owner can delete)
+        if (conversation.ownerId !== userId) {
+            throw new Error("Only the owner can delete this conversation");
+        }
+
+        // Delete all messages in the conversation
+        await prisma.message.deleteMany({
+            where: { conversationId }
+        });
+
+        // Delete conversation participants
+        await prisma.conversationParticipant.deleteMany({
+            where: { conversationId }
+        });
+
+        // Delete conversation moderators
+        await prisma.conversationModerator.deleteMany({
+            where: { conversationId }
+        });
+
+        // Finally, delete the conversation
+        await prisma.conversation.delete({
+            where: { id: conversationId }
+        });
+    }
 }
