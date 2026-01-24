@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../prisma/client';
 import { PushService } from '../services/push';
 import { emitToAll } from '../socket';
+import { logger } from '../utils/logger';
 
 export class AnnouncementController {
   public async create(req: Request, res: Response): Promise<void> {
@@ -55,7 +56,7 @@ export class AnnouncementController {
                 }
               );
             } catch (error) {
-              console.error(`Failed to send notification to user ${recipient.userId}:`, error);
+              logger.error(`Failed to send notification to user ${recipient.userId}:`, error);
             }
           }
         } else {
@@ -72,7 +73,7 @@ export class AnnouncementController {
               }
             );
           } catch (error) {
-            console.error('Failed to send notification to announcements topic:', error);
+            logger.error('Failed to send notification to announcements topic:', error);
           }
         }
       }
@@ -277,7 +278,7 @@ export class AnnouncementController {
                 }
               );
             } catch (error) {
-              console.error(`Failed to send notification to user ${recipient.userId}:`, error);
+              logger.error(`Failed to send notification to user ${recipient.userId}:`, error);
             }
           }
         } else {
@@ -294,7 +295,7 @@ export class AnnouncementController {
               }
             );
           } catch (error) {
-            console.error('Failed to send notification to announcements topic:', error);
+            logger.error('Failed to send notification to announcements topic:', error);
           }
         }
       }

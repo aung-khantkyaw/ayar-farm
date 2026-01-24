@@ -21,6 +21,12 @@ export class PushService {
    */
   static async sendToUser(userId: string, title: string, body: string, data?: PushNotificationData): Promise<boolean> {
     try {
+      // Check if Firebase messaging is properly initialized
+      if (!messaging) {
+        logger.error('Firebase Messaging is not properly initialized');
+        return false;
+      }
+
       const tokens = await prisma.deviceToken.findMany({
         where: { userId }
       });
@@ -71,6 +77,11 @@ export class PushService {
    */
   static async sendToDeviceToken(deviceToken: string, title: string, body: string, data?: PushNotificationData): Promise<string> {
     try {
+      // Check if Firebase messaging is properly initialized
+      if (!messaging) {
+        throw new Error('Firebase Messaging is not properly initialized');
+      }
+
       const response = await messaging.send({
         token: deviceToken,
         notification: { title, body },
@@ -90,6 +101,11 @@ export class PushService {
    */
   static async sendToTopic(topic: string, title: string, body: string, data?: PushNotificationData): Promise<string> {
     try {
+      // Check if Firebase messaging is properly initialized
+      if (!messaging) {
+        throw new Error('Firebase Messaging is not properly initialized');
+      }
+
       const response = await messaging.send({
         topic: topic,
         notification: { title, body },
