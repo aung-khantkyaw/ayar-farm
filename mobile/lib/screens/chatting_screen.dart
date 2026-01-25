@@ -97,6 +97,7 @@ class _ChattingScreenState extends State<ChattingScreen> {
     super.dispose();
   }
 
+
   Future<void> _search(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -208,6 +209,19 @@ class _ChattingScreenState extends State<ChattingScreen> {
                           'participantIds': [AuthService.currentUser!.id],
                         },
                       );
+
+                      // Refetch conversations to update the UI with the newly joined group
+                      await _loadConversations();
+
+                      // Clear the search input if it was active
+                      if (_searchController.text.isNotEmpty) {
+                        _searchController.clear();
+                        setState(() {
+                          _isSearching = false;
+                          _searchUsers = [];
+                          _searchGroups = [];
+                        });
+                      }
 
                       Navigator.pop(context);
                       CommonSnackbar.show(

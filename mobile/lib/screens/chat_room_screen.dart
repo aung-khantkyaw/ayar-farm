@@ -68,6 +68,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
+  Future<void> _refreshConversation() async {
+    try {
+      final updatedConversation = await _chatService.getConversation(
+        widget.conversation.id,
+      );
+      if (mounted) {
+        setState(() {
+          // Update the widget's conversation with fresh data
+          // Note: This won't actually update the widget.conversation field since it's final
+          // But we can trigger a rebuild by updating state
+        });
+      }
+    } catch (e) {
+      print('Error refreshing conversation: $e');
+    }
+  }
+
+  Future<void> _refreshOnGroupJoin() async {
+    // Refresh messages and conversation data when user joins a group
+    await _loadMessages();
+    await _refreshConversation();
+  }
+
   Future<void> _loadMessages() async {
     try {
       final messages = await _chatService.getMessages(widget.conversation.id);

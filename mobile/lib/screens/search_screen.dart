@@ -134,13 +134,24 @@ class _SearchScreenState extends State<SearchScreen> {
                       },
                     );
 
-                    Navigator.pop(context);
+                    // Refetch search results to update the UI
+                    if (_searchController.text.isNotEmpty) {
+                      await _search(_searchController.text);
+                    }
+
+                    // Clear the search input after successful join
+                    _searchController.clear();
+                    await _search('');
+
                     CommonSnackbar.show(
                       context,
                       message: 'Successfully joined the group!',
                       type: SnackBarType.info,
                       position: SnackBarPosition.bottom,
                     );
+
+                    // Close the dialog and return true to indicate successful join
+                    Navigator.pop(context, true);
                   } catch (e) {
                     Navigator.pop(context);
                     CommonSnackbar.show(
