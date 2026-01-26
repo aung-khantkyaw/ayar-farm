@@ -26,6 +26,29 @@ export class DocumentService {
         }
     }
 
+    public static async getDocumentByArticleOrAgrometBulletin(article: boolean, agromet_bulletin: boolean): Promise<{ documents: any }> {
+        try {
+            let documents;
+
+            if (article) {
+                documents = await prisma.documents.findMany({
+                    where: { article: true },
+                    orderBy: { created_at: 'asc' }
+                })
+            }
+            if (agromet_bulletin) {
+                documents = await prisma.documents.findMany({
+                    where: { agromet_bulletin: true },
+                    orderBy: { created_at: 'asc' }
+                })
+            }
+            
+            return { documents }
+        } catch (error) {
+            throw new Error(`Database query failed: ${String(error)}`);
+        }
+    }
+
     public static async getAllDocumentByType(type: string): Promise<{ documents: any }> {
         try {
             let documents;

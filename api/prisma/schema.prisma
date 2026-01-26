@@ -112,25 +112,27 @@ model Fishs {
 }
 
 model Documents {
-  id              String        @id @unique @default(uuid())
-  title           String
-  author          String
-  file_urls       String[]
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt
-  crop_type_id    String?
-  machine_type_id String?
-  crop_id         String?
-  livestock_id    String?
-  machine_id      String?
-  fish_id         String?
-  size            Int?
-  Crops           Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
-  CropTypes       CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
-  Fishs           Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
-  Livestocks      Livestocks?   @relation("LivestockToDocuments", fields: [livestock_id], references: [id])
-  Machines        Machines?     @relation("MachineToDocuments", fields: [machine_id], references: [id])
-  MachineTypes    MachineTypes? @relation("MachineTypeToDocuments", fields: [machine_type_id], references: [id])
+  id               String        @id @unique @default(uuid())
+  title            String
+  author           String
+  file_urls        String[]
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  crop_type_id     String?
+  machine_type_id  String?
+  crop_id          String?
+  livestock_id     String?
+  machine_id       String?
+  fish_id          String?
+  article          Boolean       @default(false)
+  agromet_bulletin Boolean       @default(false)
+  size             Int?
+  Crops            Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
+  CropTypes        CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
+  Fishs            Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
+  Livestocks       Livestocks?   @relation("LivestockToDocuments", fields: [livestock_id], references: [id])
+  Machines         Machines?     @relation("MachineToDocuments", fields: [machine_id], references: [id])
+  MachineTypes     MachineTypes? @relation("MachineTypeToDocuments", fields: [machine_type_id], references: [id])
 
   @@index([crop_type_id])
   @@index([machine_type_id])

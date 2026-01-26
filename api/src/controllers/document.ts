@@ -7,12 +7,19 @@ export class DocumentController {
             const { id } = req.params;
             const { type } = req.query;
             const { type_id } = req.query;
+            const rawArticle = req.query.article;
+            const rawAgrometBulletin = req.query.agromet_bulletin;
+            const articleFlag = typeof rawArticle === 'string' ? rawArticle === 'true' : Boolean(rawArticle);
+            const agrometBulletinFlag = typeof rawAgrometBulletin === 'string' ? rawAgrometBulletin === 'true' : Boolean(rawAgrometBulletin);
                         
             if (id) {
                 const { document } = await DocumentService.getDocumentById(id);
                 res.status(200).json({ message: "Get Document(s) successfully", document });
             } else if (typeof type === 'string') {
                 const { documents } = type_id ? await DocumentService.getAllDocumentByTypeId(type, type_id as string) : await DocumentService.getAllDocumentByType(type);
+                res.status(200).json({ message: "Get Document(s) successfully", documents });
+            } else if (articleFlag || agrometBulletinFlag) {
+                const { documents } = await DocumentService.getDocumentByArticleOrAgrometBulletin(articleFlag, agrometBulletinFlag);
                 res.status(200).json({ message: "Get Document(s) successfully", documents });
             } else {
                 const { documents } = await DocumentService.getAllDocuments();
