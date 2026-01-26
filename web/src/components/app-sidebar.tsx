@@ -68,6 +68,16 @@ const data = {
   ],
   resources: [
     {
+      name: "Articles",
+      url: "/resource/articles",
+      icon: IconNews,
+    },
+    {
+      name: "Agromet Bulletins",
+      url: "/resource/agromet-bulletins",
+      icon: IconNews,
+    },
+    {
       name: "Videos",
       url: "/resource/videos",
       icon: IconVideoMinus,

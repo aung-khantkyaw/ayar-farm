@@ -18,6 +18,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 export function DashboardStats() {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [agrometBulletins, setAgrometBulletins] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const {
     crops,
@@ -52,6 +54,19 @@ export function DashboardStats() {
   useEffect(() => {
     const fetchResources = async () => {
       try {
+        // Fetch articles
+        const articlesRes = await api.get("/document/documents?article=true");
+        if (articlesRes && articlesRes.documents) {
+          setArticles(articlesRes.documents);
+        }
+
+        // Fetch agromet bulletins
+        const bulletinsRes = await api.get("/document/documents?agromet_bulletin=true");
+        if (bulletinsRes && bulletinsRes.documents) {
+          setAgrometBulletins(bulletinsRes.documents);
+        }
+
+        // Fetch other resources (videos and applications)
         const res = await api.get("/resources/resources");
         if (res && res.resources) {
           setResources(res.resources);
@@ -91,12 +106,12 @@ export function DashboardStats() {
   const resourceData = [
     {
       subject: "Article",
-      count: resources.filter((r) => r.type === "ARTICLE").length,
+      count: articles.length,
       fullMark: 100,
     },
     {
       subject: "Agromet",
-      count: resources.filter((r) => r.type === "AGROMET_BULLETIN").length,
+      count: agrometBulletins.length,
       fullMark: 100,
     },
     {

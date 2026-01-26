@@ -15,7 +15,9 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
+import { Route as ResourceArticlesRouteImport } from './routes/resource.articles'
 import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
+import { Route as ResourceAgrometBulletinsRouteImport } from './routes/resource.agromet-bulletins'
 import { Route as CategoryMachinesRouteImport } from './routes/category.machines'
 import { Route as CategoryLivestockRouteImport } from './routes/category.livestock'
 import { Route as CategoryFisheriesRouteImport } from './routes/category.fisheries'
@@ -58,11 +60,22 @@ const ResourceVideosRoute = ResourceVideosRouteImport.update({
   path: '/resource/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResourceArticlesRoute = ResourceArticlesRouteImport.update({
+  id: '/resource/articles',
+  path: '/resource/articles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResourceApplicationsRoute = ResourceApplicationsRouteImport.update({
   id: '/resource/applications',
   path: '/resource/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResourceAgrometBulletinsRoute =
+  ResourceAgrometBulletinsRouteImport.update({
+    id: '/resource/agromet-bulletins',
+    path: '/resource/agromet-bulletins',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CategoryMachinesRoute = CategoryMachinesRouteImport.update({
   id: '/category/machines',
   path: '/category/machines',
@@ -136,7 +149,9 @@ export interface FileRoutesByFullPath {
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
   '/category/machines': typeof CategoryMachinesRoute
+  '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/articles': typeof ResourceArticlesRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesByTo {
@@ -156,7 +171,9 @@ export interface FileRoutesByTo {
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
   '/category/machines': typeof CategoryMachinesRoute
+  '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/articles': typeof ResourceArticlesRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesById {
@@ -177,7 +194,9 @@ export interface FileRoutesById {
   '/category/fisheries': typeof CategoryFisheriesRoute
   '/category/livestock': typeof CategoryLivestockRoute
   '/category/machines': typeof CategoryMachinesRoute
+  '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
+  '/resource/articles': typeof ResourceArticlesRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRouteTypes {
@@ -199,7 +218,9 @@ export interface FileRouteTypes {
     | '/category/fisheries'
     | '/category/livestock'
     | '/category/machines'
+    | '/resource/agromet-bulletins'
     | '/resource/applications'
+    | '/resource/articles'
     | '/resource/videos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -219,7 +240,9 @@ export interface FileRouteTypes {
     | '/category/fisheries'
     | '/category/livestock'
     | '/category/machines'
+    | '/resource/agromet-bulletins'
     | '/resource/applications'
+    | '/resource/articles'
     | '/resource/videos'
   id:
     | '__root__'
@@ -239,7 +262,9 @@ export interface FileRouteTypes {
     | '/category/fisheries'
     | '/category/livestock'
     | '/category/machines'
+    | '/resource/agromet-bulletins'
     | '/resource/applications'
+    | '/resource/articles'
     | '/resource/videos'
   fileRoutesById: FileRoutesById
 }
@@ -260,7 +285,9 @@ export interface RootRouteChildren {
   CategoryFisheriesRoute: typeof CategoryFisheriesRoute
   CategoryLivestockRoute: typeof CategoryLivestockRoute
   CategoryMachinesRoute: typeof CategoryMachinesRoute
+  ResourceAgrometBulletinsRoute: typeof ResourceAgrometBulletinsRoute
   ResourceApplicationsRoute: typeof ResourceApplicationsRoute
+  ResourceArticlesRoute: typeof ResourceArticlesRoute
   ResourceVideosRoute: typeof ResourceVideosRoute
 }
 
@@ -308,11 +335,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourceVideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resource/articles': {
+      id: '/resource/articles'
+      path: '/resource/articles'
+      fullPath: '/resource/articles'
+      preLoaderRoute: typeof ResourceArticlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resource/applications': {
       id: '/resource/applications'
       path: '/resource/applications'
       fullPath: '/resource/applications'
       preLoaderRoute: typeof ResourceApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/agromet-bulletins': {
+      id: '/resource/agromet-bulletins'
+      path: '/resource/agromet-bulletins'
+      fullPath: '/resource/agromet-bulletins'
+      preLoaderRoute: typeof ResourceAgrometBulletinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/machines': {
@@ -412,7 +453,9 @@ const rootRouteChildren: RootRouteChildren = {
   CategoryFisheriesRoute: CategoryFisheriesRoute,
   CategoryLivestockRoute: CategoryLivestockRoute,
   CategoryMachinesRoute: CategoryMachinesRoute,
+  ResourceAgrometBulletinsRoute: ResourceAgrometBulletinsRoute,
   ResourceApplicationsRoute: ResourceApplicationsRoute,
+  ResourceArticlesRoute: ResourceArticlesRoute,
   ResourceVideosRoute: ResourceVideosRoute,
 }
 export const routeTree = rootRouteImport

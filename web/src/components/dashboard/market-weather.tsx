@@ -79,13 +79,15 @@ export function MarketWeather() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const marketRes = await fetch("/api/market");
+        const marketRes = await fetch(
+          `${import.meta.env.VITE_MARKET_API}/api/market`,
+        );
         if (!marketRes.ok) throw new Error("Failed to fetch market data");
         const marketJson = await marketRes.json();
         setMarketData(marketJson);
 
         const weatherYangonRes = await fetch(
-          "https://getweatherbycityapi.laziestant.tech/v2/weather/yangon",
+          `${import.meta.env.VITE_WEATHER_API}/v2/weather/yangon`,
         );
         if (!weatherYangonRes.ok)
           throw new Error("Failed to fetch weather data for Yangon");
@@ -93,7 +95,7 @@ export function MarketWeather() {
         setWeatherYangon(weatherYangonJson);
 
         const weatherMandalayRes = await fetch(
-          "https://getweatherbycityapi.laziestant.tech/v2/weather/mandalay",
+          `${import.meta.env.VITE_WEATHER_API}/v2/weather/mandalay`,
         );
         if (!weatherMandalayRes.ok)
           throw new Error("Failed to fetch weather data for Mandalay");

@@ -71,6 +71,7 @@ export interface Document {
   file_urls: string[];
   created_at: string;
   updated_at: string;
+  size?: number;
 
   crop_type_id?: string;
   livestock_type_id?: string;
@@ -79,7 +80,9 @@ export interface Document {
   livestock_id?: string;
   machine_id?: string;
   fish_id?: string;
-  
+  article?: boolean;
+  agromet_bulletin?: boolean;
+
   CropTypes?: CropType;
   Crops?: Crop;
   Fisheries?: Fishery;
