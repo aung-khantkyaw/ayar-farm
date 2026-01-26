@@ -4,6 +4,16 @@ import 'package:flutter/foundation.dart'; // for kIsWeb
 import 'package:image_picker/image_picker.dart'; // for XFile
 import '../constants/api_constants.dart';
 
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  ApiException({required this.statusCode, required this.message});
+
+  @override
+  String toString() => 'ApiException(statusCode: $statusCode, message: $message)';
+}
+
 class ApiService {
   static String? _token;
 
@@ -33,6 +43,15 @@ class ApiService {
       headers: _getHeaders(),
       body: jsonEncode(data),
     );
+
+    if (response.statusCode >= 400) {
+      // Return the error response instead of decoding it
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 
@@ -44,6 +63,14 @@ class ApiService {
       '${ApiConstants.baseUrl}$endpoint',
     ).replace(queryParameters: queryParams);
     final response = await http.get(uri, headers: _getHeaders());
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 
@@ -57,6 +84,14 @@ class ApiService {
       headers: _getHeaders(),
       body: jsonEncode(data),
     );
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 
@@ -119,6 +154,14 @@ class ApiService {
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 
@@ -181,12 +224,28 @@ class ApiService {
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 
   static Future<Map<String, dynamic>> delete(String endpoint) async {
     final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
     final response = await http.delete(url, headers: _getHeaders());
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: jsonDecode(response.body)['message'] ?? 'Request failed',
+      );
+    }
+
     return jsonDecode(response.body);
   }
 }

@@ -4,6 +4,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../constants/user_types.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -55,8 +56,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
         userType: _userType,
       );
+
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        String errorMessage = e.message;
+
+        // Handle specific error codes as mentioned in the requirements
+        if (e.statusCode == 409) {
+          errorMessage = 'User already exists';  // This is the exact message from API
+        } else if (e.statusCode == 400 && e.message.contains('Invalid phone number format')) {
+          errorMessage = 'Invalid phone number format. Use +959 followed by 9 digits.';  // This is the exact message from API
+        }
+
+        CommonSnackbar.show(
+          context,
+          message: errorMessage,
+          position: SnackBarPosition.bottom,
+          type: SnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted) {
