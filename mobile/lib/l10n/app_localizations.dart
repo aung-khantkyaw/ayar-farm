@@ -1052,12 +1052,6 @@ abstract class AppLocalizations {
   /// **'Prices are updated daily. Actual transaction prices may vary slightly.'**
   String get marketDisclaimerText;
 
-  /// No description provided for @viewAllItems.
-  ///
-  /// In en, this message translates to:
-  /// **'View all {count} items'**
-  String viewAllItems(int count);
-
   /// No description provided for @enterEmailOrPhone.
   ///
   /// In en, this message translates to:

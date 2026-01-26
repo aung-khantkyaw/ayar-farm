@@ -492,11 +492,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prices are updated daily. Actual transaction prices may vary slightly.';
 
   @override
-  String viewAllItems(int count) {
-    return 'View all $count items';
-  }
-
-  @override
   String get enterEmailOrPhone => 'Please enter your email or phone number';
 
   @override

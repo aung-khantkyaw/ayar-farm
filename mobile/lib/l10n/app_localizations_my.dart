@@ -501,11 +501,6 @@ class AppLocalizationsMy extends AppLocalizations {
       'ဈေးနှုန်းများကို နေ့စဉ် အပ်ဒိတ်လုပ်ပါသည်။ လက်တွေ့ အရောင်းအဝယ်ဈေးနှုန်းများ အနည်းငယ် ကွာခြားနိုင်ပါသည်။';
 
   @override
-  String viewAllItems(int count) {
-    return 'ပစ္စည်း $count ခုလုံးကို ကြည့်ရန်';
-  }
-
-  @override
   String get enterEmailOrPhone =>
       'သင့်အီးမေးလ် သို့မဟုတ် ဖုန်းနံပါတ်ကို ထည့်သွင်းပါ';
 

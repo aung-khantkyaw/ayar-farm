@@ -267,6 +267,10 @@ class _ChattingScreenState extends State<ChattingScreen> {
     }
   }
 
+  Future<void> _refreshConversations() async {
+    await _loadConversations();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -305,12 +309,16 @@ class _ChattingScreenState extends State<ChattingScreen> {
               return matchesFilter &&
                   (conv.name?.toLowerCase().contains(query) ?? false);
             } else {
-              final other = conv.participants.firstWhere(
-                (p) => p.userId != _currentUserId,
-                orElse: () => conv.participants.first,
-              );
-              return matchesFilter &&
-                  (other.user?.name.toLowerCase().contains(query) ?? false);
+              final otherParticipants = conv.participants
+                  .where((p) => p.userId != _currentUserId)
+                  .toList();
+              if (otherParticipants.isNotEmpty) {
+                final other = otherParticipants.first;
+                return matchesFilter &&
+                    (other.user?.name?.toLowerCase().contains(query) ?? false);
+              } else {
+                return false; // No other participant found
+              }
             }
           }
 
@@ -410,10 +418,13 @@ class _ChattingScreenState extends State<ChattingScreen> {
           Expanded(
             child: Container(
               color: surfaceColor,
-              child:
-                  _searchController.text.isNotEmpty
-                      ? ListView(
-                        padding: const EdgeInsets.only(bottom: 100),
+              child: RefreshIndicator(
+                onRefresh: _refreshConversations,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 100),
+                  child: _searchController.text.isNotEmpty
+                      ? Column(
                         children: [
                           if (_searchUsers.isNotEmpty) ...[
                             Padding(
@@ -498,18 +509,21 @@ class _ChattingScreenState extends State<ChattingScreen> {
                         ],
                       )
                       : _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Padding(
+                        padding: EdgeInsets.only(top: 50, bottom: 50),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
                       : filteredConversations.isEmpty
-                      ? Center(
-                        child: Text(
-                          "No conversations yet",
-                          style: TextStyle(color: textSubColor),
+                      ? const Padding(
+                        padding: EdgeInsets.only(top: 50, bottom: 50),
+                        child: Center(
+                          child: Text(
+                            "No conversations yet",
+                          ),
                         ),
                       )
-                      : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 100),
-                        itemCount: filteredConversations.length,
-                        itemBuilder: (context, index) {
+                      : Column(
+                        children: List.generate(filteredConversations.length, (index) {
                           final conversation = filteredConversations[index];
                           String title = "Chat";
                           String imageUrl = "";
@@ -518,17 +532,24 @@ class _ChattingScreenState extends State<ChattingScreen> {
                             title = conversation.name ?? "Group";
                             imageUrl = conversation.imageUrl ?? "";
                           } else {
-                            try {
-                              final other = conversation.participants
-                                  .firstWhere(
-                                    (p) => p.userId != _currentUserId,
-                                    orElse:
-                                        () => conversation.participants.first,
-                                  );
-                              title = other.user?.name ?? "User";
-                              imageUrl = other.user?.profilePicture ?? "";
-                            } catch (e) {
-                              title = "User";
+                            // In a direct conversation, based on the API response,
+                            // the participants array contains the other user (not the current user)
+                            // So we can just get the first participant (which should be the other user)
+                            if (conversation.participants.isNotEmpty) {
+                              final otherParticipant = conversation.participants.first;
+                              final otherUser = otherParticipant.user;
+
+                              // Check if the user object is properly loaded
+                              if (otherUser != null && otherUser.name != null && otherUser.name!.isNotEmpty) {
+                                title = otherUser.name!;
+                                imageUrl = otherUser.profilePicture ?? "";
+                              } else {
+                                // If user object is not loaded, use a fallback name
+                                title = "Unknown User";
+                              }
+                            } else {
+                              // This shouldn't happen in a direct conversation, but just in case
+                              title = "Unknown User";
                             }
                           }
 
@@ -684,8 +705,10 @@ class _ChattingScreenState extends State<ChattingScreen> {
                               ),
                             ),
                           );
-                        },
+                        }),
                       ),
+                ),
+              ),
             ),
           ),
         ],

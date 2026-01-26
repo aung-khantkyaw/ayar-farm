@@ -72,7 +72,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       final position = await Geolocator.getCurrentPosition();
       final response = await http.get(
         Uri.parse(
-          'https://getweatherbycityapi.laziestant.tech/v2/weather?lat=${position.latitude}&lon=${position.longitude}',
+          'https://getweatherbycity.vercel.app/v2/weather?lat=${position.latitude}&lon=${position.longitude}',
         ),
       );
 

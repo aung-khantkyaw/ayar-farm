@@ -18,12 +18,10 @@ class _MarketScreenState extends State<MarketScreen> {
 
   // Filter Data
   List<Map<String, dynamic>> _states = [];
-  List<Map<String, dynamic>> _productions = [];
   List<dynamic> _markets = [];
 
   // Selected Filters
   int? _selectedStateId;
-  int? _selectedProductionId;
   String? _selectedMarketName;
   DateTime? _selectedDate;
 
@@ -49,14 +47,10 @@ class _MarketScreenState extends State<MarketScreen> {
   Future<void> _fetchMetaData() async {
     try {
       final statesResponse = await http.get(
-        Uri.parse('https://myanmarmarketapi.laziestant.tech/api/states'),
-      );
-      final productionsResponse = await http.get(
-        Uri.parse('https://myanmarmarketapi.laziestant.tech/api/productions'),
+        Uri.parse('https://mm-market-api.vercel.app/api/states'),
       );
 
-      if (statesResponse.statusCode == 200 &&
-          productionsResponse.statusCode == 200) {
+      if (statesResponse.statusCode == 200) {
         setState(() {
           final statesData = json.decode(statesResponse.body);
           if (statesData is Map) {
@@ -69,20 +63,6 @@ class _MarketScreenState extends State<MarketScreen> {
                 }).toList();
             _states.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
           }
-
-          final prodData = json.decode(productionsResponse.body);
-          if (prodData is Map) {
-            _productions =
-                prodData.entries.map((e) {
-                  return {
-                    'id': int.tryParse(e.key) ?? 0,
-                    'name': e.value.toString(),
-                  };
-                }).toList();
-            _productions.sort(
-              (a, b) => (a['id'] as int).compareTo(b['id'] as int),
-            );
-          }
         });
       }
     } catch (e) {
@@ -90,18 +70,15 @@ class _MarketScreenState extends State<MarketScreen> {
     }
   }
 
-  Future<List<dynamic>> _getMarkets({int? stateId, int? productionId}) async {
+  Future<List<dynamic>> _getMarkets({int? stateId}) async {
     try {
       Map<String, String> queryParams = {};
       if (stateId != null) {
         queryParams['state'] = stateId.toString();
       }
-      if (productionId != null) {
-        queryParams['production'] = productionId.toString();
-      }
 
       final uri = Uri.https(
-        'myanmarmarketapi.laziestant.tech',
+        'mm-market-api.vercel.app',
         '/api/markets',
         queryParams.isNotEmpty ? queryParams : null,
       );
@@ -118,10 +95,7 @@ class _MarketScreenState extends State<MarketScreen> {
   }
 
   Future<void> _fetchMarkets() async {
-    final markets = await _getMarkets(
-      stateId: _selectedStateId,
-      productionId: _selectedProductionId,
-    );
+    final markets = await _getMarkets(stateId: _selectedStateId);
     if (mounted) {
       setState(() {
         _markets = markets;
@@ -155,7 +129,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
       if (_selectedMarketName != null) {
         uri = Uri.https(
-          'myanmarmarketapi.laziestant.tech',
+          'mm-market-api.vercel.app',
           '/api/market/$_selectedMarketName',
           queryParams.isNotEmpty ? queryParams : null,
         );
@@ -163,12 +137,9 @@ class _MarketScreenState extends State<MarketScreen> {
         if (_selectedStateId != null) {
           queryParams['state'] = _selectedStateId.toString();
         }
-        if (_selectedProductionId != null) {
-          queryParams['production'] = _selectedProductionId.toString();
-        }
 
         uri = Uri.https(
-          'myanmarmarketapi.laziestant.tech',
+          'mm-market-api.vercel.app',
           '/api/market',
           queryParams.isNotEmpty ? queryParams : null,
         );
@@ -203,7 +174,6 @@ class _MarketScreenState extends State<MarketScreen> {
   void _showFilterModal() {
     // Initialize local state with current parent state
     int? tempStateId = _selectedStateId;
-    int? tempProductionId = _selectedProductionId;
     String? tempMarketName = _selectedMarketName;
     DateTime? tempDate = _selectedDate;
     List<dynamic> tempMarkets = List.from(_markets);
@@ -219,10 +189,7 @@ class _MarketScreenState extends State<MarketScreen> {
           builder: (context, setModalState) {
             // Helper to refresh markets in modal
             Future<void> refreshModalMarkets() async {
-              final markets = await _getMarkets(
-                stateId: tempStateId,
-                productionId: tempProductionId,
-              );
+              final markets = await _getMarkets(stateId: tempStateId);
               if (context.mounted) {
                 setModalState(() {
                   tempMarkets = markets;
@@ -297,44 +264,6 @@ class _MarketScreenState extends State<MarketScreen> {
                     onChanged: (value) {
                       setModalState(() {
                         tempStateId = value;
-                        tempMarketName = null;
-                      });
-                      refreshModalMarkets();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Production Selection
-                  DropdownButtonFormField<int>(
-                    decoration: InputDecoration(
-                      labelText:
-                          AppLocalizations.of(context)!.selectProductType,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    value: tempProductionId,
-                    items: [
-                      DropdownMenuItem<int>(
-                        value: null,
-                        child: Text(
-                          AppLocalizations.of(context)!.allProductTypes,
-                        ),
-                      ),
-                      ..._productions.map((production) {
-                        return DropdownMenuItem<int>(
-                          value: production['id'],
-                          child: Text(production['name']),
-                        );
-                      }),
-                    ],
-                    onChanged: (value) {
-                      setModalState(() {
-                        tempProductionId = value;
                         tempMarketName = null;
                       });
                       refreshModalMarkets();
@@ -423,7 +352,6 @@ class _MarketScreenState extends State<MarketScreen> {
                       // Apply filters
                       this.setState(() {
                         _selectedStateId = tempStateId;
-                        _selectedProductionId = tempProductionId;
                         _selectedMarketName = tempMarketName;
                         _selectedDate = tempDate;
                         _markets = tempMarkets;
@@ -868,28 +796,6 @@ class _MarketScreenState extends State<MarketScreen> {
                 );
               },
             ),
-            if (items.length > 5)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: isDark ? Colors.white10 : Colors.grey[100]!,
-                    ),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    AppLocalizations.of(context)!.viewAllItems(items.length),
-                    style: const TextStyle(
-                      color: primaryColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

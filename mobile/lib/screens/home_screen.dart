@@ -51,6 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
     "လယ်ယာသုံးစက်ကိရိယာများ",
     "မိုးလေဝသ",
     "ပေါက်ဈေး",
+    "စိုက်ပျိုးရေးနည်းပညာများ",
+    "သစ်တောစိုက်ပျိုးရေး",
+    "မြေညီပင်စိုက်ပျိုးရေး",
+    "မြေသြဇာနှင့်ဓာတုသယံဇာ",
+    "ဆေးပင်များနှင့်အပင်များ",
+    "အပင်ကာကွယ်ဆေးများ",
+    "အရောင်းအဝယ်ဈေးကွက်",
+    "အဆောက်အအုံများ",
+    "အိမ်မွေးတိရစ္ဆာန်ကျန်းမာရေး",
+    "ချေးငွေ",
   ];
 
   @override
@@ -143,7 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       debugPrint('Filtered announcements count: ${announcements?.length}');
       debugPrint('New announcement: ${newAnnouncement?['title']}');
-      debugPrint('_activeAnnouncement before: ${_activeAnnouncement?['title']}');
+      debugPrint(
+        '_activeAnnouncement before: ${_activeAnnouncement?['title']}',
+      );
       debugPrint('_showAnnouncement before: $_showAnnouncement');
 
       final prevId = _activeAnnouncement?['id'];
@@ -279,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final position = await Geolocator.getCurrentPosition();
       final response = await http.get(
         Uri.parse(
-          'https://getweatherbycityapi.laziestant.tech/v2/weather?lat=${position.latitude}&lon=${position.longitude}',
+          'https://getweatherbycity.vercel.app/v2/weather?lat=${position.latitude}&lon=${position.longitude}',
         ),
       );
 

@@ -161,14 +161,6 @@
   "unknownMarket": "Unknown Market",
   "marketRegion": "Market Region",
   "marketDisclaimerText": "Prices are updated daily. Actual transaction prices may vary slightly.",
-  "viewAllItems": "View all {count} items",
-  "@viewAllItems": {
-      "placeholders": {
-          "count": {
-              "type": "int"
-          }
-      }
-  },
   "enterEmailOrPhone": "Please enter your email or phone number",
   "resetCodeSent": "Reset code sent successfully",
   "failedToSendResetCode": "Failed to send reset code: ",
