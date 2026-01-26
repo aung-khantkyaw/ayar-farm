@@ -212,9 +212,27 @@ export default function ChatRoomManagement() {
     setActionLoading(true);
     try {
       const token = getToken();
+
+      // First, find the user by username to get their ID
+      const userResponse = await api.get(
+        `/users/search?q=${encodeURIComponent(directUserName.trim())}`,
+        token,
+      );
+      const userData = Array.isArray(userResponse?.data)
+        ? userResponse.data
+        : userResponse?.users || [];
+
+      if (!userData || userData.length === 0) {
+        alert(`User "${directUserName.trim()}" not found`);
+        return;
+      }
+
+      // Get the first matching user's ID
+      const participantId = userData[0].id;
+
       await api.post(
         "/chat/conversations/direct",
-        { userId: directUserName.trim() },
+        { participantId },
         token,
       );
       setDirectUserName("");

@@ -34,6 +34,7 @@ type AuthContextType = {
   signUp: (data: any) => Promise<void>;
   signOut: () => Promise<void>;
   confirmation: (code: string, identifier?: string) => Promise<void>;
+  updateUserProfile: (userData: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -183,6 +184,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserProfile = async (userData: any) => {
+    setIsLoading(true);
+    try {
+      // Prepare form data for file upload if needed
+      const formData = new FormData();
+
+      // Add all user data fields to form data
+      Object.keys(userData).forEach(key => {
+        if (key === 'profilePicture' && userData[key] instanceof File) {
+          formData.append('profile_picture', userData[key]);
+        } else if (key !== 'profilePicture') {
+          formData.append(key, userData[key]);
+        }
+      });
+
+      // Make API call to update user profile
+      const response = await api.put("/users/profile", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const updatedUser = response.data.user;
+
+      // Update local state and storage
+      setUser(updatedUser);
+      setSession(prev => ({ ...prev, user: updatedUser }));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      toast.error("Error updating profile", {
+        description: error.message || "An unknown error occurred",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -193,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         confirmation,
+        updateUserProfile,
       }}
     >
       {children}

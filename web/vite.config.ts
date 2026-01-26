@@ -22,12 +22,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/market': {
-        target: 'https://myanmarmarketapi.laziestant.tech',
+        target: 'https://mm-market-api.vercel.app',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/market/, '/api/market')
       },
       '/v2/weather': {
-        target: 'https://getweatherbycityapi.laziestant.tech',
+        target: 'https://getweatherbycity.vercel.app',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/v2\/weather/, '/v2/weather')
       }

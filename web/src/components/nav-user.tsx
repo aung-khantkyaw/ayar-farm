@@ -6,7 +6,6 @@ import {
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { API_URL } from "@/lib/config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/providers/auth-provider.tsx";
+import { useNavigate } from "@tanstack/react-router";
 
 export function NavUser({
   user,
@@ -34,6 +34,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const navigate = useNavigate();
 
   const { signOut } = useAuth();
 
@@ -41,7 +42,11 @@ export function NavUser({
     if (profilePicture.startsWith("http")) {
       return profilePicture;
     }
-    return `${API_URL}${profilePicture}`;
+    return `${profilePicture}`;
+  };
+
+  const handleAccountClick = () => {
+    navigate({ to: "/account" });
   };
 
   return (
@@ -100,7 +105,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAccountClick}>
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>

@@ -218,7 +218,7 @@ const AnnouncementManagement = () => {
             title: form.title,
             message: form.message,
             type: form.type,
-            userIds: selectedUserIds,
+            recipientIds: selectedUserIds,
           },
           token,
         );

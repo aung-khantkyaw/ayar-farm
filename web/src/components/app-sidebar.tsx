@@ -2,8 +2,6 @@ import * as React from "react";
 import {
   IconVideoMinus,
   IconWheat,
-  // IconFileAi,
-  // IconFileDescription,
   IconTractor,
   IconHelp,
   IconLeaf,
@@ -15,6 +13,8 @@ import {
   IconDeviceMobile,
   IconMessageCog,
   IconNews,
+  IconBuildingBank,
+  IconSpeakerphone,
 } from "@tabler/icons-react";
 
 import { NavCategories } from "@/components/nav-category";
@@ -63,14 +63,14 @@ const data = {
     {
       name: "Announcements",
       url: "/admin/announcements",
-      icon: IconNews,
+      icon: IconSpeakerphone,
     },
   ],
   resources: [
     {
       name: "Loans",
       url: "/resource/loans",
-      icon: IconNews,
+      icon: IconBuildingBank,
     },
     {
       name: "Agromet Bulletins",
@@ -118,7 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const authUser = {
     name: user.name || "Unknown User",
     email: user.email || "No Email",
-    avatar: user.profile_picture || "https://via.placeholder.com/200",
+    avatar: user.profile_picture || "",
   };
 
   return (
