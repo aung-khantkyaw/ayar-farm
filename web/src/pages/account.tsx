@@ -4,7 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -26,7 +32,12 @@ const states = [
   { id: "1dzIVEs684iyjetc", code: "KAYIN", en: "KAYIN", mm: "ကရင်" },
   { id: "aVHfHbYrrdNZu9bW", code: "CHIN", en: "CHIN", mm: "ချင်း" },
   { id: "EbUz7oziqo6OB5pL", code: "SAGAING", en: "SAGAING", mm: "စစ်ကိုင်း" },
-  { id: "X8rt_XwuTgAggCju", code: "TANINTHARYI", en: "TANINTHARYI", mm: "တနသာရီ" },
+  {
+    id: "X8rt_XwuTgAggCju",
+    code: "TANINTHARYI",
+    en: "TANINTHARYI",
+    mm: "တနသာရီ",
+  },
   { id: "zBMPM_jGuwbus35I", code: "BAGO", en: "BAGO", mm: "ပဲခူး" },
   { id: "u431U0SGuX9lkur-", code: "MAGWE", en: "MAGWE", mm: "မကွေး" },
   { id: "5PflwjWItczLTOof", code: "MANDALAY", en: "MANDALAY", mm: "မန္တလေး" },
@@ -35,7 +46,12 @@ const states = [
   { id: "Zvxm3m8cAwCeDgz1", code: "YANGON", en: "YANGON", mm: "ရန်ကုန်" },
   { id: "DZ1kOrvrt-7LntG4", code: "SHAN", en: "SHAN", mm: "ရှမ်း" },
   { id: "tY793VdREy9r5xsl", code: "AYEYAWADY", en: "AYEYAWADY", mm: "ဧရာ၀တီ" },
-  { id: "sH0ybsmxNuxmeOT_", code: "NAYPYITAW", en: "NAYPYITAW", mm: "နေပြည်တော်" },
+  {
+    id: "sH0ybsmxNuxmeOT_",
+    code: "NAYPYITAW",
+    en: "NAYPYITAW",
+    mm: "နေပြည်တော်",
+  },
 ];
 
 export default function AccountPage() {
@@ -55,6 +71,9 @@ export default function AccountPage() {
   const [townships, setTownships] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
+    null,
+  );
 
   useEffect(() => {
     if (user) {
@@ -68,23 +87,16 @@ export default function AccountPage() {
         location: user.location || "",
         profilePicture: user.profilePicture || "",
       });
-
-      // Extract state and township from location if available
-      if (user.location) {
-        // Simple parsing - you might need to adjust based on your location format
-        const locationParts = user.location.split(", ");
-        // Logic to extract state and township from location string would go here
-      }
     }
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleStateChange = async (stateId: string) => {
@@ -92,10 +104,10 @@ export default function AccountPage() {
     if (stateId) {
       try {
         // Fetch townships for the selected state
-        const stateNumber = states.find(s => s.id === stateId)?.code;
+        const stateNumber = states.find((s) => s.id === stateId)?.code;
         if (stateNumber) {
           const response = await fetch(
-            `https://myanmaridentityapi.laziestant.tech/v1/states/number/${stateNumber}/townships`
+            `https://myanmaridentityapi.laziestant.tech/v1/states/number/${stateNumber}/townships`,
           );
           if (response.ok) {
             const data = await response.json();
@@ -114,6 +126,7 @@ export default function AccountPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setProfilePictureFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -129,8 +142,14 @@ export default function AccountPage() {
     try {
       // Prepare the updated profile data
       const updatedData = {
-        ...formData,
-        location: formData.location, // You might want to concatenate state and township here
+        id: formData.id,
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        gender: formData.gender,
+        userType: formData.userType,
+        location: `${states.find(s => s.id === selectedState)?.en || ''} ${townships.find(t => t.id === selectedTownship)?.name.en || ''} ${formData.location}`.trim(),
+        ...(profilePictureFile && { profilePicture: profilePictureFile }),
       };
 
       // Call the update function from auth provider
@@ -160,31 +179,39 @@ export default function AccountPage() {
             {/* Profile Picture */}
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="h-24 w-24">
-                <AvatarImage 
-                  src={imagePreview || formData.profilePicture || "/placeholder-avatar.jpg"} 
-                  alt={formData.name} 
+                <AvatarImage
+                  src={
+                    imagePreview ||
+                    formData.profilePicture ||
+                    "/placeholder-avatar.jpg"
+                  }
+                  alt={formData.name}
                 />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold">
-                  {formData.name?.charAt(0)?.toUpperCase() || 
-                   formData.email?.charAt(0)?.toUpperCase()}
+                  {formData.name?.charAt(0)?.toUpperCase() ||
+                    formData.email?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
                 <Label htmlFor="profilePicture" className="cursor-pointer">
-                  <span className="text-sm font-medium">Change Profile Picture</span>
+                  <span className="text-sm font-medium">
+                    Change Profile Picture
+                  </span>
                 </Label>
-                <Input 
-                  id="profilePicture" 
-                  type="file" 
-                  accept="image/*" 
+                <Input
+                  id="profilePicture"
+                  type="file"
+                  accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
                 />
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById('profilePicture')?.click()}
+                  onClick={() =>
+                    document.getElementById("profilePicture")?.click()
+                  }
                 >
                   Choose File
                 </Button>
@@ -230,9 +257,9 @@ export default function AccountPage() {
             {/* Gender Selection */}
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
-              <Select 
-                value={formData.gender} 
-                onValueChange={(value) => handleSelectChange('gender', value)}
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => handleSelectChange("gender", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select gender" />
@@ -248,20 +275,28 @@ export default function AccountPage() {
             {/* User Type Selection */}
             <div className="space-y-2">
               <Label htmlFor="userType">User Type</Label>
-              <Select 
-                value={formData.userType} 
-                onValueChange={(value) => handleSelectChange('userType', value)}
+              <Select
+                value={formData.userType}
+                onValueChange={(value) => handleSelectChange("userType", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select user type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="farmer">Farmer</SelectItem>
-                  <SelectItem value="agriculturalSpecialist">Agricultural Specialist</SelectItem>
-                  <SelectItem value="agriculturalEquipmentShop">Agricultural Equipment Shop</SelectItem>
+                  <SelectItem value="agriculturalSpecialist">
+                    Agricultural Specialist
+                  </SelectItem>
+                  <SelectItem value="agriculturalEquipmentShop">
+                    Agricultural Equipment Shop
+                  </SelectItem>
                   <SelectItem value="traderVendor">Trader/Vendor</SelectItem>
-                  <SelectItem value="livestockBreeder">Livestock Breeder</SelectItem>
-                  <SelectItem value="livestockSpecialist">Livestock Specialist</SelectItem>
+                  <SelectItem value="livestockBreeder">
+                    Livestock Breeder
+                  </SelectItem>
+                  <SelectItem value="livestockSpecialist">
+                    Livestock Specialist
+                  </SelectItem>
                   <SelectItem value="others">Others</SelectItem>
                 </SelectContent>
               </Select>
@@ -271,10 +306,7 @@ export default function AccountPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
-                <Select 
-                  value={selectedState} 
-                  onValueChange={handleStateChange}
-                >
+                <Select value={selectedState} onValueChange={handleStateChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
@@ -290,8 +322,8 @@ export default function AccountPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="township">Township</Label>
-                <Select 
-                  value={selectedTownship} 
+                <Select
+                  value={selectedTownship}
                   onValueChange={setSelectedTownship}
                 >
                   <SelectTrigger>

@@ -1,11 +1,50 @@
 "use client";
 
+import { type ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
-const decodeJwtPayload = (token: string) => {
+interface User {
+  id: string;
+  name: string;
+  email?: string;
+  phone_number?: string;
+  [key: string]: any;
+}
+
+interface Session {
+  user: User;
+  access_token: string;
+}
+
+interface SignUpData {
+  name: string;
+  phone_number?: string;
+  email?: string;
+  password: string;
+  user_type?: string;
+  [key: string]: any;
+}
+
+interface UpdateUserProfileData {
+  [key: string]: any;
+  profilePicture?: File;
+}
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
+  signOut: () => Promise<void>;
+  confirmation: (code: string, identifier?: string) => Promise<void>;
+  updateUserProfile: (userData: UpdateUserProfileData) => Promise<void>;
+}
+
+const decodeJwtPayload = (token: string): any => {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
@@ -20,29 +59,22 @@ const decodeJwtPayload = (token: string) => {
   }
 };
 
-const isTokenExpired = (token: string) => {
+const isTokenExpired = (token: string): boolean => {
   const payload = decodeJwtPayload(token);
   if (!payload || !payload.exp) return true;
   return payload.exp * 1000 <= Date.now();
 };
 
-type AuthContextType = {
-  user: any;
-  session: any;
-  isLoading: boolean;
-  signIn: (identifier: string, password: string) => Promise<void>;
-  signUp: (data: any) => Promise<void>;
-  signOut: () => Promise<void>;
-  confirmation: (code: string, identifier?: string) => Promise<void>;
-  updateUserProfile: (userData: any) => Promise<void>;
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [session, setSession] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -71,7 +103,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, [router]);
 
-  const signIn = async (identifier: string, password: string) => {
+  const signIn = async (
+    identifier: string,
+    password: string,
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const isEmail = identifier.includes("@");
@@ -98,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (data: any) => {
+  const signUp = async (data: SignUpData): Promise<void> => {
     setIsLoading(true);
     try {
       // Backend expects: name, phone_number, email, password, user_type
@@ -109,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (data.phone_number) {
         localStorage.setItem(
           "pending_confirmation_identifier",
-          data.phone_number
+          data.phone_number,
         );
       }
 
@@ -128,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     setIsLoading(true);
     try {
       setUser(null);
@@ -145,7 +180,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const confirmation = async (code: string, identifier?: string) => {
+  const confirmation = async (
+    code: string,
+    identifier?: string,
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const targetIdentifier =
@@ -184,33 +222,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUserProfile = async (userData: any) => {
+  const updateUserProfile = async (
+    userData: UpdateUserProfileData,
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       // Prepare form data for file upload if needed
       const formData = new FormData();
 
       // Add all user data fields to form data
-      Object.keys(userData).forEach(key => {
-        if (key === 'profilePicture' && userData[key] instanceof File) {
-          formData.append('profile_picture', userData[key]);
-        } else if (key !== 'profilePicture') {
+      Object.keys(userData).forEach((key) => {
+        if (key === "profilePicture" && userData[key] instanceof File) {
+          formData.append("profile_picture", userData[key]);
+        } else if (key !== "profilePicture") {
           formData.append(key, userData[key]);
         }
       });
 
       // Make API call to update user profile
-      const response = await api.put("/users/profile", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await api.put(
+        "/users/profile",
+        formData,
+        "multipart/form-data",
+      );
 
       const updatedUser = response.data.user;
 
       // Update local state and storage
       setUser(updatedUser);
-      setSession(prev => ({ ...prev, user: updatedUser }));
+      setSession((prev: Session | null) =>
+        prev ? { ...prev, user: updatedUser } : null,
+      );
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       toast.success("Profile updated successfully!");
@@ -242,7 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
