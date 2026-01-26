@@ -46,37 +46,37 @@ import {
 import { toast } from "sonner";
 import type { Document } from "@/lib/interface";
 
-function ArticleManagement() {
+function LoanManagement() {
   const { user, isLoading } = useAuth();
-  const [articles, setArticles] = useState<Document[]>([]);
+  const [loans, setLoans] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [articleToDelete, setArticleToDelete] = useState<Document | null>(null);
+  const [loanToDelete, setLoanToDelete] = useState<Document | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     author: "",
   });
 
-  const fetchArticles = async () => {
+  const fetchLoans = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const data = await api.get(
-        "/document/documents?article=true",
+        "/document/documents?loan=true",
         token || undefined,
       );
-      setArticles(data.documents || []);
+      setLoans(data.documents || []);
     } catch (error) {
-      console.error("Error fetching articles:", error);
-      toast.error("Failed to fetch articles");
+      console.error("Error fetching loans:", error);
+      toast.error("Failed to fetch loans");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchArticles();
+    fetchLoans();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +91,7 @@ function ArticleManagement() {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error("Please select an article file");
+      toast.error("Please select an loan file");
       return;
     }
 
@@ -110,14 +110,14 @@ function ArticleManagement() {
     uploadData.append("file_urls", selectedFile);
     uploadData.append("title", formData.title);
     uploadData.append("author", formData.author);
-    uploadData.append("article", "true");
+    uploadData.append("loan", "true");
     uploadData.append("agromet_bulletin", "false");
 
     try {
       const token = localStorage.getItem("token");
       await api.post("/document/documents", uploadData, token || undefined);
 
-      toast.success("Article uploaded successfully!");
+      toast.success("Loan uploaded successfully!");
       setSelectedFile(null);
       setFormData({
         title: "",
@@ -125,11 +125,11 @@ function ArticleManagement() {
       });
       // Reset file input
       const fileInput = document.getElementById(
-        "article-file",
+        "loan-file",
       ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
 
-      fetchArticles();
+      fetchLoans();
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Upload failed");
@@ -139,22 +139,22 @@ function ArticleManagement() {
   };
 
   const confirmDelete = async () => {
-    if (!articleToDelete) return;
+    if (!loanToDelete) return;
 
     try {
       const token = localStorage.getItem("token");
       await api.delete(
-        `/document/documents/${articleToDelete.id}`,
+        `/document/documents/${loanToDelete.id}`,
         token || undefined,
       );
 
-      toast.success("Article deleted successfully!");
-      fetchArticles();
+      toast.success("Loan deleted successfully!");
+      fetchLoans();
     } catch (error) {
-      console.error("Error deleting article:", error);
-      toast.error("Failed to delete article");
+      console.error("Error deleting loan:", error);
+      toast.error("Failed to delete loan");
     } finally {
-      setArticleToDelete(null);
+      setLoanToDelete(null);
     }
   };
 
@@ -181,10 +181,10 @@ function ArticleManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Article Management
+              Loan Management
             </h1>
             <p className="text-gray-600 mt-2">
-              Upload and manage articles for users
+              Upload and manage loans for users
             </p>
           </div>
         </div>
@@ -194,17 +194,17 @@ function ArticleManagement() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              Upload New Article
+              Upload New Loan
             </CardTitle>
             <CardDescription>
-              Upload article files for users to read
+              Upload loan files for users to read
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="article-file">Article File</Label>
+              <Label htmlFor="loan-file">Loan File</Label>
               <Input
-                id="article-file"
+                id="loanle"
                 type="file"
                 onChange={handleFileChange}
                 accept=".pdf,.doc,.docx,.txt"
@@ -217,7 +217,7 @@ function ArticleManagement() {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  placeholder="Article title"
+                  placeholder="Loan title"
                   value={formData.title}
                   onChange={(e) => handleInputChange("title", e.target.value)}
                 />
@@ -226,7 +226,7 @@ function ArticleManagement() {
                 <Label htmlFor="author">Author</Label>
                 <Input
                   id="author"
-                  placeholder="Article author"
+                  placeholder="Loan author"
                   value={formData.author}
                   onChange={(e) => handleInputChange("author", e.target.value)}
                 />
@@ -238,28 +238,28 @@ function ArticleManagement() {
               disabled={uploading || !selectedFile}
               className="w-full"
             >
-              {uploading ? "Uploading..." : "Upload Article"}
+              {uploading ? "Uploading..." : "Upload Loan"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Articles List */}
+        {/* Loans List */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5" />
-                  Uploaded Articles
+                  Uploaded Loans
                 </CardTitle>
-                <CardDescription>Manage your uploaded articles</CardDescription>
+                <CardDescription>Manage your uploaded loans</CardDescription>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   setLoading(true);
-                  fetchArticles();
+                  fetchLoans();
                 }}
                 disabled={loading}
               >
@@ -271,14 +271,14 @@ function ArticleManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            {articles.length === 0 ? (
+            {loans.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No articles uploaded
+                  No loans uploaded
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Upload your first article to get started
+                  Upload your first loan to get started
                 </p>
               </div>
             ) : (
@@ -294,25 +294,23 @@ function ArticleManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {articles.map((article) => (
-                      <TableRow key={article.id}>
+                    {loans.map((loan) => (
+                      <TableRow key={loan.id}>
                         <TableCell className="font-medium">
-                          {article.title}
+                          {loan.title}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {article.author}
+                          {loan.author}
                         </TableCell>
+                        <TableCell>{formatFileSize(loan.size || 0)}</TableCell>
                         <TableCell>
-                          {formatFileSize(article.size || 0)}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(article.created_at).toLocaleDateString()}
+                          {new Date(loan.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
                               onClick={() =>
-                                window.open(article.file_urls[0], "_blank")
+                                window.open(loan.file_urls[0], "_blank")
                               }
                               variant="outline"
                               size="sm"
@@ -332,11 +330,11 @@ function ArticleManagement() {
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>
-                                    Delete Article
+                                    Delete Loan
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "
-                                    {article.title}
+                                    {loan.title}
                                     "? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -344,12 +342,12 @@ function ArticleManagement() {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => {
-                                      setArticleToDelete(article);
+                                      setLoanToDelete(loan);
                                       confirmDelete();
                                     }}
                                     className="bg-red-500 hover:bg-red-600"
                                   >
-                                    Delete Article
+                                    Delete Loan
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -369,7 +367,7 @@ function ArticleManagement() {
   );
 }
 
-function ResourceArticlesPage() {
+function ResourceLoansPage() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -398,7 +396,7 @@ function ResourceArticlesPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col">
-            <ArticleManagement />
+            <LoanManagement />
           </div>
         </div>
       </SidebarInset>
@@ -406,4 +404,4 @@ function ResourceArticlesPage() {
   );
 }
 
-export default ResourceArticlesPage;
+export default ResourceLoansPage;

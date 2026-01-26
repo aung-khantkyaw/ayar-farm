@@ -80,7 +80,7 @@ export interface Document {
   livestock_id?: string;
   machine_id?: string;
   fish_id?: string;
-  article?: boolean;
+  loan?: boolean;
   agromet_bulletin?: boolean;
 
   CropTypes?: CropType;

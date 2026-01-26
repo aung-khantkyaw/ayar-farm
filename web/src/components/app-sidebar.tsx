@@ -68,8 +68,8 @@ const data = {
   ],
   resources: [
     {
-      name: "Articles",
-      url: "/resource/articles",
+      name: "Loans",
+      url: "/resource/loans",
       icon: IconNews,
     },
     {

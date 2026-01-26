@@ -32,7 +32,7 @@ const HomePage = () => {
   const fetchActiveVideo = async () => {
     try {
       const response = await api.get(
-        "/resources/resources?type=VIDEO&isActive=true"
+        "/resources/resources?type=VIDEO&isActive=true",
       );
 
       if (response?.resources) {
@@ -50,7 +50,7 @@ const HomePage = () => {
   const fetchActiveApplications = async () => {
     try {
       const response = await api.get(
-        "/resources/resources?type=APPLICATION&isActive=true"
+        "/resources/resources?type=APPLICATION&isActive=true",
       );
 
       if (response?.resources) {
@@ -191,7 +191,7 @@ const HomePage = () => {
                         1000+
                       </div>
                       <div className="text-xs text-gray-500">
-                        Knowledge Articles
+                        Knowledge Loans
                       </div>
                     </div>
                     <div className="text-center">
@@ -261,7 +261,7 @@ const HomePage = () => {
                 icon: <GraduationCap className="w-8 h-8" />,
                 title: "Educational Content",
                 description:
-                  "Learn new farming techniques through articles, videos, and tutorials",
+                  "Learn new farming techniques through loans, videos, and tutorials",
                 color: "from-[#53B154] to-[#4FC3F7]",
               },
               {
@@ -468,7 +468,7 @@ const HomePage = () => {
                     >
                       <div className="w-5 h-5 bg-white/60 rounded"></div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             </div>

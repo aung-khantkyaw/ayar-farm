@@ -112,7 +112,7 @@ function AgrometBulletinManagement() {
     uploadData.append("file_urls", selectedFile);
     uploadData.append("title", formData.title);
     uploadData.append("author", formData.author);
-    uploadData.append("article", "false");
+    uploadData.append("loan", "false");
     uploadData.append("agromet_bulletin", "true");
 
     try {

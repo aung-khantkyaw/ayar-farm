@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 export function DashboardStats() {
-  const [articles, setArticles] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [agrometBulletins, setAgrometBulletins] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const {
@@ -54,14 +54,16 @@ export function DashboardStats() {
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        // Fetch articles
-        const articlesRes = await api.get("/document/documents?article=true");
-        if (articlesRes && articlesRes.documents) {
-          setArticles(articlesRes.documents);
+        // Fetch loans
+        const loansRes = await api.get("/document/documents?loan=true");
+        if (loansRes && loansRes.documents) {
+          setLoans(loansRes.documents);
         }
 
         // Fetch agromet bulletins
-        const bulletinsRes = await api.get("/document/documents?agromet_bulletin=true");
+        const bulletinsRes = await api.get(
+          "/document/documents?agromet_bulletin=true",
+        );
         if (bulletinsRes && bulletinsRes.documents) {
           setAgrometBulletins(bulletinsRes.documents);
         }
@@ -105,8 +107,8 @@ export function DashboardStats() {
   // Resource Stats
   const resourceData = [
     {
-      subject: "Article",
-      count: articles.length,
+      subject: "Loan",
+      count: loans.length,
       fullMark: 100,
     },
     {

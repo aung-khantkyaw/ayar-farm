@@ -15,7 +15,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
-import { Route as ResourceArticlesRouteImport } from './routes/resource.articles'
+import { Route as ResourceLoansRouteImport } from './routes/resource.loans'
 import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
 import { Route as ResourceAgrometBulletinsRouteImport } from './routes/resource.agromet-bulletins'
 import { Route as CategoryMachinesRouteImport } from './routes/category.machines'
@@ -60,9 +60,9 @@ const ResourceVideosRoute = ResourceVideosRouteImport.update({
   path: '/resource/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResourceArticlesRoute = ResourceArticlesRouteImport.update({
-  id: '/resource/articles',
-  path: '/resource/articles',
+const ResourceLoansRoute = ResourceLoansRouteImport.update({
+  id: '/resource/loans',
+  path: '/resource/loans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourceApplicationsRoute = ResourceApplicationsRouteImport.update({
@@ -151,7 +151,7 @@ export interface FileRoutesByFullPath {
   '/category/machines': typeof CategoryMachinesRoute
   '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
-  '/resource/articles': typeof ResourceArticlesRoute
+  '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesByTo {
@@ -173,7 +173,7 @@ export interface FileRoutesByTo {
   '/category/machines': typeof CategoryMachinesRoute
   '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
-  '/resource/articles': typeof ResourceArticlesRoute
+  '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRoutesById {
@@ -196,7 +196,7 @@ export interface FileRoutesById {
   '/category/machines': typeof CategoryMachinesRoute
   '/resource/agromet-bulletins': typeof ResourceAgrometBulletinsRoute
   '/resource/applications': typeof ResourceApplicationsRoute
-  '/resource/articles': typeof ResourceArticlesRoute
+  '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
 }
 export interface FileRouteTypes {
@@ -220,7 +220,7 @@ export interface FileRouteTypes {
     | '/category/machines'
     | '/resource/agromet-bulletins'
     | '/resource/applications'
-    | '/resource/articles'
+    | '/resource/loans'
     | '/resource/videos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -242,7 +242,7 @@ export interface FileRouteTypes {
     | '/category/machines'
     | '/resource/agromet-bulletins'
     | '/resource/applications'
-    | '/resource/articles'
+    | '/resource/loans'
     | '/resource/videos'
   id:
     | '__root__'
@@ -264,7 +264,7 @@ export interface FileRouteTypes {
     | '/category/machines'
     | '/resource/agromet-bulletins'
     | '/resource/applications'
-    | '/resource/articles'
+    | '/resource/loans'
     | '/resource/videos'
   fileRoutesById: FileRoutesById
 }
@@ -287,7 +287,7 @@ export interface RootRouteChildren {
   CategoryMachinesRoute: typeof CategoryMachinesRoute
   ResourceAgrometBulletinsRoute: typeof ResourceAgrometBulletinsRoute
   ResourceApplicationsRoute: typeof ResourceApplicationsRoute
-  ResourceArticlesRoute: typeof ResourceArticlesRoute
+  ResourceLoansRoute: typeof ResourceLoansRoute
   ResourceVideosRoute: typeof ResourceVideosRoute
 }
 
@@ -335,11 +335,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourceVideosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/resource/articles': {
-      id: '/resource/articles'
-      path: '/resource/articles'
-      fullPath: '/resource/articles'
-      preLoaderRoute: typeof ResourceArticlesRouteImport
+    '/resource/loans': {
+      id: '/resource/loans'
+      path: '/resource/loans'
+      fullPath: '/resource/loans'
+      preLoaderRoute: typeof ResourceLoansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resource/applications': {
@@ -455,7 +455,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoryMachinesRoute: CategoryMachinesRoute,
   ResourceAgrometBulletinsRoute: ResourceAgrometBulletinsRoute,
   ResourceApplicationsRoute: ResourceApplicationsRoute,
-  ResourceArticlesRoute: ResourceArticlesRoute,
+  ResourceLoansRoute: ResourceLoansRoute,
   ResourceVideosRoute: ResourceVideosRoute,
 }
 export const routeTree = rootRouteImport
