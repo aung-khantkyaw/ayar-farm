@@ -44,9 +44,7 @@ import {
   RefreshCw,
   BookOpen,
 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { getUserById } from "@/lib/utils";
 import type { Document } from "@/lib/interface";
 
 function ArticleManagement() {
@@ -76,26 +74,6 @@ function ArticleManagement() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const AuthorDisplay = ({ authorId }: { authorId: string }) => {
-    const [name, setName] = useState("...");
-
-    useEffect(() => {
-      const fetchName = async () => {
-        try {
-          const response = await getUserById(authorId);
-          const userData = response.data || response;
-          setName(userData.name || "Unknown");
-        } catch (error) {
-          console.error("Error fetching author:", error);
-          setName("Unknown");
-        }
-      };
-      if (authorId) fetchName();
-    }, [authorId]);
-
-    return <span>{name}</span>;
   };
 
   useEffect(() => {
