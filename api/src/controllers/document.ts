@@ -35,11 +35,16 @@ export class DocumentController {
 
     public async addDocument(req: Request, res: Response): Promise<void> {
         try {
-            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id } = req.body;
+            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, article, agromet_bulletin } = req.body;
             const files = req.files as Express.Multer.File[];
             const file_urls = files ? files.map(file => file.path) : [];
             const size = files && files.length > 0 ? files[0].size : (req.body.size ? parseInt(req.body.size) : 0);
-            const newDocument = (await DocumentService.addNewDocument(title, author, file_urls, size, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id)).document;
+
+            // Convert string values to booleans
+            const articleBool = typeof article === 'string' ? article === 'true' : Boolean(article);
+            const agrometBulletinBool = typeof agromet_bulletin === 'string' ? agromet_bulletin === 'true' : Boolean(agromet_bulletin);
+
+            const newDocument = (await DocumentService.addNewDocument(title, author, file_urls, size, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, articleBool, agrometBulletinBool)).document;
 
             if (!newDocument) {
                 res.status(400).json({ message: 'Document added fail' })
@@ -56,22 +61,26 @@ export class DocumentController {
     public async editDocument(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id } = req.body;
-            
+            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  article, agromet_bulletin } = req.body;
+
             const files = req.files as Express.Multer.File[];
             console.log(`Received ${files ? files.length : 0} files`);
-                
+
             const existingDocument = (await DocumentService.getDocumentById(id)).document;
-    
+
             if (!existingDocument) {
                 res.status(404).json({ message: 'Document not found' })
             }
-                
+
             const newFileUrls = files ? files.map((file) => file.path) : [];
             const file_urls = [...existingDocument!.file_urls, ...newFileUrls];
-                
-            const updatedDocument = (await DocumentService.updateDocument(id, title, author, file_urls, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id));
-    
+
+            // Convert string values to booleans
+            const articleBool = typeof article === 'string' ? article === 'true' : Boolean(article);
+            const agrometBulletinBool = typeof agromet_bulletin === 'string' ? agromet_bulletin === 'true' : Boolean(agromet_bulletin);
+
+            const updatedDocument = (await DocumentService.updateDocument(id, title, author, file_urls, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  articleBool, agrometBulletinBool));
+
             res.status(200).json({ message: 'Document updated successfully', data: updatedDocument });
             return;
         } catch (error) {

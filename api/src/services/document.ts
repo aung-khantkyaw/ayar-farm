@@ -201,7 +201,7 @@ export class DocumentService {
         }
     }
 
-    public static async addNewDocument(title: string, author: string, file_urls: string[], size: number, crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string ): Promise<{ document: any }> {
+    public static async addNewDocument(title: string, author: string, file_urls: string[], size: number, crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, article: boolean, agromet_bulletin: boolean ): Promise<{ document: any }> {
         try {
             const document = await prisma.documents.create({
                 data: {
@@ -214,7 +214,9 @@ export class DocumentService {
                     crop_id: crop_id || null,
                     livestock_id: livestock_id || null,
                     machine_id: machine_id || null,
-                    fish_id: fish_id || null
+                    fish_id: fish_id || null,
+                    article,
+                    agromet_bulletin
                 }
             })
 
@@ -224,7 +226,7 @@ export class DocumentService {
         }
     }
 
-    public static async updateDocument(id: string, title: string, author: string, file_urls: string[], crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string ): Promise<{ document: any }> {
+    public static async updateDocument(id: string, title: string, author: string, file_urls: string[], crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, article: boolean, agromet_bulletin: boolean  ): Promise<{ document: any }> {
         try {
             const document = await prisma.documents.update({
                 where: { id },
@@ -237,7 +239,9 @@ export class DocumentService {
                     crop_id: crop_id || null,
                     livestock_id: livestock_id || null,
                     machine_id: machine_id || null,
-                    fish_id: fish_id || null
+                    fish_id: fish_id || null,
+                    article,
+                    agromet_bulletin
                 }
             })
 
