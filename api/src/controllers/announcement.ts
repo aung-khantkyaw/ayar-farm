@@ -14,6 +14,8 @@ export class AnnouncementController {
       return;
     }
 
+    console.log('Creating announcement with data:', { title, message, type, data, recipientIds, userId });
+
     try {
       // Create the announcement
       const announcement = await prisma.announcements.create({
