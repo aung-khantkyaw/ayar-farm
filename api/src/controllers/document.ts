@@ -7,9 +7,9 @@ export class DocumentController {
             const { id } = req.params;
             const { type } = req.query;
             const { type_id } = req.query;
-            const rawArticle = req.query.article;
+            const rawLoan = req.query.loan;
             const rawAgrometBulletin = req.query.agromet_bulletin;
-            const articleFlag = typeof rawArticle === 'string' ? rawArticle === 'true' : Boolean(rawArticle);
+            const loanFlag = typeof rawLoan === 'string' ? rawLoan === 'true' : Boolean(rawLoan);
             const agrometBulletinFlag = typeof rawAgrometBulletin === 'string' ? rawAgrometBulletin === 'true' : Boolean(rawAgrometBulletin);
                         
             if (id) {
@@ -18,8 +18,8 @@ export class DocumentController {
             } else if (typeof type === 'string') {
                 const { documents } = type_id ? await DocumentService.getAllDocumentByTypeId(type, type_id as string) : await DocumentService.getAllDocumentByType(type);
                 res.status(200).json({ message: "Get Document(s) successfully", documents });
-            } else if (articleFlag || agrometBulletinFlag) {
-                const { documents } = await DocumentService.getDocumentByArticleOrAgrometBulletin(articleFlag, agrometBulletinFlag);
+            } else if (loanFlag || agrometBulletinFlag) {
+                const { documents } = await DocumentService.getDocumentByLoanOrAgrometBulletin(loanFlag, agrometBulletinFlag);
                 res.status(200).json({ message: "Get Document(s) successfully", documents });
             } else {
                 const { documents } = await DocumentService.getAllDocuments();
@@ -35,16 +35,16 @@ export class DocumentController {
 
     public async addDocument(req: Request, res: Response): Promise<void> {
         try {
-            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, article, agromet_bulletin } = req.body;
+            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, loan, agromet_bulletin } = req.body;
             const files = req.files as Express.Multer.File[];
             const file_urls = files ? files.map(file => file.path) : [];
             const size = files && files.length > 0 ? files[0].size : (req.body.size ? parseInt(req.body.size) : 0);
 
             // Convert string values to booleans
-            const articleBool = typeof article === 'string' ? article === 'true' : Boolean(article);
+            const loanBool = typeof loan === 'string' ? loan === 'true' : Boolean(loan);
             const agrometBulletinBool = typeof agromet_bulletin === 'string' ? agromet_bulletin === 'true' : Boolean(agromet_bulletin);
 
-            const newDocument = (await DocumentService.addNewDocument(title, author, file_urls, size, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, articleBool, agrometBulletinBool)).document;
+            const newDocument = (await DocumentService.addNewDocument(title, author, file_urls, size, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id, loanBool, agrometBulletinBool)).document;
 
             if (!newDocument) {
                 res.status(400).json({ message: 'Document added fail' })
@@ -61,7 +61,7 @@ export class DocumentController {
     public async editDocument(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  article, agromet_bulletin } = req.body;
+            const { title, author, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  loan, agromet_bulletin } = req.body;
 
             const files = req.files as Express.Multer.File[];
             console.log(`Received ${files ? files.length : 0} files`);
@@ -76,10 +76,10 @@ export class DocumentController {
             const file_urls = [...existingDocument!.file_urls, ...newFileUrls];
 
             // Convert string values to booleans
-            const articleBool = typeof article === 'string' ? article === 'true' : Boolean(article);
+            const loanBool = typeof loan === 'string' ? loan === 'true' : Boolean(loan);
             const agrometBulletinBool = typeof agromet_bulletin === 'string' ? agromet_bulletin === 'true' : Boolean(agromet_bulletin);
 
-            const updatedDocument = (await DocumentService.updateDocument(id, title, author, file_urls, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  articleBool, agrometBulletinBool));
+            const updatedDocument = (await DocumentService.updateDocument(id, title, author, file_urls, crop_type_id, livestock_type_id, machine_type_id, crop_id, livestock_id, machine_id, fish_id,  loanBool, agrometBulletinBool));
 
             res.status(200).json({ message: 'Document updated successfully', data: updatedDocument });
             return;

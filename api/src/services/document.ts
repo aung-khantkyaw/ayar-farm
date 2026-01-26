@@ -26,13 +26,13 @@ export class DocumentService {
         }
     }
 
-    public static async getDocumentByArticleOrAgrometBulletin(article: boolean, agromet_bulletin: boolean): Promise<{ documents: any }> {
+    public static async getDocumentByLoanOrAgrometBulletin(loan: boolean, agromet_bulletin: boolean): Promise<{ documents: any }> {
         try {
             let documents;
 
-            if (article) {
+            if (loan) {
                 documents = await prisma.documents.findMany({
-                    where: { article: true },
+                    where: { loan: true },
                     orderBy: { created_at: 'asc' }
                 })
             }
@@ -201,7 +201,7 @@ export class DocumentService {
         }
     }
 
-    public static async addNewDocument(title: string, author: string, file_urls: string[], size: number, crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, article: boolean, agromet_bulletin: boolean ): Promise<{ document: any }> {
+    public static async addNewDocument(title: string, author: string, file_urls: string[], size: number, crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, loan: boolean, agromet_bulletin: boolean ): Promise<{ document: any }> {
         try {
             const document = await prisma.documents.create({
                 data: {
@@ -215,7 +215,7 @@ export class DocumentService {
                     livestock_id: livestock_id || null,
                     machine_id: machine_id || null,
                     fish_id: fish_id || null,
-                    article,
+                    loan,
                     agromet_bulletin
                 }
             })
@@ -226,7 +226,7 @@ export class DocumentService {
         }
     }
 
-    public static async updateDocument(id: string, title: string, author: string, file_urls: string[], crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, article: boolean, agromet_bulletin: boolean  ): Promise<{ document: any }> {
+    public static async updateDocument(id: string, title: string, author: string, file_urls: string[], crop_type_id: string, livestock_type_id: string, machine_type_id: string, crop_id: string, livestock_id: string, machine_id: string, fish_id: string, loan: boolean, agromet_bulletin: boolean  ): Promise<{ document: any }> {
         try {
             const document = await prisma.documents.update({
                 where: { id },
@@ -240,7 +240,7 @@ export class DocumentService {
                     livestock_id: livestock_id || null,
                     machine_id: machine_id || null,
                     fish_id: fish_id || null,
-                    article,
+                    loan,
                     agromet_bulletin
                 }
             })

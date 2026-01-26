@@ -19,6 +19,11 @@ export class AuthController {
             return;
         }
 
+        if (!phoneRegex.test(phone_number)) {
+            res.status(400).json({ message: 'Invalid phone number format. Use +959 followed by 9 digits.' });
+            return;
+        }
+
         // Check if user already exists
         const existingUser = await prisma.users.findFirst({
             where: {
@@ -30,12 +35,7 @@ export class AuthController {
         });
 
         if (existingUser) {
-            res.status(409).json({ message: 'User already exists' });
-            return;
-        }
-
-        if (!phoneRegex.test(phone_number)) {
-            res.status(400).json({ message: 'Invalid phone number format. Use +959 followed by 9 digits.' });
+            res.status(409).json({ message: 'User Already Exists' });
             return;
         }
 
