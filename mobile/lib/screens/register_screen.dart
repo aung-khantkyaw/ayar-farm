@@ -66,9 +66,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         // Handle specific error codes as mentioned in the requirements
         if (e.statusCode == 409) {
-          errorMessage = 'User already exists';  // This is the exact message from API
-        } else if (e.statusCode == 400 && e.message.contains('Invalid phone number format')) {
-          errorMessage = 'Invalid phone number format. Use +959 followed by 9 digits.';  // This is the exact message from API
+          errorMessage =
+              AppLocalizations.of(
+                context,
+              )!.existUser; // This is the exact message from API
+        } else if (e.statusCode == 400 &&
+            e.message.contains('Invalid phone number format')) {
+          errorMessage =
+              AppLocalizations.of(
+                context,
+              )!.phoneNumberInvalid; // This is the exact message from API
         }
 
         CommonSnackbar.show(

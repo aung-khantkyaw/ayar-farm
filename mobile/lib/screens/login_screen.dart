@@ -70,11 +70,21 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    } catch (e) {
+    } on ApiException catch (e) {
       if (mounted) {
+        String errorMessage = e.message;
+
+        if (e.statusCode == 401) {
+          errorMessage = AppLocalizations.of(context)!.invalidCredentials;
+        } else if (e.statusCode == 400) {
+          errorMessage = AppLocalizations.of(context)!.phoneNumberInvalid;
+        } else if (e.statusCode == 404) {
+          errorMessage = AppLocalizations.of(context)!.userNotFound;
+        }
+
         CommonSnackbar.show(
           context,
-          message: '${AppLocalizations.of(context)!.errorOccurred} $e',
+          message: errorMessage,
           type: SnackBarType.error,
           position: SnackBarPosition.bottom,
         );

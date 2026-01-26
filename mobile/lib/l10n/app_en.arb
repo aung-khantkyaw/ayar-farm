@@ -67,8 +67,8 @@
   "animalHusbandry": "Animal husbandry",
   "fishery": "Fishery",
   "aquacultureTips": "Aquaculture tips",
-  "agriIndustry": "Agri Industry",
-  "industrialTech": "Industrial tech",
+  "agriIndustry": "Industry",
+  "industrialTech": "Industrial Tech",
   "toolsUtilities": "Tools & Utilities",
   "agriCalculator": "Agri Calculator",
   "calculatorDesc": "Calculate crop yields, fertilizer needs, and profits instantly.",
@@ -260,7 +260,16 @@
   "commonCancel": "Cancel",
   "delete": "Delete",
   "postEdit": "Edit Post",
-  "postDelete": "Delete Post"
+  "postDelete": "Delete Post",
+  "loans": "Loans",
+  "loanServices": "Access agricultural loans from banks",
+  "agrometBulletin": "Agromet Bulletin",
+  "agrometInfo": "Get latest agricultural meteorological updates",
+  "bankLoans": "Bank Loans",
+  "existUser": "Existing User",
+  "phoneNumberInvalid": "Invalid phone number format. Use +959 followed by 9 digits.",
+  "invalidCredentials": "Invalid credentials",
+  "userNotFound": "User not found"
 }
 
    

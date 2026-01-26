@@ -64,8 +64,8 @@
   "animalHusbandry": "မွေးမြူရေးလမ်းညွှန်",
   "fishery": "ငါးလုပ်ငန်း",
   "aquacultureTips": "ငါးမွေးမြူရေးနည်းလမ်းများ",
-  "agriIndustry": "လယ်ယာသုံးစက်ကိရိယာများ",
-  "industrialTech": "နည်းပညာများ",
+  "agriIndustry": "စက်ကိရိယာများ",
+  "industrialTech": "စက်မှုနည်းပညာ",
   "toolsUtilities": "ကိရိယာများ",
   "agriCalculator": "စိုက်ပျိုးရေးတွက်ချက်စက်",
   "calculatorDesc": "သီးနှံအထွက်နှုန်း၊ မြေဩဇာလိုအပ်ချက်နှင့် အမြတ်အစွန်းများကို တွက်ချက်ပါ။",
@@ -159,6 +159,13 @@
   "marketRegion": "ဈေးကွက် တည်နေရာ",
   "marketDisclaimerText": "ဈေးနှုန်းများကို နေ့စဉ် အပ်ဒိတ်လုပ်ပါသည်။ လက်တွေ့ အရောင်းအဝယ်ဈေးနှုန်းများ အနည်းငယ် ကွာခြားနိုင်ပါသည်။",
   "viewAllItems": "ပစ္စည်း {count} ခုလုံးကို ကြည့်ရန်",
+  "@viewAllItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "enterEmailOrPhone": "သင့်အီးမေးလ် သို့မဟုတ် ဖုန်းနံပါတ်ကို ထည့်သွင်းပါ",
   "resetCodeSent": "စကားဝှက်ပြန်လည်သတ်မှတ်ရန် ကုဒ် ပေးပို့ပြီးပါပြီ",
   "failedToSendResetCode": "ကုဒ်ပေးပို့ခြင်း မအောင်မြင်ပါ - ",
@@ -177,6 +184,13 @@
   "failedToUpdatePassword": "စကားဝှက် ပြောင်းလဲခြင်း မအောင်မြင်ပါ - ",
   "verifyAndReset": "အတည်ပြုပြီး ပြန်လည်သတ်မှတ်မည်",
   "verifyAndResetSubtitle": "{identifier} သို့ ပေးပို့ထားသော ကုဒ်ကို ထည့်သွင်းပြီး စကားဝှက်အသစ် သတ်မှတ်ပါ။",
+  "@verifyAndResetSubtitle": {
+      "placeholders": {
+          "identifier": {
+              "type": "String"
+          }
+      }
+  },
   "verificationCode": "အတည်ပြု ကုဒ်",
   "resendCode": "ကုဒ် ထပ်မံပေးပို့ရန်",
   "enterSixDigitCodeSubtitle": "သင့်ဖုန်းသို့ ပေးပို့ထားသော ဂဏန်း ၆ လုံးပါ ကုဒ်ကို ထည့်သွင်းပါ။",
@@ -243,5 +257,14 @@
   "commonCancel": "မလုပ်တော့",
   "delete": "ဖျက်မည်",
   "postEdit": "ပိုစ့်ကို ပြင်မည်",
-  "postDelete": "ပိုစ့်ကို ဖျက်မည်"
+  "postDelete": "ပိုစ့်ကို ဖျက်မည်",
+  "loans": "ချေးငွေများ",
+  "loanServices": "ဘဏ်များ၏ စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာချေးငွေများ",
+  "agrometBulletin": "စိုက်ပျိုးရေး မိုးလေဝသ",
+  "agrometInfo": "စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာ မိုးလေဝသ အချက်အလက်များ",
+  "bankLoans": "ဘဏ်ချေးငွေများ",
+  "existUser": "အကောင့်ရှိပြီးသား အသုံးပြုသူ",
+  "phoneNumberInvalid": "ဖုန်းနံပါတ် ပုံစံ မမှန်ကန်ပါ။ +959 နှင့် နံပါတ် ၉ လုံးပါ နောက်ဆက်တွဲကို အသုံးပြုပါ။",
+  "invalidCredentials": "အကောင့်အချက်အလက် မမှန်ကန်ပါ",
+  "userNotFound": "အသုံးပြုသူ မတွေ့ရှိပါ"
 }

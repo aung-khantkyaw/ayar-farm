@@ -207,10 +207,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aquacultureTips => 'Aquaculture tips';
 
   @override
-  String get agriIndustry => 'Agri Industry';
+  String get agriIndustry => 'Industry';
 
   @override
-  String get industrialTech => 'Industrial tech';
+  String get industrialTech => 'Industrial Tech';
 
   @override
   String get toolsUtilities => 'Tools & Utilities';
@@ -754,4 +754,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get postDelete => 'Delete Post';
+
+  @override
+  String get loans => 'Loans';
+
+  @override
+  String get loanServices => 'Access agricultural loans from banks';
+
+  @override
+  String get agrometBulletin => 'Agromet Bulletin';
+
+  @override
+  String get agrometInfo => 'Get latest agricultural meteorological updates';
+
+  @override
+  String get bankLoans => 'Bank Loans';
+
+  @override
+  String get existUser => 'Existing User';
+
+  @override
+  String get phoneNumberInvalid =>
+      'Invalid phone number format. Use +959 followed by 9 digits.';
+
+  @override
+  String get invalidCredentials => 'Invalid credentials';
+
+  @override
+  String get userNotFound => 'User not found';
 }

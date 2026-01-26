@@ -491,13 +491,13 @@ abstract class AppLocalizations {
   /// No description provided for @agriIndustry.
   ///
   /// In en, this message translates to:
-  /// **'Agri Industry'**
+  /// **'Industry'**
   String get agriIndustry;
 
   /// No description provided for @industrialTech.
   ///
   /// In en, this message translates to:
-  /// **'Industrial tech'**
+  /// **'Industrial Tech'**
   String get industrialTech;
 
   /// No description provided for @toolsUtilities.
@@ -1567,6 +1567,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Post'**
   String get postDelete;
+
+  /// No description provided for @loans.
+  ///
+  /// In en, this message translates to:
+  /// **'Loans'**
+  String get loans;
+
+  /// No description provided for @loanServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Access agricultural loans from banks'**
+  String get loanServices;
+
+  /// No description provided for @agrometBulletin.
+  ///
+  /// In en, this message translates to:
+  /// **'Agromet Bulletin'**
+  String get agrometBulletin;
+
+  /// No description provided for @agrometInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Get latest agricultural meteorological updates'**
+  String get agrometInfo;
+
+  /// No description provided for @bankLoans.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Loans'**
+  String get bankLoans;
+
+  /// No description provided for @existUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing User'**
+  String get existUser;
+
+  /// No description provided for @phoneNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid phone number format. Use +959 followed by 9 digits.'**
+  String get phoneNumberInvalid;
+
+  /// No description provided for @invalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid credentials'**
+  String get invalidCredentials;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'User not found'**
+  String get userNotFound;
 }
 
 class _AppLocalizationsDelegate

@@ -8,6 +8,7 @@ import 'crop_type_screen.dart';
 import 'livestock_screen.dart';
 import 'fish_screen.dart';
 import 'machine_type_screen.dart';
+import 'document_screen.dart';
 
 class CategoryScreen extends StatelessWidget {
   const CategoryScreen({super.key});
@@ -114,6 +115,39 @@ class CategoryScreen extends StatelessWidget {
                           () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => const MachineTypeScreen(),
+                            ),
+                          ),
+                    ),
+                    _buildKnowledgeCard(
+                      AppLocalizations.of(context)!.loans,
+                      AppLocalizations.of(context)!.loanServices,
+                      'https://res.cloudinary.com/dqr9p7iem/image/upload/v1769448501/images_2_ouiigh.jpg',
+                      surfaceColor,
+                      textMainColor,
+                      textSubColor,
+                      onTap:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const DocumentScreen(type: 'loan'),
+                            ),
+                          ),
+                    ),
+                    _buildKnowledgeCard(
+                      AppLocalizations.of(context)!.agrometBulletin,
+                      AppLocalizations.of(context)!.agrometInfo,
+                      'https://res.cloudinary.com/dqr9p7iem/image/upload/v1769448334/images_1_naznjq.jpg',
+                      surfaceColor,
+                      textMainColor,
+                      textSubColor,
+                      onTap:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const DocumentScreen(
+                                    type: 'agromet_bulletin',
+                                  ),
                             ),
                           ),
                     ),

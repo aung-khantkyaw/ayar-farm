@@ -207,10 +207,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get aquacultureTips => 'ငါးမွေးမြူရေးနည်းလမ်းများ';
 
   @override
-  String get agriIndustry => 'လယ်ယာသုံးစက်ကိရိယာများ';
+  String get agriIndustry => 'စက်ကိရိယာများ';
 
   @override
-  String get industrialTech => 'နည်းပညာများ';
+  String get industrialTech => 'စက်မှုနည်းပညာ';
 
   @override
   String get toolsUtilities => 'ကိရိယာများ';
@@ -768,4 +768,33 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get postDelete => 'ပိုစ့်ကို ဖျက်မည်';
+
+  @override
+  String get loans => 'ချေးငွေများ';
+
+  @override
+  String get loanServices => 'ဘဏ်များ၏ စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာချေးငွေများ';
+
+  @override
+  String get agrometBulletin => 'စိုက်ပျိုးရေး မိုးလေဝသ';
+
+  @override
+  String get agrometInfo =>
+      'စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာ မိုးလေဝသ အချက်အလက်များ';
+
+  @override
+  String get bankLoans => 'ဘဏ်ချေးငွေများ';
+
+  @override
+  String get existUser => 'အကောင့်ရှိပြီးသား အသုံးပြုသူ';
+
+  @override
+  String get phoneNumberInvalid =>
+      'ဖုန်းနံပါတ် ပုံစံ မမှန်ကန်ပါ။ +959 နှင့် နံပါတ် ၉ လုံးပါ နောက်ဆက်တွဲကို အသုံးပြုပါ။';
+
+  @override
+  String get invalidCredentials => 'အကောင့်အချက်အလက် မမှန်ကန်ပါ';
+
+  @override
+  String get userNotFound => 'အသုံးပြုသူ မတွေ့ရှိပါ';
 }

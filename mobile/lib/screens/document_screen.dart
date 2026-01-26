@@ -26,10 +26,20 @@ class _DocumentScreenState extends State<DocumentScreen> {
 
   Future<void> _fetchDocuments() async {
     try {
-      final queryParams = {'type': widget.type};
-      if (widget.type_id != null) {
-        queryParams['type_id'] = widget.type_id!;
+      final queryParams = <String, String>{};
+
+      // Handle special document types with boolean flags
+      if (widget.type == 'loan') {
+        queryParams['loan'] = 'true';
+      } else if (widget.type == 'agromet_bulletin') {
+        queryParams['agromet_bulletin'] = 'true';
+      } else {
+        queryParams['type'] = widget.type;
+        if (widget.type_id != null) {
+          queryParams['type_id'] = widget.type_id!;
+        }
       }
+
       final response = await ApiService.get(
         ApiConstants.documents,
         queryParams: queryParams,
@@ -61,6 +71,10 @@ class _DocumentScreenState extends State<DocumentScreen> {
         return AppLocalizations.of(context)!.livestockDocuments;
       case 'machine':
         return AppLocalizations.of(context)!.machineDocuments;
+      case 'loan':
+        return AppLocalizations.of(context)!.bankLoans;
+      case 'agromet_bulletin':
+        return AppLocalizations.of(context)!.agrometBulletin;
       default:
         return AppLocalizations.of(context)!.documents;
     }
