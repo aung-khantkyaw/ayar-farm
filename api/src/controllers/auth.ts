@@ -11,6 +11,7 @@ export class AuthController {
 
     public async register(req: Request, res: Response): Promise<void> {
         const { name, phone_number, email, password, user_type } = req.body;
+        const phoneRegex = /^\+959\d{9}$/;
 
         // Validate request data
         if (!name || !phone_number || !password || !user_type) {
@@ -19,9 +20,22 @@ export class AuthController {
         }
 
         // Check if user already exists
-        const existingUser = await prisma.users.findUnique({ where: { phone_number } });
+        const existingUser = await prisma.users.findFirst({
+            where: {
+                OR: [
+                    { phone_number },
+                    { email }
+                ]
+            },
+        });
+
         if (existingUser) {
             res.status(409).json({ message: 'User already exists' });
+            return;
+        }
+
+        if (!phoneRegex.test(phone_number)) {
+            res.status(400).json({ message: 'Invalid phone number format. Use +959 followed by 9 digits.' });
             return;
         }
 
