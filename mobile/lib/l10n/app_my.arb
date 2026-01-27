@@ -258,5 +258,10 @@
   "existUser": "အကောင့်ရှိပြီးသား အသုံးပြုသူ",
   "phoneNumberInvalid": "ဖုန်းနံပါတ် ပုံစံ မမှန်ကန်ပါ။ +959 နှင့် နံပါတ် ၉ လုံးပါ နောက်ဆက်တွဲကို အသုံးပြုပါ။",
   "invalidCredentials": "အကောင့်အချက်အလက် မမှန်ကန်ပါ",
-  "userNotFound": "အသုံးပြုသူ မတွေ့ရှိပါ"
+  "userNotFound": "အသုံးပြုသူ မတွေ့ရှိပါ",
+  "noPrivacyPolicyAvailable": "လုံခြုံရေးမူဝါဒ မရရှိနိုင်ပါ",
+  "noTermsOfServiceAvailable": "ဝန်ဆောင်မှုစည်းမျဉ်း မရရှိနိုင်ပါ",
+  "helpResources": "အကူအညီ အရင်းအမြစ်များ",
+  "noHelpResourcesAvailable": "အကူအညီ အရင်းအမြစ်များ မရရှိနိုင်ပါ",
+  "helpResource": "အကူအညီ အရင်းအမြစ်"
 }

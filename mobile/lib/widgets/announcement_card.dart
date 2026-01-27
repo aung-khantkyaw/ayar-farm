@@ -23,7 +23,6 @@ class AnnouncementCard extends StatelessWidget {
       case AnnouncementType.breakingNews:
         return Colors.red.shade100;
       case AnnouncementType.information:
-      default:
         return Colors.blue.shade50;
     }
   }
@@ -35,7 +34,6 @@ class AnnouncementCard extends StatelessWidget {
       case AnnouncementType.breakingNews:
         return Colors.red.shade700;
       case AnnouncementType.information:
-      default:
         return Colors.blue.shade700;
     }
   }

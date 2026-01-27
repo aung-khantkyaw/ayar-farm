@@ -63,7 +63,6 @@ class CommonSnackbar {
         );
         break;
       case SnackBarPosition.bottom:
-      default:
         margin = const EdgeInsets.all(16);
         break;
     }

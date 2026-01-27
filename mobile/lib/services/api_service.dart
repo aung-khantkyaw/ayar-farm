@@ -248,4 +248,14 @@ class ApiService {
 
     return jsonDecode(response.body);
   }
+
+  static Future<Map<String, dynamic>> getAppResources({String type = 'APPLICATION', bool isActive = true}) async {
+    final endpoint = '/resources/resources';
+    final queryParams = {
+      'type': type,
+      'isActive': isActive.toString(),
+    };
+
+    return await get(endpoint, queryParams: queryParams);
+  }
 }

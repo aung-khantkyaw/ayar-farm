@@ -284,7 +284,7 @@ class _CommonPostCardState extends State<CommonPostCard> {
     if (actor == null) return;
     if (widget.authorId == actor.id) return;
 
-    final message = '${actor.name ?? 'Someone'} reacted to your post.';
+    final message = '${actor.name} reacted to your post.';
     await NotificationService().sendRemote(
       userId: widget.authorId,
       message: message,

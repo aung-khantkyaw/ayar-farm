@@ -5,6 +5,9 @@ import '../main.dart';
 import '../services/auth_service.dart';
 import 'edit_profile_screen.dart';
 import 'profile_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'help_resource_screen.dart';
+import '../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,6 +17,49 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String _appVersion = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppVersion();
+  }
+
+  Future<void> _fetchAppVersion() async {
+    try {
+      final response = await ApiService.getAppResources();
+      final resourcesData = response['resources'];
+
+      if (resourcesData != null) {
+        String version = 'N/A';
+
+        // Handle both single object and array cases
+        if (resourcesData is Map<String, dynamic>) {
+          // Single resource object
+          version = resourcesData['version']?.toString() ?? 'N/A';
+        } else if (resourcesData is List && resourcesData.isNotEmpty) {
+          // Array of resources, get the first one
+          final firstResource = resourcesData[0];
+          if (firstResource is Map<String, dynamic>) {
+            version = firstResource['version']?.toString() ?? 'N/A';
+          }
+        }
+
+        setState(() {
+          _appVersion = version;
+        });
+      } else {
+        setState(() {
+          _appVersion = 'N/A';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _appVersion = 'Version unavailable';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -146,37 +192,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
-            _buildDivider(borderColor),
-            _buildListTile(
-              icon: Icons.lock_outline,
-              title: l10n.changePassword,
-              textColor: textColor,
-              iconBgColor: iconBgColor,
-              iconColor: iconColor,
-              onTap: () {},
-            ),
           ]),
 
           // Preferences Section
           _buildSectionHeader(l10n.preferencesSection, sectionHeaderColor),
           _buildSectionContainer(cardColor, borderColor, [
-            // _buildListTile(
-            //   icon: Icons.notifications_outlined,
-            //   title: l10n.pushNotifications,
-            //   textColor: textColor,
-            //   iconBgColor: iconBgColor,
-            //   iconColor: iconColor,
-            //   trailing: Switch(
-            //     value: _pushNotifications,
-            //     onChanged: (value) {
-            //       setState(() {
-            //         _pushNotifications = value;
-            //       });
-            //     },
-            //     activeColor: const Color(0xFF2BEE5B),
-            //   ),
-            // ),
-            // _buildDivider(borderColor),
             _buildListTile(
               icon: Icons.translate,
               title: l10n.language,
@@ -213,7 +233,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               textColor: textColor,
               iconBgColor: iconBgColor,
               iconColor: iconColor,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacyPolicyScreen(),
+                  ),
+                );
+              },
             ),
             _buildDivider(borderColor),
             _buildListTile(
@@ -222,16 +249,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               textColor: textColor,
               iconBgColor: iconBgColor,
               iconColor: iconColor,
-              onTap: () {},
-            ),
-            _buildDivider(borderColor),
-            _buildListTile(
-              icon: Icons.bug_report_outlined,
-              title: l10n.reportBug,
-              textColor: textColor,
-              iconBgColor: iconBgColor,
-              iconColor: iconColor,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HelpResourceScreen(),
+                  ),
+                );
+              },
             ),
           ]),
 
@@ -283,7 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Text(
-              'App Version 1.0.0',
+              'App Version $_appVersion',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),

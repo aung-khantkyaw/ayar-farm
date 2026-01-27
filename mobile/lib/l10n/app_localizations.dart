@@ -1615,6 +1615,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'User not found'**
   String get userNotFound;
+
+  /// No description provided for @noPrivacyPolicyAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No Privacy Policy available'**
+  String get noPrivacyPolicyAvailable;
+
+  /// No description provided for @noTermsOfServiceAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No Terms of Service available'**
+  String get noTermsOfServiceAvailable;
+
+  /// No description provided for @helpResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Resources'**
+  String get helpResources;
+
+  /// No description provided for @noHelpResourcesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No Help Resources available'**
+  String get noHelpResourcesAvailable;
+
+  /// No description provided for @helpResource.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Resource'**
+  String get helpResource;
 }
 
 class _AppLocalizationsDelegate

@@ -777,4 +777,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userNotFound => 'User not found';
+
+  @override
+  String get noPrivacyPolicyAvailable => 'No Privacy Policy available';
+
+  @override
+  String get noTermsOfServiceAvailable => 'No Terms of Service available';
+
+  @override
+  String get helpResources => 'Help Resources';
+
+  @override
+  String get noHelpResourcesAvailable => 'No Help Resources available';
+
+  @override
+  String get helpResource => 'Help Resource';
 }

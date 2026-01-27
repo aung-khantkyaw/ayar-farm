@@ -21,7 +21,7 @@ class AuthService {
     currentUser = user;
     ApiService.setToken(token);
     SocketService().connect(token, user);
-    await NotificationService().fetchForUser(user.id?.toString() ?? '');
+    await NotificationService().fetchForUser(user.id.toString());
 
     // Register device token if Firebase is initialized
     try {
@@ -42,7 +42,7 @@ class AuthService {
         currentUser = User.fromJson(jsonDecode(userData));
         SocketService().connect(token, currentUser!);
         await NotificationService().fetchForUser(
-          currentUser?.id?.toString() ?? '',
+          currentUser!.id.toString(),
         );
 
         // Register device token if Firebase is initialized

@@ -792,4 +792,19 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get userNotFound => 'အသုံးပြုသူ မတွေ့ရှိပါ';
+
+  @override
+  String get noPrivacyPolicyAvailable => 'လုံခြုံရေးမူဝါဒ မရရှိနိုင်ပါ';
+
+  @override
+  String get noTermsOfServiceAvailable => 'ဝန်ဆောင်မှုစည်းမျဉ်း မရရှိနိုင်ပါ';
+
+  @override
+  String get helpResources => 'အကူအညီ အရင်းအမြစ်များ';
+
+  @override
+  String get noHelpResourcesAvailable => 'အကူအညီ အရင်းအမြစ်များ မရရှိနိုင်ပါ';
+
+  @override
+  String get helpResource => 'အကူအညီ အရင်းအမြစ်';
 }

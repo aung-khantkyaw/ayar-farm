@@ -20,7 +20,6 @@ class CommonHeader extends StatelessWidget {
 
     // Colors
     const primaryColor = Color(0xFF2BEE5B);
-    const primaryContentColor = Color(0xFF052E11);
     final backgroundColor = isDark ? const Color(0xFF102215) : Colors.white;
     final textMainColor =
         isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111813);

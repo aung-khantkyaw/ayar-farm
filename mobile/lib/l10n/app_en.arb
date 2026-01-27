@@ -261,7 +261,12 @@
   "existUser": "Existing User",
   "phoneNumberInvalid": "Invalid phone number format. Use +959 followed by 9 digits.",
   "invalidCredentials": "Invalid credentials",
-  "userNotFound": "User not found"
+  "userNotFound": "User not found",
+  "noPrivacyPolicyAvailable": "No Privacy Policy available",
+  "noTermsOfServiceAvailable": "No Terms of Service available",
+  "helpResources": "Help Resources",
+  "noHelpResourcesAvailable": "No Help Resources available",
+  "helpResource": "Help Resource"
 }
 
    
