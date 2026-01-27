@@ -124,7 +124,7 @@ model Documents {
   livestock_id     String?
   machine_id       String?
   fish_id          String?
-  loan          Boolean       @default(false)
+  loan             Boolean       @default(false)
   agromet_bulletin Boolean       @default(false)
   size             Int?
   Crops            Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
@@ -384,6 +384,8 @@ enum ResourceType {
   AGROMET_BULLETIN
   VIDEO
   APPLICATION
+  PRIVACY_POLICY
+  HELP_RESOURCE
 }
 
 enum ConversationType {
