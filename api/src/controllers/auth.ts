@@ -25,12 +25,9 @@ export class AuthController {
         }
 
         // Check if user already exists
-        const existingUser = await prisma.users.findFirst({
+        const existingUser = await prisma.users.findUnique({
             where: {
-                OR: [
-                    { phone_number },
-                    { email }
-                ]
+                    phone_number
             },
         });
 
