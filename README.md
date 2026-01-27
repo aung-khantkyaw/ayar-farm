@@ -166,6 +166,9 @@ flutter build ios --release --dart-define=API_BASE_URL=https://ayarfarmlink-api.
 
 # To build APK with obfuscation and split per ABI
 flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info --dart-define=API_BASE_URL=https://ayarfarmlink-api.onrender.com/api
+
+# To build App Bundle for Play Store
+flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info --dart-define=API_BASE_URL=https://ayarfarmlink-api.onrender.com/api
 ```
 
 ## Environment Variables
