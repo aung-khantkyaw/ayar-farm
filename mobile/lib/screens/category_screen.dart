@@ -27,8 +27,6 @@ class CategoryScreen extends StatelessWidget {
         isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111813);
     final textSubColor =
         isDark ? const Color(0xFF8BA892) : const Color(0xFF61896B);
-    final borderColor =
-        isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB);
 
     return Column(
       children: [

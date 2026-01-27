@@ -1,4 +1,4 @@
-package com.example.ayar_farm
+package mm.ayar.farm.app
 
 import io.flutter.embedding.android.FlutterActivity
 

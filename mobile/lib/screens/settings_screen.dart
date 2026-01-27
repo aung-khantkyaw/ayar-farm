@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
-import '../services/api_service.dart';
-import '../services/socket_service.dart';
 import 'edit_profile_screen.dart';
 import 'profile_screen.dart';
 
@@ -16,8 +14,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _pushNotifications = true;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;

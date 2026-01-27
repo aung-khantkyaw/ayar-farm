@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:ayar_farm/widgets/common_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
-import 'package:collection/collection.dart';
 import '../models/chat_models.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -125,29 +128,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
-  Future<void> _refreshConversation() async {
-    try {
-      final updatedConversation = await _chatService.getConversation(
-        widget.conversation.id,
-      );
-      if (mounted) {
-        setState(() {
-          // Update the widget's conversation with fresh data
-          // Note: This won't actually update the widget.conversation field since it's final
-          // But we can trigger a rebuild by updating state
-        });
-      }
-    } catch (e) {
-      print('Error refreshing conversation: $e');
-    }
-  }
-
-  Future<void> _refreshOnGroupJoin() async {
-    // Refresh messages and conversation data when user joins a group
-    await _loadMessages();
-    await _refreshConversation();
-  }
-
   Future<void> _loadMessages() async {
     try {
       final messages = await _chatService.getMessages(widget.conversation.id);
@@ -234,10 +214,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return Text(conversation.name ?? "Group Chat");
     } else {
       // Look for the other participant (not the current user)
-      final otherParticipant = conversation.participants
-          .firstWhere(
-            (p) => p.userId != _currentUser?.id,
-            orElse: () => ConversationParticipant(
+      final otherParticipant = conversation.participants.firstWhere(
+        (p) => p.userId != _currentUser?.id,
+        orElse:
+            () => ConversationParticipant(
               id: '',
               conversationId: '',
               userId: '',
@@ -251,7 +231,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 userType: null,
               ),
             ),
-          );
+      );
 
       final displayName = otherParticipant.user?.name ?? "Chat";
 
@@ -259,18 +239,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         children: [
           if (otherParticipant.user?.profilePicture != null)
             CircleAvatar(
-              backgroundImage: NetworkImage(otherParticipant.user!.profilePicture!),
+              backgroundImage: NetworkImage(
+                otherParticipant.user!.profilePicture!,
+              ),
               radius: 16,
             )
           else
             CircleAvatar(child: Icon(Icons.person, size: 16), radius: 16),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              displayName,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Expanded(child: Text(displayName, overflow: TextOverflow.ellipsis)),
         ],
       );
     }
@@ -384,7 +361,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             if (user?.userType != null)
                               Text(
                                 userTypeLabels[user!.userType!] ??
-                                    user!.userType!,
+                                    user.userType!,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -434,7 +411,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -753,7 +729,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         borderRadius: BorderRadius.circular(8),
         child: _VideoPlayerWithController(
           videoUrl: _getVideoUrl(message),
-          key: ValueKey(message.id ?? message.fileUrl),
+          key: ValueKey(message.id),
         ),
       ),
     );
@@ -767,7 +743,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return videoUrl;
   }
 
-  void _downloadMediaFile(String fileUrl) {
+  Future<void> _downloadMediaFile(String fileUrl) async {
     // Determine if it's an image or video based on file extension
     String fullUrl = fileUrl;
     if (!fullUrl.startsWith('http')) {
@@ -790,6 +766,92 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       type: SnackBarType.info,
       position: SnackBarPosition.bottom,
     );
+
+    try {
+      // Request permissions
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.request();
+        if (status != PermissionStatus.granted) {
+          CommonSnackbar.show(
+            context,
+            message: 'Storage permission is required to download files',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+          return;
+        }
+      } else if (Platform.isIOS) {
+        var status = await Permission.photos.request();
+        if (status != PermissionStatus.granted) {
+          CommonSnackbar.show(
+            context,
+            message: 'Photos permission is required to save files',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+          return;
+        }
+      }
+
+      // Download the file
+      final response = await http.get(Uri.parse(fullUrl));
+      if (response.statusCode == 200) {
+        // Get the download directory
+        Directory? downloadDir;
+
+        if (Platform.isAndroid) {
+          // On Android, use the application's external storage directory
+          // This is accessible to the user and other apps
+          downloadDir = await getExternalStorageDirectory();
+          if (downloadDir != null) {
+            // Place in the app's external directory which is accessible to user
+            downloadDir = Directory('${downloadDir.path}/ayarfarm');
+          } else {
+            // Fallback to application documents directory if external storage is not available
+            downloadDir = await getApplicationDocumentsDirectory();
+          }
+        } else if (Platform.isIOS) {
+          // On iOS, use the documents directory
+          downloadDir = await getApplicationDocumentsDirectory();
+        } else {
+          // For other platforms, use application documents directory
+          downloadDir = await getApplicationDocumentsDirectory();
+        }
+
+        // Create ayarfarm subdirectory if it doesn't exist
+        if (!await downloadDir.exists()) {
+          await downloadDir.create(recursive: true);
+        }
+
+        // Create the file path
+        final filePath = '${downloadDir.path}/$fileName';
+        final file = File(filePath);
+
+        // Write the downloaded data to the file
+        await file.writeAsBytes(response.bodyBytes);
+
+        CommonSnackbar.show(
+          context,
+          message: 'Successfully downloaded $fileName to AyarFarm folder!',
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
+        );
+      } else {
+        CommonSnackbar.show(
+          context,
+          message: 'Failed to download file. Status: ${response.statusCode}',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
+        );
+      }
+    } catch (e) {
+      CommonSnackbar.show(
+        context,
+        message: 'Error downloading file: $e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
+      );
+    }
   }
 
   Widget _buildInputArea() {

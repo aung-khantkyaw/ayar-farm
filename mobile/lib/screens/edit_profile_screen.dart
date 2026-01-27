@@ -166,7 +166,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _loadUserData() {
     final user = AuthService.currentUser;
     if (user != null) {
-      _nameController.text = user.name ?? '';
+      _nameController.text = user.name;
       _phoneController.text = user.phoneNumber ?? '';
       _emailController.text = user.email ?? '';
       _addressController.text = user.location ?? '';

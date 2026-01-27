@@ -97,7 +97,6 @@ class _ChattingScreenState extends State<ChattingScreen> {
     super.dispose();
   }
 
-
   Future<void> _search(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -309,13 +308,14 @@ class _ChattingScreenState extends State<ChattingScreen> {
               return matchesFilter &&
                   (conv.name?.toLowerCase().contains(query) ?? false);
             } else {
-              final otherParticipants = conv.participants
-                  .where((p) => p.userId != _currentUserId)
-                  .toList();
+              final otherParticipants =
+                  conv.participants
+                      .where((p) => p.userId != _currentUserId)
+                      .toList();
               if (otherParticipants.isNotEmpty) {
                 final other = otherParticipants.first;
                 return matchesFilter &&
-                    (other.user?.name?.toLowerCase().contains(query) ?? false);
+                    (other.user?.name.toLowerCase().contains(query) ?? false);
               } else {
                 return false; // No other participant found
               }
@@ -423,290 +423,304 @@ class _ChattingScreenState extends State<ChattingScreen> {
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 100),
-                  child: _searchController.text.isNotEmpty
-                      ? Column(
-                        children: [
-                          if (_searchUsers.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                'Users',
-                                style: TextStyle(
-                                  color: textSubColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            ..._searchUsers.map(
-                              (user) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage:
-                                      user.profilePicture != null
-                                          ? NetworkImage(user.profilePicture!)
-                                          : null,
-                                  child:
-                                      user.profilePicture == null
-                                          ? const Icon(Icons.person)
-                                          : null,
-                                ),
-                                title: Text(
-                                  user.name,
-                                  style: TextStyle(color: textMainColor),
-                                ),
-                                subtitle: Text(
-                                  user.email ?? '',
-                                  style: TextStyle(color: textSubColor),
-                                ),
-                                onTap: () => _startDirectChat(user),
-                              ),
-                            ),
-                          ],
-                          if (_searchGroups.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                'Groups',
-                                style: TextStyle(
-                                  color: textSubColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            ..._searchGroups.map(
-                              (group) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage:
-                                      group.imageUrl != null
-                                          ? NetworkImage(group.imageUrl!)
-                                          : null,
-                                  child:
-                                      group.imageUrl == null
-                                          ? const Icon(Icons.group)
-                                          : null,
-                                ),
-                                title: Text(
-                                  group.name ?? 'Group',
-                                  style: TextStyle(color: textMainColor),
-                                ),
-                                subtitle: Text(
-                                  '${group.participants.length} members',
-                                  style: TextStyle(color: textSubColor),
-                                ),
-                                onTap: () => _showGroupInfo(group),
-                              ),
-                            ),
-                          ],
-                          if (_searchUsers.isEmpty && _searchGroups.isEmpty)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Text(
-                                  'No results found',
-                                  style: TextStyle(color: textSubColor),
-                                ),
-                              ),
-                            ),
-                        ],
-                      )
-                      : _isLoading
-                      ? const Padding(
-                        padding: EdgeInsets.only(top: 50, bottom: 50),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                      : filteredConversations.isEmpty
-                      ? const Padding(
-                        padding: EdgeInsets.only(top: 50, bottom: 50),
-                        child: Center(
-                          child: Text(
-                            "No conversations yet",
-                          ),
-                        ),
-                      )
-                      : Column(
-                        children: List.generate(filteredConversations.length, (index) {
-                          final conversation = filteredConversations[index];
-                          String title = "Chat";
-                          String imageUrl = "";
-
-                          if (conversation.type == ConversationType.GROUP) {
-                            title = conversation.name ?? "Group";
-                            imageUrl = conversation.imageUrl ?? "";
-                          } else {
-                            // In a direct conversation, based on the API response,
-                            // the participants array contains the other user (not the current user)
-                            // So we can just get the first participant (which should be the other user)
-                            if (conversation.participants.isNotEmpty) {
-                              final otherParticipant = conversation.participants.first;
-                              final otherUser = otherParticipant.user;
-
-                              // Check if the user object is properly loaded
-                              if (otherUser != null && otherUser.name != null && otherUser.name!.isNotEmpty) {
-                                title = otherUser.name!;
-                                imageUrl = otherUser.profilePicture ?? "";
-                              } else {
-                                // If user object is not loaded, use a fallback name
-                                title = "Unknown User";
-                              }
-                            } else {
-                              // This shouldn't happen in a direct conversation, but just in case
-                              title = "Unknown User";
-                            }
-                          }
-
-                          String time = "";
-                          if (conversation.lastMessageTime != null) {
-                            final now = DateTime.now();
-                            final diff = now.difference(
-                              conversation.lastMessageTime!,
-                            );
-                            if (diff.inDays == 0) {
-                              time = DateFormat(
-                                'HH:mm',
-                              ).format(conversation.lastMessageTime!.toLocal());
-                            } else if (diff.inDays < 7) {
-                              time = DateFormat(
-                                'E',
-                              ).format(conversation.lastMessageTime!.toLocal());
-                            } else {
-                              time = DateFormat(
-                                'MM/dd',
-                              ).format(conversation.lastMessageTime!.toLocal());
-                            }
-                          }
-
-                          return GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) =>
-                                          conversation.type ==
-                                                  ConversationType.GROUP
-                                              ? GroupChatScreen(
-                                                conversation: conversation,
-                                              )
-                                              : DirectChatScreen(
-                                                conversation: conversation,
-                                              ),
-                                ),
-                              );
-                              _loadConversations();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: borderColor,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 24,
-                                    backgroundColor: surfaceHighlightColor,
-                                    backgroundImage:
-                                        imageUrl.isNotEmpty
-                                            ? NetworkImage(imageUrl)
-                                            : null,
-                                    child:
-                                        imageUrl.isEmpty
-                                            ? Icon(
-                                              conversation.type ==
-                                                      ConversationType.GROUP
-                                                  ? Icons.group
-                                                  : Icons.person,
-                                              color: textSubColor,
-                                            )
-                                            : null,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                title,
-                                                style: TextStyle(
-                                                  color: textMainColor,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            Text(
-                                              time,
-                                              style: TextStyle(
-                                                color: textSubColor,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                conversation.lastMessage ??
-                                                    "No messages yet",
-                                                style: TextStyle(
-                                                  color: textSubColor,
-                                                  fontSize: 14,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            if (conversation.unreadCount > 0)
-                                              Container(
-                                                margin: const EdgeInsets.only(
-                                                  left: 8,
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: primaryColor,
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                child: Text(
-                                                  conversation.unreadCount > 99
-                                                      ? '99+'
-                                                      : conversation.unreadCount
-                                                          .toString(),
-                                                  style: const TextStyle(
-                                                    color: primaryContentColor,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
+                  child:
+                      _searchController.text.isNotEmpty
+                          ? Column(
+                            children: [
+                              if (_searchUsers.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    'Users',
+                                    style: TextStyle(
+                                      color: textSubColor,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                                ),
+                                ..._searchUsers.map(
+                                  (user) => ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage:
+                                          user.profilePicture != null
+                                              ? NetworkImage(
+                                                user.profilePicture!,
+                                              )
+                                              : null,
+                                      child:
+                                          user.profilePicture == null
+                                              ? const Icon(Icons.person)
+                                              : null,
+                                    ),
+                                    title: Text(
+                                      user.name,
+                                      style: TextStyle(color: textMainColor),
+                                    ),
+                                    subtitle: Text(
+                                      user.email ?? '',
+                                      style: TextStyle(color: textSubColor),
+                                    ),
+                                    onTap: () => _startDirectChat(user),
+                                  ),
+                                ),
+                              ],
+                              if (_searchGroups.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    'Groups',
+                                    style: TextStyle(
+                                      color: textSubColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                ..._searchGroups.map(
+                                  (group) => ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage:
+                                          group.imageUrl != null
+                                              ? NetworkImage(group.imageUrl!)
+                                              : null,
+                                      child:
+                                          group.imageUrl == null
+                                              ? const Icon(Icons.group)
+                                              : null,
+                                    ),
+                                    title: Text(
+                                      group.name ?? 'Group',
+                                      style: TextStyle(color: textMainColor),
+                                    ),
+                                    subtitle: Text(
+                                      '${group.participants.length} members',
+                                      style: TextStyle(color: textSubColor),
+                                    ),
+                                    onTap: () => _showGroupInfo(group),
+                                  ),
+                                ),
+                              ],
+                              if (_searchUsers.isEmpty && _searchGroups.isEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Text(
+                                      'No results found',
+                                      style: TextStyle(color: textSubColor),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          )
+                          : _isLoading
+                          ? const Padding(
+                            padding: EdgeInsets.only(top: 50, bottom: 50),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                          : filteredConversations.isEmpty
+                          ? const Padding(
+                            padding: EdgeInsets.only(top: 50, bottom: 50),
+                            child: Center(child: Text("No conversations yet")),
+                          )
+                          : Column(
+                            children: List.generate(filteredConversations.length, (
+                              index,
+                            ) {
+                              final conversation = filteredConversations[index];
+                              String title = "Chat";
+                              String imageUrl = "";
+
+                              if (conversation.type == ConversationType.GROUP) {
+                                title = conversation.name ?? "Group";
+                                imageUrl = conversation.imageUrl ?? "";
+                              } else {
+                                // In a direct conversation, based on the API response,
+                                // the participants array contains the other user (not the current user)
+                                // So we can just get the first participant (which should be the other user)
+                                if (conversation.participants.isNotEmpty) {
+                                  final otherParticipant =
+                                      conversation.participants.first;
+                                  final otherUser = otherParticipant.user;
+
+                                  // Check if the user object is properly loaded
+                                  if (otherUser != null &&
+                                      otherUser.name.isNotEmpty) {
+                                    title = otherUser.name;
+                                    imageUrl = otherUser.profilePicture ?? "";
+                                  } else {
+                                    // If user object is not loaded, use a fallback name
+                                    title = "Unknown User";
+                                  }
+                                } else {
+                                  // This shouldn't happen in a direct conversation, but just in case
+                                  title = "Unknown User";
+                                }
+                              }
+
+                              String time = "";
+                              if (conversation.lastMessageTime != null) {
+                                final now = DateTime.now();
+                                final diff = now.difference(
+                                  conversation.lastMessageTime!,
+                                );
+                                if (diff.inDays == 0) {
+                                  time = DateFormat('HH:mm').format(
+                                    conversation.lastMessageTime!.toLocal(),
+                                  );
+                                } else if (diff.inDays < 7) {
+                                  time = DateFormat('E').format(
+                                    conversation.lastMessageTime!.toLocal(),
+                                  );
+                                } else {
+                                  time = DateFormat('MM/dd').format(
+                                    conversation.lastMessageTime!.toLocal(),
+                                  );
+                                }
+                              }
+
+                              return GestureDetector(
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) =>
+                                              conversation.type ==
+                                                      ConversationType.GROUP
+                                                  ? GroupChatScreen(
+                                                    conversation: conversation,
+                                                  )
+                                                  : DirectChatScreen(
+                                                    conversation: conversation,
+                                                  ),
+                                    ),
+                                  );
+                                  _loadConversations();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: borderColor,
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: surfaceHighlightColor,
+                                        backgroundImage:
+                                            imageUrl.isNotEmpty
+                                                ? NetworkImage(imageUrl)
+                                                : null,
+                                        child:
+                                            imageUrl.isEmpty
+                                                ? Icon(
+                                                  conversation.type ==
+                                                          ConversationType.GROUP
+                                                      ? Icons.group
+                                                      : Icons.person,
+                                                  color: textSubColor,
+                                                )
+                                                : null,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    title,
+                                                    style: TextStyle(
+                                                      color: textMainColor,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  time,
+                                                  style: TextStyle(
+                                                    color: textSubColor,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    conversation.lastMessage ??
+                                                        "No messages yet",
+                                                    style: TextStyle(
+                                                      color: textSubColor,
+                                                      fontSize: 14,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (conversation.unreadCount >
+                                                    0)
+                                                  Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          left: 8,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 2,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: primaryColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      conversation.unreadCount >
+                                                              99
+                                                          ? '99+'
+                                                          : conversation
+                                                              .unreadCount
+                                                              .toString(),
+                                                      style: const TextStyle(
+                                                        color:
+                                                            primaryContentColor,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
                 ),
               ),
             ),

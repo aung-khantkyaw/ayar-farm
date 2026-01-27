@@ -56,7 +56,7 @@ class _PostScreenState extends State<PostScreen> {
       if (!mounted) return;
       final reactions = (data['reactions'] as List?) ?? [];
       final counts = (data['_count'] ?? {}) as Map;
-      final currentUserId = AuthService.currentUser?.id?.toString();
+      final currentUserId = AuthService.currentUser?.id.toString();
       String? reactionType;
       bool reacted = false;
 
@@ -231,7 +231,7 @@ class _PostScreenState extends State<PostScreen> {
             ?.toString();
     if (authorId == null || authorId == actor.id) return;
 
-    final message = '${actor.name ?? 'Someone'} reacted to your post.';
+    final message = '${actor.name} reacted to your post.';
     await NotificationService().sendRemote(
       userId: authorId,
       message: message,
@@ -274,8 +274,8 @@ class _PostScreenState extends State<PostScreen> {
 
     final message =
         type == 'reply'
-            ? '${actor.name ?? 'Someone'} replied to your comment.'
-            : '${actor.name ?? 'Someone'} commented on your post.';
+            ? '${actor.name} replied to your comment.'
+            : '${actor.name} commented on your post.';
 
     await NotificationService().sendRemote(
       userId: targetId,
@@ -475,7 +475,7 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   bool _isCurrentUserComment(Map c) {
-    final currentUserId = AuthService.currentUser?.id?.toString();
+    final currentUserId = AuthService.currentUser?.id.toString();
     if (currentUserId == null) return false;
     final authorId =
         (c['author']?['id'] ?? c['authorId'] ?? c['author_id'])?.toString();
@@ -1001,7 +1001,7 @@ class _PostScreenState extends State<PostScreen> {
     if (!mounted) return;
     setState(() {
       final isCurrentUser =
-          userId != null && userId == AuthService.currentUser?.id?.toString();
+          userId != null && userId == AuthService.currentUser?.id.toString();
       if (action == 'added') {
         // Avoid double-counting for the actor; local optimistic update already handled.
         if (!isCurrentUser) {
@@ -1038,7 +1038,7 @@ class _PostScreenState extends State<PostScreen> {
                 comment['author_id'])
             ?.toString();
     if (authorId != null &&
-        authorId == AuthService.currentUser?.id?.toString()) {
+        authorId == AuthService.currentUser?.id.toString()) {
       // Already applied locally when posting; skip to avoid double count.
       return;
     }
@@ -1084,7 +1084,7 @@ class _PostScreenState extends State<PostScreen> {
   void _handlePostCommentDeletedEvent(dynamic data) {
     if (data == null || data['postId']?.toString() != widget.postId) return;
     final userId = data['userId']?.toString();
-    if (userId != null && userId == AuthService.currentUser?.id?.toString()) {
+    if (userId != null && userId == AuthService.currentUser?.id.toString()) {
       // Local delete already adjusted counts.
       return;
     }
@@ -1107,7 +1107,7 @@ class _PostScreenState extends State<PostScreen> {
     final action = data['action']?.toString();
     final reactionType = data['reactionType']?.toString();
     final userId = data['userId']?.toString();
-    if (userId != null && userId == AuthService.currentUser?.id?.toString()) {
+    if (userId != null && userId == AuthService.currentUser?.id.toString()) {
       // Local optimistic update already handled.
       return;
     }
@@ -1243,10 +1243,8 @@ class _PostScreenState extends State<PostScreen> {
                     child: Text(
                       post != null
                           ? (post!['author']?['name'] as String? ??
-                              AppLocalizations.of(context)!.unknown ??
-                              'Unknown')
-                          : (AppLocalizations.of(context)!.loadingAuthor ??
-                              'Loading Author...'),
+                              AppLocalizations.of(context)!.unknown)
+                          : (AppLocalizations.of(context)!.loadingAuthor),
                       style: TextStyle(
                         color: textMainColor,
                         fontSize: 18,
@@ -1435,8 +1433,7 @@ class _PostScreenState extends State<PostScreen> {
                                       .toList())
                                 else
                                   Text(
-                                    AppLocalizations.of(context)!.noComments ??
-                                        'No comments yet',
+                                    AppLocalizations.of(context)!.noComments,
                                   ),
                               ],
                             ],
@@ -1524,9 +1521,8 @@ class _PostScreenState extends State<PostScreen> {
                                               : _replyToName != null
                                               ? "Replying to $_replyToName"
                                               : AppLocalizations.of(
-                                                    context,
-                                                  )!.writeComment ??
-                                                  'Write a comment...',
+                                                context,
+                                              )!.writeComment,
                                       border: InputBorder.none,
                                     ),
                                   ),

@@ -7,7 +7,8 @@ class ApiConstants {
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       // Android emulator cannot reach host's localhost; 10.0.2.2 points to host.
-      return 'https://ayarfarmlink-api.onrender.com/api';
+      // return 'https://ayarfarmlink-api.onrender.com/api';
+      return 'http://10.0.2.2:3000/api';
     }
 
     return 'http://localhost:3000/api';

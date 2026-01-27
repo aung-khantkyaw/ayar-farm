@@ -65,7 +65,6 @@ class _CropTypeScreenState extends State<CropTypeScreen> {
 
     // Colors from HTML design
     const primaryColor = Color(0xFF2BEE5B);
-    const primaryContentColor = Color(0xFF052E11);
     final surfaceColor =
         isDark ? const Color(0xFF1A2C1E) : const Color(0xFFFFFFFF);
     final textMainColor =

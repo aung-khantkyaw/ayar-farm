@@ -77,7 +77,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     // Colors from HTML design
     const primaryColor = Color(0xFF2BEE5B);
-    const primaryDarkColor = Color(0xFF25D552);
     final backgroundColor =
         isDark ? const Color(0xFF102215) : const Color(0xFFF6F8F6);
     final surfaceColor = isDark ? const Color(0xFF1C3022) : Colors.white;

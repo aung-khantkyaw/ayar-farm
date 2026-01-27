@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             position: SnackBarPosition.bottom,
             type: SnackBarType.error,
-            message: response.message ?? AppLocalizations.of(context)!.unknown,
+            message: response.message,
           );
         }
       }

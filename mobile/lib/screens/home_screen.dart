@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../constants/api_constants.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';

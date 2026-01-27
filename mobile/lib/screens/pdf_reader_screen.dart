@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ayar_farm/l10n/app_localizations.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class PdfReaderScreen extends StatelessWidget {

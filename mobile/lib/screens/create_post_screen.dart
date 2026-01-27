@@ -60,7 +60,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   // Colors from HTML
   static const _primaryColor = Color(0xFF2BEE5B);
-  static const _bgLight = Color(0xFFF6F8F6);
   // HTML body bg is #102215, but main content is #1a2e1f in dark mode
   static const _bgDarkContent = Color(0xFF1A2E1F);
   static const _textLight = Color(0xFF111813);
@@ -852,56 +851,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double radius;
-
-  _DashedBorderPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.radius,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = strokeWidth
-          ..style = PaintingStyle.stroke;
-
-    final path =
-        Path()..addRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            Radius.circular(radius),
-          ),
-        );
-
-    // Simple dashed effect implementation
-    final dashPath = Path();
-    double dashWidth = 8.0;
-    double dashSpace = 4.0;
-    double distance = 0.0;
-
-    for (PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) {
-        dashPath.addPath(
-          pathMetric.extractPath(distance, distance + dashWidth),
-          Offset.zero,
-        );
-        distance += dashWidth + dashSpace;
-      }
-    }
-
-    canvas.drawPath(dashPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 enum AttachmentType { image, video, document }

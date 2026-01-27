@@ -85,8 +85,6 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _showGroupInfo(Conversation group) async {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textMainColor =
-        isDark ? const Color(0xFFE1E6E2) : const Color(0xFF111813);
     final textSubColor =
         isDark ? const Color(0xFF8BA892) : const Color(0xFF61896B);
 
@@ -177,14 +175,10 @@ class _SearchScreenState extends State<SearchScreen> {
         isDark ? const Color(0xFF102215) : const Color(0xFFF6F8F6);
     final surfaceColor =
         isDark ? const Color(0xFF102215) : const Color(0xFFFFFFFF);
-    final surfaceHighlightColor =
-        isDark ? const Color(0xFF1E3626) : const Color(0xFFF0F4F1);
     final textMainColor =
         isDark ? const Color(0xFFE1E6E2) : const Color(0xFF111813);
     final textSubColor =
         isDark ? const Color(0xFF8BA892) : const Color(0xFF61896B);
-    final borderColor =
-        isDark ? const Color(0xFF1E3626) : const Color(0xFFF9FAFB);
 
     return Scaffold(
       backgroundColor: backgroundColor,

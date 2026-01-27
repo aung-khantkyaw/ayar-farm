@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../widgets/common_bottom_nav.dart';
 import 'home_screen.dart';
 import 'category_navigator.dart';
@@ -8,7 +7,6 @@ import 'settings_screen.dart';
 import '../services/socket_service.dart';
 import '../services/notification_service.dart';
 import '../models/chat_models.dart';
-import 'chat_room_screen.dart';
 import '../services/auth_service.dart';
 
 class MainScreen extends StatefulWidget {

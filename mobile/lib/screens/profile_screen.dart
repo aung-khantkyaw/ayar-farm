@@ -818,7 +818,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onProfileTap: () {
                             // If we are already on this user's profile, maybe avoid pushing?
                             // But checking that is complex. Pushing new instance is safe.
-                            if (user?.id != post.author.id) {
+                            if (user.id != post.author.id) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
