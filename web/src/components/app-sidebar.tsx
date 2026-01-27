@@ -15,6 +15,7 @@ import {
   IconNews,
   IconBuildingBank,
   IconSpeakerphone,
+  IconFileSettings
 } from "@tabler/icons-react";
 
 import { NavCategories } from "@/components/nav-category";
@@ -64,6 +65,11 @@ const data = {
       name: "Announcements",
       url: "/admin/announcements",
       icon: IconSpeakerphone,
+    },
+    {
+      name: "Documents",
+      url: "/admin/system-documents",
+      icon: IconFileSettings,
     },
   ],
   resources: [

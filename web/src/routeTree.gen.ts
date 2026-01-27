@@ -28,6 +28,7 @@ import { Route as AuthSuccessRouteImport } from './routes/auth.success'
 import { Route as AuthErrorRouteImport } from './routes/auth.error'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSystemDocumentsRouteImport } from './routes/admin.system-documents'
 import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
 
@@ -127,6 +128,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSystemDocumentsRoute = AdminSystemDocumentsRouteImport.update({
+  id: '/admin/system-documents',
+  path: '/admin/system-documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminChatRoomRoute = AdminChatRoomRouteImport.update({
   id: '/admin/chat-room',
   path: '/admin/chat-room',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
+  '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
+  '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/chat-room': typeof AdminChatRoomRoute
+  '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/announcements'
     | '/admin/chat-room'
+    | '/admin/system-documents'
     | '/admin/users'
     | '/auth/confirm'
     | '/auth/error'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/announcements'
     | '/admin/chat-room'
+    | '/admin/system-documents'
     | '/admin/users'
     | '/auth/confirm'
     | '/auth/error'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/announcements'
     | '/admin/chat-room'
+    | '/admin/system-documents'
     | '/admin/users'
     | '/auth/confirm'
     | '/auth/error'
@@ -289,6 +301,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminChatRoomRoute: typeof AdminChatRoomRoute
+  AdminSystemDocumentsRoute: typeof AdminSystemDocumentsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   AuthErrorRoute: typeof AuthErrorRoute
@@ -439,6 +452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/system-documents': {
+      id: '/admin/system-documents'
+      path: '/admin/system-documents'
+      fullPath: '/admin/system-documents'
+      preLoaderRoute: typeof AdminSystemDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/chat-room': {
       id: '/admin/chat-room'
       path: '/admin/chat-room'
@@ -465,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminChatRoomRoute: AdminChatRoomRoute,
+  AdminSystemDocumentsRoute: AdminSystemDocumentsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   AuthErrorRoute: AuthErrorRoute,

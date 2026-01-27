@@ -202,3 +202,22 @@ export interface ActiveVideo {
   created_at: string;
   updated_at: string;
 }
+
+export interface Resource {
+  id: string;
+  type: "PRIVACY_POLICY" | "HELP_RESOURCE";
+  title: string;
+  description?: string;
+  author?: string;
+  resource_url: string[];
+  image_url?: string[];
+  filename?: string;
+  size?: number;
+  version?: string;
+  platform?: string;
+  download_count?: number;
+  is_active: boolean;
+  uploaded_at: string;
+  created_at: string;
+  updated_at: string;
+}
