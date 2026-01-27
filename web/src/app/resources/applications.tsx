@@ -156,7 +156,11 @@ function ApplicationManagement() {
     uploadData.append("resource", selectedFile);
     uploadData.append("title", formData.title);
     uploadData.append("description", formData.description);
-    uploadData.append("author", user?.id);
+    if (user?.id) {
+      uploadData.append("author", user.id);
+    } else {
+      uploadData.append("author", ""); // or some default value if needed
+    }
     uploadData.append("version", formData.version || "1.0.0");
     uploadData.append("platform", formData.platform);
     uploadData.append("type", "APPLICATION");

@@ -101,7 +101,11 @@ function VideoManagement() {
     const formData = new FormData();
     formData.append("resource", uploadForm.video);
     formData.append("title", uploadForm.title);
-    formData.append("author", user?.id);
+    if (user?.id) {
+      formData.append("author", user.id);
+    } else {
+      formData.append("author", ""); // or some default value if needed
+    }
     formData.append("description", uploadForm.description);
     formData.append("type", "VIDEO");
 

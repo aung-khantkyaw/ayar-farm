@@ -116,9 +116,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
 
   const authUser = {
-    name: user.name || "Unknown User",
-    email: user.email || "No Email",
-    avatar: user.profile_picture || "",
+    name: user?.name || "Unknown User",
+    email: user?.email || "No Email",
+    avatar: user?.profile_picture || "",
   };
 
   return (
