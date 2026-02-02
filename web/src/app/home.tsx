@@ -148,10 +148,6 @@ const HomePage = () => {
                   <div className="text-2xl font-bold text-[#53B154]">4.9★</div>
                   <div className="text-sm text-gray-500">App Rating</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[#53B154]">100+</div>
-                  <div className="text-sm text-gray-500">Countries</div>
-                </div>
               </div>
             </div>
 
@@ -301,7 +297,7 @@ const HomePage = () => {
       </section>
 
       {/* Testimonials Section - Updated */}
-      <section className="py-20 bg-gradient-to-br from-[#f8fffe] to-[#f0f9ff]">
+      {/* <section className="py-20 bg-gradient-to-br from-[#f8fffe] to-[#f0f9ff]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 space-y-4">
             <Badge className="bg-[#53B154]/10 text-[#53B154] border-[#53B154]/20">
@@ -372,7 +368,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section - Enhanced */}
       <section className="py-20 bg-gradient-to-r from-[#53B154] via-[#4FC3F7] to-[#53B154] relative overflow-hidden">
@@ -442,7 +438,7 @@ const HomePage = () => {
       <footer className="bg-[#1A355E] text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1A355E] to-[#0d1b2a]"></div>
         <div className="container mx-auto px-4 py-16 relative">
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+          {/* <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
             <div className="lg:col-span-2 space-y-6">
               <div>
                 <h3 className="text-3xl font-bold mb-4">
@@ -528,7 +524,7 @@ const HomePage = () => {
                 </li>
               </ul>
             </div>
-          </div>
+          </div> */}
 
           <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-blue-200 text-sm">
@@ -540,9 +536,6 @@ const HomePage = () => {
               </span>
               <span className="hover:text-white cursor-pointer transition-colors">
                 Terms of Service
-              </span>
-              <span className="hover:text-white cursor-pointer transition-colors">
-                Cookie Policy
               </span>
             </div>
           </div>
