@@ -601,7 +601,6 @@ const CropsManagement = () => {
   // Bulk delete handlers
   const handleBulkDeleteCropTypes = async () => {
     if (selectedCropTypes.length === 0) return;
-    console.log("Selected Crop Types for bulk delete:", selectedCropTypes);
     const success = await bulkDeleteCropTypes(selectedCropTypes);
     if (success) {
       setSelectedCropTypes([]);

@@ -123,14 +123,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const joinGroup = (groupId: string) => {
     if (socket && user) {
       socket.emit("join_group", { groupId, userId: user.id });
-      console.log("Joining group:", groupId);
     }
   };
 
   const leaveGroup = (groupId: string) => {
     if (socket) {
       socket.emit("leave_group", { groupId });
-      console.log("Leaving group:", groupId);
     }
   };
 
@@ -148,19 +146,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         messageType,
         imageUrl: imageUrl || null,
       });
-      console.log(
-        "Sending message to group:",
-        groupId,
-        "with type:",
-        messageType
-      );
     }
   };
 
   const deleteMessage = (messageId: string) => {
     if (socket && user) {
       socket.emit("delete_message", { messageId, userId: user.id });
-      console.log("Deleting message:", messageId);
     }
   };
 

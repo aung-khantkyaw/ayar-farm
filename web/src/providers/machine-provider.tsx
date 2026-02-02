@@ -241,7 +241,6 @@ export const MachineProvider: React.FC<{ children: ReactNode }> = ({
 
   const bulkDeleteMachineTypes = async (ids: string[]): Promise<boolean> => {
     try {
-      console.log("Selected Crop Types for bulk delete:", ids);
 
       const token = localStorage.getItem("token");
       const response = await api.delete(

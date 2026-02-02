@@ -4,8 +4,6 @@ import { SOCKET_URL } from './config';
 let socket: Socket | null = null;
 export const initSocket = (token?: string) => {
   if (socket) return socket;
-  
-  console.log("Connecting to socket at:", SOCKET_URL);
 
   socket = io(SOCKET_URL, {
     auth: { token },

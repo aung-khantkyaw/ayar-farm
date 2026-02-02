@@ -237,7 +237,6 @@ const CropProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const bulkDeleteCropTypes = useCallback(
     async (ids: string[]): Promise<boolean> => {
       try {
-        console.log("Selected Crop Types for bulk delete:", ids);
         const token = localStorage.getItem("token");
         const response = await api.delete(
           "/cropsandpulses/croptypes",

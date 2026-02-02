@@ -37,8 +37,6 @@ const HomePage = () => {
 
       if (response?.resources) {
         setActiveVideo(response.resources);
-      } else {
-        console.log("No active video found");
       }
     } catch (error) {
       console.error("Error fetching active video:", error);
@@ -58,7 +56,6 @@ const HomePage = () => {
         const resources = response.resources;
         setApplications(Array.isArray(resources) ? resources : [resources]);
       } else {
-        console.log("No active applications found");
         setApplications([]);
       }
     } catch (error) {
@@ -87,7 +84,6 @@ const HomePage = () => {
     fetchActiveApplications();
   }, []);
 
-  console.log("Active Video:", activeVideo, "Active Application", applications);
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fffe] to-[#f0f9ff]">
       {/* Hero Section - Full Height with Centered Items */}
