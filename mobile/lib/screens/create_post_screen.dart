@@ -41,7 +41,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // Hashtags from Request
   final List<String> _availableHashtags = [
     "ကောက်ပဲသီးနှံများ",
-    "ခြံမွေးတိရစ္ဆာန်များ",
+    "ခြံမွေးတိရိစ္ဆာန်များ",
     "ငါးလုပ်ငန်း",
     "လယ်ယာသုံးစက်ကိရိယာများ",
     "မိုးလေဝသ",
