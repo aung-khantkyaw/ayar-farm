@@ -63,7 +63,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.crops,
                       AppLocalizations.of(context)!.farmingGuides,
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDR_WWrQ9f0s0cJHSHHRlYARq_M2JBR8RZzV3vmD8GGx4Wn83-weFP9Q4a8-oSP5JUKtq2CSDDZq0kiouIFyQU6hvzoLzsymxM3iLUMr0qnVrg1Oj659dwi-52SJraEGAbaEFo-Y4gIHSLEscOQ239tKywE1km3MDH_3nzBGPiaN3Kwa83Wo84zMqVEar_K8HxiiOrl_7I54wL20ql2dihYB__8V8JJxITd5JddDjAK-ucHHzoT0wWeSxEUkr2yfM-8ZMl9Ec3yzqyo',
+                      'assets/crop.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,
@@ -77,7 +77,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.livestocks,
                       AppLocalizations.of(context)!.animalHusbandry,
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuCb3WPmdk5HMEGEkYDQMMuX1zhC6AJU8cXbPDyrtqRD1vhQdAydQaHtUp8C6s7p_wLgEHj9yQ_YbwPuNnOPBYCP1MwzrTESf4qPWAN_n38CA4RJHgNmAp1Vooma40b9B6dX32W5TqQoEPUKE0D2z5qN4VLAjlPZT8X5b9B2R3olofAqJHs_rsrZZUI2Fd3LDPVxd3-KDm87a9hXBZJzUQiNjRd48uUThiXq6VhXT-l_i7AnnjpiVM28t3TmsPiZzGrIQUcPnlJ1kjsZ',
+                      'assets/livestock.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,
@@ -91,7 +91,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.fishery,
                       AppLocalizations.of(context)!.aquacultureTips,
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBOM3vaCH19CeYdlgAEYBRW8f37OXhUqsVmuVSjsen8x2wI3fPGXMFH2Yps3BcFwFc9p-lwc_6Y19RulEjb4yxi7-9GldBvUQgti7oXK36tiAG4aRKUX5pqvsJwefxtJdwIT5jrSvV7cbFtLZuMsJyz3OHA7ZxT0DGMl7v3_3VTxIO-ni1wG701Oq5uamMJEnkOwJ9XGTAWskpcrPKlNwcmgLdb4ySiOuN9hdLj_RW-MIX2aANbwHDtd7qJYuJUg8MxmFWQXXkWo0Ga',
+                      'assets/fish.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,
@@ -105,7 +105,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.agriIndustry,
                       AppLocalizations.of(context)!.industrialTech,
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuCPKmuPtRD9KWqoyJ_UI0EYN6xv5VqwmwwipVqN9nor_8T32J631B4j74AKY2jcSDw9XX0hmiW_fywsl9shMcu9qJpl64QX-xwyNHrgriARPMKI-J5cvYI244xoiVgsCjnq6xQ7WVT-NPIwVJzPnY-jcohi7yV3-n-e10BQO8_ab2vjn-p07UGPmMWNj5dfJ4dJ751Ll0ykiuCi2vuNXDhjJLpDIgnCaKvJmqKTZ-R8foIhcxOFe5Sxj220sJ6byr_CTB1Jx0h9ztNH',
+                      'assets/machine.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,
@@ -119,7 +119,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.loans,
                       AppLocalizations.of(context)!.loanServices,
-                      'https://res.cloudinary.com/dqr9p7iem/image/upload/v1769448501/images_2_ouiigh.jpg',
+                      'assets/loan.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,
@@ -135,7 +135,7 @@ class CategoryScreen extends StatelessWidget {
                     _buildKnowledgeCard(
                       AppLocalizations.of(context)!.agrometBulletin,
                       AppLocalizations.of(context)!.agrometInfo,
-                      'https://res.cloudinary.com/dqr9p7iem/image/upload/v1769448334/images_1_naznjq.jpg',
+                      'assets/agromet_bulletin.jpg',
                       surfaceColor,
                       textMainColor,
                       textSubColor,

@@ -25,7 +25,7 @@ class AppLocalizationsMy extends AppLocalizations {
   String get crops => 'ကောက်ပဲသီးနှံများ';
 
   @override
-  String get livestocks => 'ခြံမွေးတိရစ္ဆာန်များ';
+  String get livestocks => 'ခြံမွေးတိရိစ္ဆာန်များ';
 
   @override
   String get welcomeSubtitle => 'Cultivate Knowledge.\nGrow Together.';
