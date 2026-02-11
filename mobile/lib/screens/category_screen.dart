@@ -284,7 +284,7 @@ class CategoryScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: NetworkImage(imageUrl),
+                    image: AssetImage(imageUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
