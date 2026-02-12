@@ -1571,7 +1571,7 @@ abstract class AppLocalizations {
   /// No description provided for @loanServices.
   ///
   /// In en, this message translates to:
-  /// **'Access agricultural loans from banks'**
+  /// **'Access agricultural loans'**
   String get loanServices;
 
   /// No description provided for @agrometBulletin.

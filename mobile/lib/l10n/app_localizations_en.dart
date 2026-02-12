@@ -754,7 +754,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loans => 'Loans';
 
   @override
-  String get loanServices => 'Access agricultural loans from banks';
+  String get loanServices => 'Access agricultural loans';
 
   @override
   String get agrometBulletin => 'Agromet Bulletin';

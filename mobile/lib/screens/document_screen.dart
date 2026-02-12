@@ -282,13 +282,6 @@ class _DocumentScreenState extends State<DocumentScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            '• ${sizeInMB} MB',
-                            style: TextStyle(
-                              color: textMutedColor,
-                              fontSize: 11,
-                            ),
-                          ),
                         ],
                       ),
                     ],

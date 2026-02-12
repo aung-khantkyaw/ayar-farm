@@ -768,14 +768,13 @@ class AppLocalizationsMy extends AppLocalizations {
   String get loans => 'ချေးငွေများ';
 
   @override
-  String get loanServices => 'ဘဏ်များ၏ စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာချေးငွေများ';
+  String get loanServices => 'စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာချေးငွေများ';
 
   @override
-  String get agrometBulletin => 'စိုက်ပျိုးရေး မိုးလေဝသ';
+  String get agrometBulletin => 'မိုးလေဝသ';
 
   @override
-  String get agrometInfo =>
-      'စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာ မိုးလေဝသ အချက်အလက်များ';
+  String get agrometInfo => 'စိုက်ပျိုးမွေးမြူရေးဆိုင်ရာ မိုးလေဝသ';
 
   @override
   String get bankLoans => 'ဘဏ်ချေးငွေများ';

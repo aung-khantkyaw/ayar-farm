@@ -5,7 +5,7 @@ export class DocumentService {
     public static async getAllDocuments(): Promise<{ documents: any }> {
         try {
             const documents = await prisma.documents.findMany({
-                orderBy: { created_at: 'asc' }
+                orderBy: { created_at: 'desc' }
             })
 
             return { documents }
@@ -33,13 +33,13 @@ export class DocumentService {
             if (loan) {
                 documents = await prisma.documents.findMany({
                     where: { loan: true },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })
             }
             if (agromet_bulletin) {
                 documents = await prisma.documents.findMany({
                     where: { agromet_bulletin: true },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })
             }
             
@@ -64,7 +64,7 @@ export class DocumentService {
                         CropTypes: true,
                         Crops: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 });
             } else if (type === "livestock") {
                 documents = await prisma.documents.findMany({
@@ -74,7 +74,7 @@ export class DocumentService {
                     include: {
                         Livestocks: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 });
             } else if (type === "fish") {
                 documents = await prisma.documents.findMany({
@@ -84,7 +84,7 @@ export class DocumentService {
                     include: {
                         Fishs: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 });
             } else if (type === "machine") {
                 documents = await prisma.documents.findMany({
@@ -98,7 +98,7 @@ export class DocumentService {
                         MachineTypes: true,
                         Machines: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 });
             }
 
@@ -120,7 +120,7 @@ export class DocumentService {
                         CropTypes: true,
                         Crops: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })) : (await prisma.documents.findMany({
                     where: {
                         OR: [
@@ -132,7 +132,7 @@ export class DocumentService {
                         CropTypes: true,
                         Crops: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 }))
             } else if (type === "livestock") {
                 documents = type_id ? (await prisma.documents.findMany({
@@ -142,7 +142,7 @@ export class DocumentService {
                     include: {
                         Livestocks: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })) : (await prisma.documents.findMany({
                     where: {
                         livestock_id: { not: null } 
@@ -150,7 +150,7 @@ export class DocumentService {
                     include: {
                         Livestocks: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 }));
             } else if (type === "fish") {
                 documents = type_id ? (await prisma.documents.findMany({
@@ -160,7 +160,7 @@ export class DocumentService {
                     include: {
                         Fishs: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })) : (await prisma.documents.findMany({
                     where: {
                         fish_id: { not: null }
@@ -168,7 +168,7 @@ export class DocumentService {
                     include: {
                         Fishs: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 }));
             } else if (type === "machine") {
                 documents = type_id ? (await prisma.documents.findMany({
@@ -179,7 +179,7 @@ export class DocumentService {
                         MachineTypes: true,
                         Machines: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 })) : (await prisma.documents.findMany({
                     where: {
                         OR: [
@@ -191,7 +191,7 @@ export class DocumentService {
                         MachineTypes: true,
                         Machines: true
                     },
-                    orderBy: { created_at: 'asc' }
+                    orderBy: { created_at: 'desc' }
                 }));
             }
 

@@ -58,9 +58,9 @@ class CategoryScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 0.8,
                   children: [
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.crops,
                       AppLocalizations.of(context)!.farmingGuides,
                       'assets/crop.jpg',
@@ -75,6 +75,7 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.livestocks,
                       AppLocalizations.of(context)!.animalHusbandry,
                       'assets/livestock.jpg',
@@ -89,6 +90,7 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.fishery,
                       AppLocalizations.of(context)!.aquacultureTips,
                       'assets/fish.jpg',
@@ -103,6 +105,7 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.agriIndustry,
                       AppLocalizations.of(context)!.industrialTech,
                       'assets/machine.jpg',
@@ -117,6 +120,7 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.loans,
                       AppLocalizations.of(context)!.loanServices,
                       'assets/loan.jpg',
@@ -133,6 +137,7 @@ class CategoryScreen extends StatelessWidget {
                           ),
                     ),
                     _buildKnowledgeCard(
+                      context,
                       AppLocalizations.of(context)!.agrometBulletin,
                       AppLocalizations.of(context)!.agrometInfo,
                       'assets/agromet_bulletin.jpg',
@@ -253,6 +258,7 @@ class CategoryScreen extends StatelessWidget {
   }
 
   Widget _buildKnowledgeCard(
+    BuildContext context,
     String title,
     String subtitle,
     String imageUrl,
@@ -261,6 +267,9 @@ class CategoryScreen extends StatelessWidget {
     Color textSub, {
     VoidCallback? onTap,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final imageHeight = screenWidth * 0.22; // 22.5% of screen width
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -280,8 +289,7 @@ class CategoryScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 120,
-              width: double.infinity,
+              height: imageHeight,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
@@ -290,7 +298,9 @@ class CategoryScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 12),
+
             Text(
               title,
               style: TextStyle(
@@ -299,7 +309,12 @@ class CategoryScreen extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            Text(subtitle, style: TextStyle(color: textSub, fontSize: 12)),
+            Text(
+              subtitle,
+              style: TextStyle(color: textSub, fontSize: 12),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -380,14 +395,18 @@ class CategoryScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Container(
-            height: 100,
-            width: 100,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(imageUrl),
-                fit: BoxFit.cover,
+          Expanded(
+            flex: 1,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
             ),
           ),
