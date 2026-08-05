@@ -1,0 +1,14 @@
+.git
+.gitignore
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+build
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache
+.pub
