@@ -433,3 +433,48 @@ enum EmbeddingStatus {
   COMPLETED
   FAILED
 }
+
+enum AIProvider {
+  OPENROUTER
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  CUSTOM     
+}
+
+model ApiKey {
+  id                  String      @id @default(uuid())
+  provider            AIProvider
+  
+  llmModelName        String      // eg - "gemini-1.5-flash", "llama3:8b"
+  embeddingModelName  String      // eg - "text-embedding-004", "nomic-embed-text"
+  
+  vectorSize          Int         // eg - 768 (Gemini), 1536 (OpenAI)
+
+  apiKey              String?     
+  
+  baseUrl             String?     // eg - "http://localhost:11434/v1" or "https://api.yourdomain.com/v1"
+
+  limit               Int         @default(0) // 0 ဆိုရင် အကန့်အသတ်မရှိ (Unlimited)
+  used                Int         @default(0)
+  expiresAt           DateTime?
+  
+  active              Boolean     @default(false)
+  
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([provider])
+  @@index([active])
+}
+
+model KnowledgeBase {
+  id              String          @id @unique @default(uuid())
+  title           String
+  author          String
+  file_urls       String[]
+  size            Int?
+  embeddingStatus EmbeddingStatus @default(PENDING)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+}

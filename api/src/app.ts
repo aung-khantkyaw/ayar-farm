@@ -19,6 +19,9 @@ import notification from "./routes/notification";
 import announcement from "./routes/announcement";
 import pushNotification from "./routes/push-notification";
 import deviceToken from "./routes/device-token";
+import apiKey from "./routes/api-key";
+import knowledgeBase from "./routes/knowledge-base";
+import dataVectorization from "./routes/data-vectorization";
 
 const app = express();
 
@@ -72,5 +75,8 @@ app.use("/api/notifications", notification);
 app.use("/api/announcements", announcement);
 app.use("/api/push", pushNotification);
 app.use("/api/device-tokens", deviceToken);
+app.use("/api/api-keys", apiKey);
+app.use("/api/knowledge-base", knowledgeBase);
+app.use("/api/data-vectorization", dataVectorization);
 
 export default app;

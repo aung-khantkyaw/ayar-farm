@@ -19,6 +19,9 @@ import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcem
 import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
 import { Route as AdminSystemDocumentsRouteImport } from './routes/admin.system-documents'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AiApiKeysRouteImport } from './routes/ai.api-keys'
+import { Route as AiDataVectorizationRouteImport } from './routes/ai.data-vectorization'
+import { Route as AiKnowledgeBaseRouteImport } from './routes/ai.knowledge-base'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthErrorRouteImport } from './routes/auth.error'
 import { Route as AuthSuccessRouteImport } from './routes/auth.success'
@@ -80,6 +83,21 @@ const AdminSystemDocumentsRoute = AdminSystemDocumentsRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiApiKeysRoute = AiApiKeysRouteImport.update({
+  id: '/ai/api-keys',
+  path: '/ai/api-keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiDataVectorizationRoute = AiDataVectorizationRouteImport.update({
+  id: '/ai/data-vectorization',
+  path: '/ai/data-vectorization',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiKnowledgeBaseRoute = AiKnowledgeBaseRouteImport.update({
+  id: '/ai/knowledge-base',
+  path: '/ai/knowledge-base',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
@@ -155,6 +173,9 @@ export interface FileRoutesByFullPath {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/api-keys': typeof AiApiKeysRoute
+  '/ai/data-vectorization': typeof AiDataVectorizationRoute
+  '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -179,6 +200,9 @@ export interface FileRoutesByTo {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/api-keys': typeof AiApiKeysRoute
+  '/ai/data-vectorization': typeof AiDataVectorizationRoute
+  '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -204,6 +228,9 @@ export interface FileRoutesById {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/api-keys': typeof AiApiKeysRoute
+  '/ai/data-vectorization': typeof AiDataVectorizationRoute
+  '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/success': typeof AuthSuccessRoute
@@ -230,6 +257,9 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/api-keys'
+    | '/ai/data-vectorization'
+    | '/ai/knowledge-base'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -254,6 +284,9 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/api-keys'
+    | '/ai/data-vectorization'
+    | '/ai/knowledge-base'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -278,6 +311,9 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/api-keys'
+    | '/ai/data-vectorization'
+    | '/ai/knowledge-base'
     | '/auth/confirm'
     | '/auth/error'
     | '/auth/success'
@@ -303,6 +339,9 @@ export interface RootRouteChildren {
   AdminChatRoomRoute: typeof AdminChatRoomRoute
   AdminSystemDocumentsRoute: typeof AdminSystemDocumentsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AiApiKeysRoute: typeof AiApiKeysRoute
+  AiDataVectorizationRoute: typeof AiDataVectorizationRoute
+  AiKnowledgeBaseRoute: typeof AiKnowledgeBaseRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   AuthErrorRoute: typeof AuthErrorRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
@@ -387,6 +426,27 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai/api-keys': {
+      id: '/ai/api-keys'
+      path: '/ai/api-keys'
+      fullPath: '/ai/api-keys'
+      preLoaderRoute: typeof AiApiKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai/data-vectorization': {
+      id: '/ai/data-vectorization'
+      path: '/ai/data-vectorization'
+      fullPath: '/ai/data-vectorization'
+      preLoaderRoute: typeof AiDataVectorizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai/knowledge-base': {
+      id: '/ai/knowledge-base'
+      path: '/ai/knowledge-base'
+      fullPath: '/ai/knowledge-base'
+      preLoaderRoute: typeof AiKnowledgeBaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/confirm': {
@@ -487,6 +547,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminChatRoomRoute: AdminChatRoomRoute,
   AdminSystemDocumentsRoute: AdminSystemDocumentsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AiApiKeysRoute: AiApiKeysRoute,
+  AiDataVectorizationRoute: AiDataVectorizationRoute,
+  AiKnowledgeBaseRoute: AiKnowledgeBaseRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   AuthErrorRoute: AuthErrorRoute,
   AuthSuccessRoute: AuthSuccessRoute,
