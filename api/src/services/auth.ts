@@ -3,6 +3,7 @@ import Twilio from "twilio";
 import nodemailer from "nodemailer";
 import { prisma } from "../prisma/client";
 import { otpEmailTemplate } from "../templates/otp-email";
+import { Resend } from "resend";
 
 export class AuthService {
     private static twilioClient: ReturnType<typeof Twilio> | null = null;
@@ -102,7 +103,7 @@ export class AuthService {
         }
     }
 
-    public static async sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
+    public static async sendOTPEmailByMailer(toEmail: string, otp: string): Promise<boolean> {
         const useTls = (process.env.EMAIL_USE_TLS ?? "").toLowerCase() === "true";
         console.log(`[AuthService] Sending OTP email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${useTls})`);
         const transporter = this.createEmailTransporter();
@@ -123,6 +124,30 @@ export class AuthService {
         }
     }
 
+    public static async sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
+        const resend = new Resend(process.env.RESEND_API_KEY ?? "");
+        
+        try {
+            const { data, error } = await resend.emails.send({
+                from: process.env.EMAIL_FROM ?? 'AyarFarm <onboarding@resend.dev>',
+                to: [toEmail],
+                subject: 'AyarFarm Link MSME - Account Verification',
+                html: otpEmailTemplate(otp),
+            });
+
+            if (error) {
+                console.error("Resend email error:", error);
+                return false;
+            }
+
+            console.log("Resend email success:", data);
+            return true;
+        } catch (err) {
+            console.error("Email send failed with exception:", err);
+            return false;
+        }
+    }
+
     public static async verifyOTPEmail(email: string, otp: string): Promise<boolean> {
         const user = await prisma.users.findFirst({ 
             where: { email, verificationToken: otp } 
@@ -133,7 +158,7 @@ export class AuthService {
         return user.verificationTokenExpiresAt > new Date();
     }
 
-    public static async sendResetEmail(toEmail: string, otp: string): Promise<boolean> {
+    public static async sendResetEmailByMailer(toEmail: string, otp: string): Promise<boolean> {
         const useTls = (process.env.EMAIL_USE_TLS ?? "").toLowerCase() === "true";
         console.log(`[AuthService] Sending Reset email to ${toEmail} via ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT} (TLS: ${useTls})`);
         const transporter = this.createEmailTransporter();
@@ -150,6 +175,30 @@ export class AuthService {
             return true;
         } catch (err) {
             console.error("Email send failed:", err);
+            return false;
+        }
+    }
+
+    public static async sendResetEmail(toEmail: string, otp: string): Promise<boolean> {
+        const resend = new Resend(process.env.RESEND_API_KEY ?? "");
+        
+        try {
+            const { data, error } = await resend.emails.send({
+                from: process.env.EMAIL_FROM ?? 'AyarFarm <onboarding@resend.dev>',
+                to: [toEmail],
+                subject: 'AyarFarm Link MSME - Reset your AyarFarm password',
+                html: otpEmailTemplate(otp),
+            });
+
+            if (error) {
+                console.error("Resend email error:", error);
+                return false;
+            }
+
+            console.log("Resend email success:", data);
+            return true;
+        } catch (err) {
+            console.error("Email send failed with exception:", err);
             return false;
         }
     }

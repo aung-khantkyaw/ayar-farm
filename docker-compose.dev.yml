@@ -1,10 +1,8 @@
-version: "3.8"
-
 services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: docker/Dockerfile.api
     ports:
       - "3000:3000"
     env_file:
@@ -18,7 +16,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: docker/Dockerfile.web
     ports:
       - "5173:5173"
     env_file:
@@ -34,7 +32,7 @@ services:
   mobile:
     build:
       context: .
-      dockerfile: Dockerfile.mobile
+      dockerfile: docker/Dockerfile.mobile
       target: dev
     ports:
       - "8080:8080"
@@ -46,7 +44,7 @@ services:
   database:
     build:
       context: .
-      dockerfile: Dockerfile.database
+      dockerfile: docker/Dockerfile.database
     ports:
       - "5432:5432"
     volumes:

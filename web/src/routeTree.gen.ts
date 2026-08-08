@@ -9,47 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
-import { Route as ResourceLoansRouteImport } from './routes/resource.loans'
-import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
-import { Route as ResourceAgrometBulletinsRouteImport } from './routes/resource.agromet-bulletins'
-import { Route as CategoryMachinesRouteImport } from './routes/category.machines'
-import { Route as CategoryLivestockRouteImport } from './routes/category.livestock'
-import { Route as CategoryFisheriesRouteImport } from './routes/category.fisheries'
-import { Route as CategoryCropsRouteImport } from './routes/category.crops'
-import { Route as AuthUnauthorizedRouteImport } from './routes/auth.unauthorized'
-import { Route as AuthSuccessRouteImport } from './routes/auth.success'
-import { Route as AuthErrorRouteImport } from './routes/auth.error'
-import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminSystemDocumentsRouteImport } from './routes/admin.system-documents'
-import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
+import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
+import { Route as AdminSystemDocumentsRouteImport } from './routes/admin.system-documents'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as AuthErrorRouteImport } from './routes/auth.error'
+import { Route as AuthSuccessRouteImport } from './routes/auth.success'
+import { Route as AuthUnauthorizedRouteImport } from './routes/auth.unauthorized'
+import { Route as CategoryCropsRouteImport } from './routes/category.crops'
+import { Route as CategoryFisheriesRouteImport } from './routes/category.fisheries'
+import { Route as CategoryLivestockRouteImport } from './routes/category.livestock'
+import { Route as CategoryMachinesRouteImport } from './routes/category.machines'
+import { Route as ResourceAgrometBulletinsRouteImport } from './routes/resource.agromet-bulletins'
+import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
+import { Route as ResourceLoansRouteImport } from './routes/resource.loans'
+import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -57,24 +42,84 @@ const AccountRoute = AccountRouteImport.update({
   path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResourceVideosRoute = ResourceVideosRouteImport.update({
-  id: '/resource/videos',
-  path: '/resource/videos',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResourceLoansRoute = ResourceLoansRouteImport.update({
-  id: '/resource/loans',
-  path: '/resource/loans',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResourceApplicationsRoute = ResourceApplicationsRouteImport.update({
-  id: '/resource/applications',
-  path: '/resource/applications',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin/announcements',
+  path: '/admin/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminChatRoomRoute = AdminChatRoomRouteImport.update({
+  id: '/admin/chat-room',
+  path: '/admin/chat-room',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSystemDocumentsRoute = AdminSystemDocumentsRouteImport.update({
+  id: '/admin/system-documents',
+  path: '/admin/system-documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthErrorRoute = AuthErrorRouteImport.update({
+  id: '/auth/error',
+  path: '/auth/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSuccessRoute = AuthSuccessRouteImport.update({
+  id: '/auth/success',
+  path: '/auth/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
+  id: '/auth/unauthorized',
+  path: '/auth/unauthorized',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryCropsRoute = CategoryCropsRouteImport.update({
+  id: '/category/crops',
+  path: '/category/crops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryFisheriesRoute = CategoryFisheriesRouteImport.update({
+  id: '/category/fisheries',
+  path: '/category/fisheries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryLivestockRoute = CategoryLivestockRouteImport.update({
+  id: '/category/livestock',
+  path: '/category/livestock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryMachinesRoute = CategoryMachinesRouteImport.update({
+  id: '/category/machines',
+  path: '/category/machines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourceAgrometBulletinsRoute =
@@ -83,64 +128,19 @@ const ResourceAgrometBulletinsRoute =
     path: '/resource/agromet-bulletins',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CategoryMachinesRoute = CategoryMachinesRouteImport.update({
-  id: '/category/machines',
-  path: '/category/machines',
+const ResourceApplicationsRoute = ResourceApplicationsRouteImport.update({
+  id: '/resource/applications',
+  path: '/resource/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategoryLivestockRoute = CategoryLivestockRouteImport.update({
-  id: '/category/livestock',
-  path: '/category/livestock',
+const ResourceLoansRoute = ResourceLoansRouteImport.update({
+  id: '/resource/loans',
+  path: '/resource/loans',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategoryFisheriesRoute = CategoryFisheriesRouteImport.update({
-  id: '/category/fisheries',
-  path: '/category/fisheries',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoryCropsRoute = CategoryCropsRouteImport.update({
-  id: '/category/crops',
-  path: '/category/crops',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
-  id: '/auth/unauthorized',
-  path: '/auth/unauthorized',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSuccessRoute = AuthSuccessRouteImport.update({
-  id: '/auth/success',
-  path: '/auth/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthErrorRoute = AuthErrorRouteImport.update({
-  id: '/auth/error',
-  path: '/auth/error',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthConfirmRoute = AuthConfirmRouteImport.update({
-  id: '/auth/confirm',
-  path: '/auth/confirm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSystemDocumentsRoute = AdminSystemDocumentsRouteImport.update({
-  id: '/admin/system-documents',
-  path: '/admin/system-documents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminChatRoomRoute = AdminChatRoomRouteImport.update({
-  id: '/admin/chat-room',
-  path: '/admin/chat-room',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
-  id: '/admin/announcements',
-  path: '/admin/announcements',
+const ResourceVideosRoute = ResourceVideosRouteImport.update({
+  id: '/resource/videos',
+  path: '/resource/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -319,32 +319,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -354,109 +333,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/resource/videos': {
-      id: '/resource/videos'
-      path: '/resource/videos'
-      fullPath: '/resource/videos'
-      preLoaderRoute: typeof ResourceVideosRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/resource/loans': {
-      id: '/resource/loans'
-      path: '/resource/loans'
-      fullPath: '/resource/loans'
-      preLoaderRoute: typeof ResourceLoansRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/resource/applications': {
-      id: '/resource/applications'
-      path: '/resource/applications'
-      fullPath: '/resource/applications'
-      preLoaderRoute: typeof ResourceApplicationsRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/resource/agromet-bulletins': {
-      id: '/resource/agromet-bulletins'
-      path: '/resource/agromet-bulletins'
-      fullPath: '/resource/agromet-bulletins'
-      preLoaderRoute: typeof ResourceAgrometBulletinsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/category/machines': {
-      id: '/category/machines'
-      path: '/category/machines'
-      fullPath: '/category/machines'
-      preLoaderRoute: typeof CategoryMachinesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/category/livestock': {
-      id: '/category/livestock'
-      path: '/category/livestock'
-      fullPath: '/category/livestock'
-      preLoaderRoute: typeof CategoryLivestockRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/category/fisheries': {
-      id: '/category/fisheries'
-      path: '/category/fisheries'
-      fullPath: '/category/fisheries'
-      preLoaderRoute: typeof CategoryFisheriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/category/crops': {
-      id: '/category/crops'
-      path: '/category/crops'
-      fullPath: '/category/crops'
-      preLoaderRoute: typeof CategoryCropsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/unauthorized': {
-      id: '/auth/unauthorized'
-      path: '/auth/unauthorized'
-      fullPath: '/auth/unauthorized'
-      preLoaderRoute: typeof AuthUnauthorizedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/success': {
-      id: '/auth/success'
-      path: '/auth/success'
-      fullPath: '/auth/success'
-      preLoaderRoute: typeof AuthSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/error': {
-      id: '/auth/error'
-      path: '/auth/error'
-      fullPath: '/auth/error'
-      preLoaderRoute: typeof AuthErrorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/confirm': {
-      id: '/auth/confirm'
-      path: '/auth/confirm'
-      fullPath: '/auth/confirm'
-      preLoaderRoute: typeof AuthConfirmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/system-documents': {
-      id: '/admin/system-documents'
-      path: '/admin/system-documents'
-      fullPath: '/admin/system-documents'
-      preLoaderRoute: typeof AdminSystemDocumentsRouteImport
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/chat-room': {
@@ -466,11 +375,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChatRoomRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/announcements': {
-      id: '/admin/announcements'
-      path: '/admin/announcements'
-      fullPath: '/admin/announcements'
-      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+    '/admin/system-documents': {
+      id: '/admin/system-documents'
+      path: '/admin/system-documents'
+      fullPath: '/admin/system-documents'
+      preLoaderRoute: typeof AdminSystemDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/error': {
+      id: '/auth/error'
+      path: '/auth/error'
+      fullPath: '/auth/error'
+      preLoaderRoute: typeof AuthErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/success': {
+      id: '/auth/success'
+      path: '/auth/success'
+      fullPath: '/auth/success'
+      preLoaderRoute: typeof AuthSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/unauthorized': {
+      id: '/auth/unauthorized'
+      path: '/auth/unauthorized'
+      fullPath: '/auth/unauthorized'
+      preLoaderRoute: typeof AuthUnauthorizedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/crops': {
+      id: '/category/crops'
+      path: '/category/crops'
+      fullPath: '/category/crops'
+      preLoaderRoute: typeof CategoryCropsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/fisheries': {
+      id: '/category/fisheries'
+      path: '/category/fisheries'
+      fullPath: '/category/fisheries'
+      preLoaderRoute: typeof CategoryFisheriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/livestock': {
+      id: '/category/livestock'
+      path: '/category/livestock'
+      fullPath: '/category/livestock'
+      preLoaderRoute: typeof CategoryLivestockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/machines': {
+      id: '/category/machines'
+      path: '/category/machines'
+      fullPath: '/category/machines'
+      preLoaderRoute: typeof CategoryMachinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/agromet-bulletins': {
+      id: '/resource/agromet-bulletins'
+      path: '/resource/agromet-bulletins'
+      fullPath: '/resource/agromet-bulletins'
+      preLoaderRoute: typeof ResourceAgrometBulletinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/applications': {
+      id: '/resource/applications'
+      path: '/resource/applications'
+      fullPath: '/resource/applications'
+      preLoaderRoute: typeof ResourceApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/loans': {
+      id: '/resource/loans'
+      path: '/resource/loans'
+      fullPath: '/resource/loans'
+      preLoaderRoute: typeof ResourceLoansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resource/videos': {
+      id: '/resource/videos'
+      path: '/resource/videos'
+      fullPath: '/resource/videos'
+      preLoaderRoute: typeof ResourceVideosRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
