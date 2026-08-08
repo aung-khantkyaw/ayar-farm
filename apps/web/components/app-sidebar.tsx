@@ -17,7 +17,10 @@ import {
   IconNews,
   IconBuildingBank,
   IconSpeakerphone,
-  IconFileSettings
+  IconFileSettings,
+  IconKey,
+  IconFileDatabase,
+  IconFileTextAi 
 } from "@tabler/icons-react";
 
 import { NavCategories } from "@/components/nav-category";
@@ -118,6 +121,23 @@ const data = {
       icon: IconTractor,
     },
   ],
+  ai_integration: [
+    {
+      name: "API Keys",
+      url: "/ai_integration/api_keys",
+      icon: IconKey,
+    },
+    {
+      name: "Add New Dataset",
+      url: "/ai_integration/add_new_dataset",
+      icon: IconFileDatabase,
+    },
+    {
+      name: "RAG Testing",
+      url: "/ai_integration/rag_testing",
+      icon: IconFileTextAi ,
+    }
+  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -150,6 +170,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavCategories title="System Managements" items={data.main} />
         <NavCategories title="Resource Managements" items={data.resources} />
         <NavCategories title="Category Managements" items={data.categories} />
+        <NavCategories title="AI Integration" items={data.ai_integration} />
         {/*<NavSecondary items={data.navSecondary} className="mt-auto" />*/}
       </SidebarContent>
       <SidebarFooter>

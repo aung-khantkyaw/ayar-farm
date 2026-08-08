@@ -672,6 +672,7 @@ const CropsManagement = () => {
   };
 
   return (
+
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -2073,32 +2074,8 @@ const CropsManagement = () => {
         </DialogContent>
       </Dialog>
     </div>
+
   );
 };
 
-const AdminCropPage = () => {
-  return (
-    <CropProvider>
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <CropsManagement />
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </CropProvider>
-  );
-};
-
-export default AdminCropPage;
+export default CropsManagement;

@@ -127,6 +127,7 @@ model Documents {
   loan             Boolean       @default(false)
   agromet_bulletin Boolean       @default(false)
   size             Int?
+  embeddingStatus  EmbeddingStatus @default(PENDING)
   Crops            Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
   CropTypes        CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
   Fishs            Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
@@ -232,6 +233,7 @@ model Post {
   commentCount  Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  embeddingStatus EmbeddingStatus @default(PENDING)
   author        Users          @relation("UserPosts", fields: [authorId], references: [id])
   comments      PostComment[]
   media         PostMedia[]
@@ -423,4 +425,11 @@ enum AnnouncementType {
   INFORMATION
   WARNING
   BREAKING_NEWS
+}
+
+enum EmbeddingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
