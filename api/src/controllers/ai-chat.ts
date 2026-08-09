@@ -8,7 +8,7 @@ export class AIChatController {
     public async chatStream(req: Request, res: Response): Promise<void> {
         try {
             const userId = (req as any).user.id;
-            const { question } = req.body;
+            const { question, roomId } = req.body;
 
             if (!question) {
                 res.status(400).json({ message: "Question is required" });
@@ -21,20 +21,21 @@ export class AIChatController {
             res.setHeader('Connection', 'keep-alive');
             res.setHeader('Access-Control-Allow-Origin', '*');
 
-            // Get conversation history
-            const history = await AIChatService.getChatHistory(userId, 10);
+            // Get conversation history for the room (if provided) or user
+            const history = await AIChatService.getChatHistory(userId, roomId, 10);
             const conversationHistory = history.map(msg => ({
                 role: msg.role,
                 content: msg.content,
             }));
 
-            // Save user message to database
-            await AIChatService.saveUserMessage(userId, question);
+            // Save user message to database with room_id
+            await AIChatService.saveUserMessage(userId, question, roomId);
 
             // Send user message confirmation
             res.write(`data: ${JSON.stringify({ type: 'user_message', content: question })}\n\n`);
 
             let fullResponse = '';
+            let sources: any[] = [];
 
             try {
                 // Stream response from Python RAG service
@@ -43,16 +44,34 @@ export class AIChatController {
                     userId,
                     conversationHistory
                 )) {
-                    fullResponse += chunk;
-                    // Send chunk to client
-                    res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+                    // Check if chunk contains sources marker
+                    if (chunk.includes('[SOURCES]')) {
+                        const parts = chunk.split('[SOURCES]');
+                        // Send the text part before sources
+                        if (parts[0]) {
+                            fullResponse += parts[0];
+                            res.write(`data: ${JSON.stringify({ type: 'chunk', content: parts[0] })}\n\n`);
+                        }
+                        // Parse sources JSON
+                        if (parts[1]) {
+                            try {
+                                sources = JSON.parse(parts[1].trim());
+                            } catch (e) {
+                                console.error('Failed to parse sources:', e);
+                            }
+                        }
+                    } else {
+                        fullResponse += chunk;
+                        // Send chunk to client
+                        res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+                    }
                 }
 
-                // Save assistant response to database
-                await AIChatService.saveAssistantMessage(userId, fullResponse);
+                // Save assistant response to database with sources and room_id
+                await AIChatService.saveAssistantMessage(userId, fullResponse, sources, roomId);
 
-                // Send completion signal
-                res.write(`data: ${JSON.stringify({ type: 'done', content: fullResponse })}\n\n`);
+                // Send completion signal with sources
+                res.write(`data: ${JSON.stringify({ type: 'done', content: fullResponse, sources })}\n\n`);
             } catch (error) {
                 // Send error signal
                 res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to get AI response' })}\n\n`);
@@ -73,9 +92,9 @@ export class AIChatController {
     public async getChatHistory(req: Request, res: Response): Promise<void> {
         try {
             const userId = (req as any).user.id;
-            const { limit } = req.query;
+            const { limit, roomId } = req.query;
 
-            const messages = await AIChatService.getChatHistory(userId, Number(limit) || 50);
+            const messages = await AIChatService.getChatHistory(userId, roomId as string, Number(limit) || 50);
 
             res.status(200).json({ message: "Chat history retrieved", data: messages });
         } catch (error) {
@@ -89,8 +108,9 @@ export class AIChatController {
     public async clearChatHistory(req: Request, res: Response): Promise<void> {
         try {
             const userId = (req as any).user.id;
+            const { roomId } = req.query;
 
-            await AIChatService.clearChatHistory(userId);
+            await AIChatService.clearChatHistory(userId, roomId as string);
 
             res.status(200).json({ message: "Chat history cleared" });
         } catch (error) {

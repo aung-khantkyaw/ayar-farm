@@ -1,4 +1,5 @@
 import threading
+import os
 import uvicorn
 from config.settings import settings
 from services.api_key_manager import api_key_manager
@@ -42,7 +43,9 @@ def start_rag_service():
     print("🚀 Starting RAG Chat Service...")
     try:
         from rag_service import app
-        uvicorn.run(app, host="0.0.0.0", port=8001)
+        # Use PORT environment variable for Render compatibility, default to 8001
+        port = int(os.getenv('PORT', 8001))
+        uvicorn.run(app, host="0.0.0.0", port=port)
     except Exception as e:
         print(f"❌ Fatal error in RAG service: {e}")
 

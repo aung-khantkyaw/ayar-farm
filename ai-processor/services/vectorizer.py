@@ -91,11 +91,24 @@ class Vectorizer:
             print("⚠️  No text content found in post")
             return []
         
-        # Chunk the text
+        # Generate title from content preview (first 100 chars)
+        title_preview = text[:100] + '...' if len(text) > 100 else text
+        
+        # Get author name from joined query or fallback to authorId
+        author_name = post_data.get('author_name') or post_data.get('author') or post_data.get('createdBy', '')
+        
+        # Chunk the text with metadata
         chunks = self.text_chunker.chunk_text(text, {
             'source_type': 'post',
             'source_id': post_data.get('id'),
-            'title': post_data.get('title', '')
+            'title': title_preview,
+            'author': author_name,
+            'metadata': {
+                'type': 'post',
+                'title': title_preview,
+                'author': author_name,
+                'post_id': post_data.get('id')
+            }
         })
         
         # Vectorize chunks
@@ -103,8 +116,15 @@ class Vectorizer:
     
     def process_document(self, document_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Process a document (PDF) for vectorization"""
-        pdf_url = document_data.get('file_url') or document_data.get('fileUrl') or document_data.get('url')
-        if not pdf_url:
+        # Handle both singular and plural field names
+        pdf_urls = document_data.get('file_urls') or document_data.get('file_url') or document_data.get('fileUrl') or document_data.get('url')
+        
+        # Get first URL if it's an array
+        if isinstance(pdf_urls, list) and len(pdf_urls) > 0:
+            pdf_url = pdf_urls[0]
+        elif isinstance(pdf_urls, str):
+            pdf_url = pdf_urls
+        else:
             print("⚠️  No PDF URL found in document")
             return []
         
@@ -119,11 +139,18 @@ class Vectorizer:
             print("⚠️  No content extracted from PDF")
             return []
         
-        # Chunk structured content
+        # Chunk structured content with metadata
         chunks = self.text_chunker.chunk_structured_content(content, {
             'source_type': 'document',
             'source_id': document_data.get('id'),
-            'title': document_data.get('title', '')
+            'title': document_data.get('title', ''),
+            'author': document_data.get('author', ''),
+            'metadata': {
+                'type': 'document',
+                'title': document_data.get('title', ''),
+                'author': document_data.get('author', ''),
+                'document_id': document_data.get('id')
+            }
         })
         
         # Vectorize chunks
@@ -131,9 +158,15 @@ class Vectorizer:
     
     def process_knowledge_base(self, kb_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Process a knowledge base entry for vectorization"""
-        # Similar to document processing
-        pdf_url = kb_data.get('file_url') or kb_data.get('fileUrl') or kb_data.get('url')
-        if not pdf_url:
+        # Handle both singular and plural field names
+        pdf_urls = kb_data.get('file_urls') or kb_data.get('file_url') or kb_data.get('fileUrl') or kb_data.get('url')
+        
+        # Get first URL if it's an array
+        if isinstance(pdf_urls, list) and len(pdf_urls) > 0:
+            pdf_url = pdf_urls[0]
+        elif isinstance(pdf_urls, str):
+            pdf_url = pdf_urls
+        else:
             print("⚠️  No PDF URL found in knowledge base entry")
             return []
         
@@ -148,11 +181,18 @@ class Vectorizer:
             print("⚠️  No content extracted from PDF")
             return []
         
-        # Chunk structured content
+        # Chunk structured content with metadata
         chunks = self.text_chunker.chunk_structured_content(content, {
             'source_type': 'knowledge_base',
             'source_id': kb_data.get('id'),
-            'title': kb_data.get('title', '')
+            'title': kb_data.get('title', ''),
+            'author': kb_data.get('author', ''),
+            'metadata': {
+                'type': 'knowledge_base',
+                'title': kb_data.get('title', ''),
+                'author': kb_data.get('author', ''),
+                'kb_id': kb_data.get('id')
+            }
         })
         
         # Vectorize chunks

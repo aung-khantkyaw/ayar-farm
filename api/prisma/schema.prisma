@@ -38,6 +38,7 @@ model Users {
   postComments               PostComment[]             @relation("UserPostComments")
   postReactions              PostReaction[]            @relation("UserPostReactions")
   aiChatMessages             AIChatMessage[]           @relation("UserAIChatMessages")
+  chatRooms                  ChatRoom[]                @relation("UserChatRooms")
 }
 
 model CropTypes {
@@ -480,17 +481,33 @@ model KnowledgeBase {
   updated_at      DateTime        @updatedAt
 }
 
+model ChatRoom {
+  id          String          @id @unique @default(uuid())
+  userId      String
+  title       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        Users           @relation("UserChatRooms", fields: [userId], references: [id])
+  messages    AIChatMessage[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model AIChatMessage {
   id          String      @id @unique @default(uuid())
   userId      String
+  roomId      String?
   role        ChatRole    @default(USER)
   content     String
   sources     Json?       // Store RAG sources (documents, posts, etc.)
   createdAt   DateTime    @default(now())
   user        Users       @relation("UserAIChatMessages", fields: [userId], references: [id])
+  room        ChatRoom?   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+  @@index([roomId])
 }
 
 enum ChatRole {

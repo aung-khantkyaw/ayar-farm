@@ -23,6 +23,7 @@ import apiKey from "./routes/api-key";
 import knowledgeBase from "./routes/knowledge-base";
 import dataVectorization from "./routes/data-vectorization";
 import aiChat from "./routes/ai-chat";
+import chatRoom from "./routes/chat-room";
 
 const app = express();
 
@@ -80,5 +81,6 @@ app.use("/api/api-keys", apiKey);
 app.use("/api/knowledge-base", knowledgeBase);
 app.use("/api/data-vectorization", dataVectorization);
 app.use("/api/ai-chat", aiChat);
+app.use("/api/chat-rooms", chatRoom);
 
 export default app;

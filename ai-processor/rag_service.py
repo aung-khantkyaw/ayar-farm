@@ -68,12 +68,26 @@ class RAGService:
                     )
                     
                     for result in search_results.points:
+                        # Use record_id as the appropriate ID based on collection type
+                        record_id = result.payload.get('record_id', '')
+                        post_id = result.payload.get('post_id') or (record_id if collection == 'posts' else None)
+                        document_id = result.payload.get('document_id') or (record_id if collection == 'documents' else None)
+                        kb_id = result.payload.get('kb_id') or (record_id if collection == 'knowledge_base' else None)
+                        
                         all_results.append({
                             'collection': collection,
                             'score': result.score,
                             'text': result.payload.get('text', ''),
-                            'record_id': result.payload.get('record_id', ''),
-                            'chunk_index': result.payload.get('chunk_index', 0)
+                            'record_id': record_id,
+                            'chunk_index': result.payload.get('chunk_index', 0),
+                            'metadata': {
+                                'type': result.payload.get('type', collection),
+                                'title': result.payload.get('title', ''),
+                                'author': result.payload.get('author', ''),
+                                'post_id': post_id,
+                                'document_id': document_id,
+                                'kb_id': kb_id
+                            }
                         })
                 except Exception as e:
                     print(f"⚠️  Failed to search collection {collection}: {e}")
@@ -195,7 +209,8 @@ async def chat(request: ChatRequest):
         sources.append({
             'collection': result['collection'],
             'record_id': result['record_id'],
-            'score': result['score']
+            'score': result['score'],
+            'metadata': result['metadata']
         })
     
     context = "\n\n".join(context_parts)
@@ -208,6 +223,9 @@ async def chat(request: ChatRequest):
             request.conversation_history
         ):
             yield chunk
+        
+        # Send sources metadata after response is complete
+        yield f"\n\n[SOURCES]\n{json.dumps(sources)}\n"
     
     return StreamingResponse(
         generate(),

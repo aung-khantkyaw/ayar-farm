@@ -70,10 +70,21 @@ class EmbeddingStatusRepository:
             if not table_name:
                 return None
             
-            cursor.execute(
-                f'SELECT * FROM "{table_name}" WHERE id = %s',
-                (record_id,)
-            )
+            # For Post, join with Users to get author name
+            if task_type.upper() == 'POST':
+                cursor.execute(
+                    '''SELECT p.*, u.name as author_name 
+                       FROM "Post" p 
+                       LEFT JOIN "Users" u ON p."authorId" = u.id 
+                       WHERE p.id = %s''',
+                    (record_id,)
+                )
+            else:
+                cursor.execute(
+                    f'SELECT * FROM "{table_name}" WHERE id = %s',
+                    (record_id,)
+                )
+            
             row = cursor.fetchone()
             if row:
                 columns = [desc[0] for desc in cursor.description]

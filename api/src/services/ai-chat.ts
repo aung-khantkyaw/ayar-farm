@@ -7,10 +7,15 @@ export class AIChatService {
     /**
      * Get chat history for a user
      */
-    public static async getChatHistory(userId: string, limit: number = 50) {
+    public static async getChatHistory(userId: string, roomId?: string, limit: number = 50) {
         try {
+            const where: any = { userId };
+            if (roomId) {
+                where.roomId = roomId;
+            }
+
             const messages = await prisma.aIChatMessage.findMany({
-                where: { userId },
+                where,
                 orderBy: { createdAt: 'asc' },
                 take: limit,
             });
@@ -30,11 +35,12 @@ export class AIChatService {
     /**
      * Save user question to database
      */
-    public static async saveUserMessage(userId: string, content: string) {
+    public static async saveUserMessage(userId: string, content: string, roomId?: string) {
         try {
             const message = await prisma.aIChatMessage.create({
                 data: {
                     userId,
+                    roomId,
                     role: 'USER',
                     content,
                 },
@@ -52,12 +58,14 @@ export class AIChatService {
     public static async saveAssistantMessage(
         userId: string,
         content: string,
-        sources?: any
+        sources?: any,
+        roomId?: string
     ) {
         try {
             const message = await prisma.aIChatMessage.create({
                 data: {
                     userId,
+                    roomId,
                     role: 'ASSISTANT',
                     content,
                     sources: sources || null,
@@ -73,10 +81,15 @@ export class AIChatService {
     /**
      * Clear chat history for a user
      */
-    public static async clearChatHistory(userId: string) {
+    public static async clearChatHistory(userId: string, roomId?: string) {
         try {
+            const where: any = { userId };
+            if (roomId) {
+                where.roomId = roomId;
+            }
+
             await prisma.aIChatMessage.deleteMany({
-                where: { userId },
+                where,
             });
 
             return { success: true };
