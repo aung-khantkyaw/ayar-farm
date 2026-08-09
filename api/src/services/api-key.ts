@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
+import { redisClient, STREAM_NAMES } from "../config/redis";
 
 export class ApiKeyService {
     public static async getAllApiKeys(): Promise<{ apiKeys: any }> {
@@ -41,6 +42,27 @@ export class ApiKeyService {
                 where: { id },
                 data,
             });
+
+            // If active field is being updated, publish to Redis stream
+            if (data.active !== undefined) {
+                try {
+                    await redisClient.xadd(
+                        STREAM_NAMES.API_KEY_UPDATES,
+                        '*',
+                        'type',
+                        'API_KEY_UPDATE',
+                        'apiKeyId',
+                        id,
+                        'active',
+                        String(data.active)
+                    );
+                    console.log(`📤 Published API key update to stream: ${id}, active: ${data.active}`);
+                } catch (redisError) {
+                    console.error('❌ Failed to publish to Redis stream:', redisError);
+                    // Don't throw error - the DB update succeeded
+                }
+            }
+
             return { apiKey };
         } catch (error) {
             throw new Error(`Database query failed: ${String(error)}`);

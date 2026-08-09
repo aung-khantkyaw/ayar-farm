@@ -1,5 +1,5 @@
 import { prisma } from "../prisma/client";
-import { Redis } from 'ioredis';
+import { redisClient, STREAM_NAMES } from "../config/redis";
 
 export interface PendingItem {
   id: string;
@@ -12,23 +12,6 @@ export interface PendingItem {
   embeddingStatus: string;
   created_at: Date;
 }
-
-const redis = new Redis(process.env.REDIS_URL as string, {
-  maxRetriesPerRequest: 3,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  enableReadyCheck: true
-});
-
-redis.on('error', (err) => {
-  console.error('Redis connection error:', err);
-});
-
-redis.on('connect', () => {
-  console.log('✅ Redis connected successfully');
-});
 
 export class DataVectorizationService {
     public static async getPendingItems(): Promise<{ items: PendingItem[] }> {
@@ -124,6 +107,96 @@ export class DataVectorizationService {
         }
     }
 
+    public static async getAllItems(): Promise<{ items: PendingItem[] }> {
+        try {
+            const items: PendingItem[] = [];
+
+            // Fetch all posts
+            const posts = await prisma.post.findMany({
+                select: {
+                    id: true,
+                    content: true,
+                    createdAt: true,
+                    embeddingStatus: true,
+                    author: {
+                        select: {
+                            name: true,
+                            user_type: true,
+                        }
+                    }
+                }
+            });
+
+            posts.forEach(post => {
+                items.push({
+                    id: post.id,
+                    type: 'post',
+                    title: post.content?.substring(0, 100) || 'No content',
+                    content: post.content || undefined,
+                    author: post.author?.name || undefined,
+                    user_type: post.author?.user_type ? String(post.author.user_type) : undefined,
+                    embeddingStatus: post.embeddingStatus,
+                    created_at: post.createdAt,
+                });
+            });
+
+            // Fetch all documents
+            const documents = await prisma.documents.findMany({
+                select: {
+                    id: true,
+                    title: true,
+                    author: true,
+                    file_urls: true,
+                    embeddingStatus: true,
+                    created_at: true,
+                }
+            });
+
+            documents.forEach(doc => {
+                items.push({
+                    id: doc.id,
+                    type: 'document',
+                    title: doc.title,
+                    author: doc.author,
+                    file_urls: doc.file_urls,
+                    embeddingStatus: doc.embeddingStatus,
+                    created_at: doc.created_at,
+                });
+            });
+
+            // Fetch all knowledge base items
+            const knowledgeBase = await prisma.knowledgeBase.findMany({
+                select: {
+                    id: true,
+                    title: true,
+                    author: true,
+                    file_urls: true,
+                    embeddingStatus: true,
+                    created_at: true,
+                }
+            });
+
+            knowledgeBase.forEach(kb => {
+                items.push({
+                    id: kb.id,
+                    type: 'knowledgeBase',
+                    title: kb.title,
+                    author: kb.author,
+                    file_urls: kb.file_urls,
+                    embeddingStatus: kb.embeddingStatus,
+                    created_at: kb.created_at,
+                });
+            });
+
+            // Sort by created_at descending
+            items.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+
+            return { items };
+        } catch (error) {
+            throw new Error(`Database query failed: ${String(error)}`);
+        }
+    }
+
     public static async updateEmbeddingStatus(
         type: 'post' | 'document' | 'knowledgeBase',
         id: string,
@@ -174,11 +247,11 @@ export class DataVectorizationService {
                     }
                 }
 
-                const streamId = await redis.xadd(
-                    'vector_task_stream', 
-                    'MAXLEN', '~', 500,  
-                    '*',                 
-                    ...streamArgs        
+                const streamId = await redisClient.xadd(
+                    STREAM_NAMES.VECTOR_TASK_STREAM,
+                    'MAXLEN', '~', 500,
+                    '*',
+                    ...streamArgs
                 ) as string;
 
                 console.log(`✅ [Redis Stream] Enqueued ${type} (ID: ${id}) to Python Worker. Stream ID: ${streamId}`);

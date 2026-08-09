@@ -12,6 +12,16 @@ export class DataVectorizationController {
         }
     }
 
+    public async getAllItems(req: Request, res: Response): Promise<void> {
+        try {
+            const { items } = await DataVectorizationService.getAllItems();
+            res.status(200).json({ message: "Get all items successfully", items });
+        } catch (error) {
+            res.status(500).json({ message: `Error fetching all items: ${error}` });
+            console.error("Error fetching all items:", error);
+        }
+    }
+
     public async updateEmbeddingStatus(req: Request, res: Response): Promise<void> {
         try {
             const { type, id, status } = req.body;

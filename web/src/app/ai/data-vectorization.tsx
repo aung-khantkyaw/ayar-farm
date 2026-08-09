@@ -67,18 +67,19 @@ const DataVectorization = () => {
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [previewItem, setPreviewItem] = useState<PendingItem | null>(null);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
 
   const fetchPendingItems = async () => {
     try {
       const token = localStorage.getItem("token") || undefined;
-      const result = await api.get("/data-vectorization/pending", token);
+      const result = await api.get("/data-vectorization/all", token);
       if (result.items) {
         setItems(result.items);
       }
     } catch (error) {
-      toast.error("Failed to fetch pending items");
+      toast.error("Failed to fetch items");
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +117,8 @@ const DataVectorization = () => {
   const filteredItems = items
     .filter((item) => {
       const matchesType = activeTab === "all" || item.type === activeTab;
-      return matchesType;
+      const matchesStatus = statusFilter === "all" || item.embeddingStatus === statusFilter;
+      return matchesType && matchesStatus;
     })
     .sort((a, b) => {
       if (!sortBy) return 0;
@@ -151,6 +153,21 @@ const DataVectorization = () => {
   const postCount = items.filter((item) => item.type === "post").length;
   const documentCount = items.filter((item) => item.type === "document").length;
   const knowledgeBaseCount = items.filter((item) => item.type === "knowledgeBase").length;
+
+  const postPendingCount = items.filter((item) => item.type === "post" && item.embeddingStatus === "PENDING").length;
+  const postProcessingCount = items.filter((item) => item.type === "post" && item.embeddingStatus === "PROCESSING").length;
+  const postCompletedCount = items.filter((item) => item.type === "post" && item.embeddingStatus === "COMPLETED").length;
+  const postFailedCount = items.filter((item) => item.type === "post" && item.embeddingStatus === "FAILED").length;
+
+  const documentPendingCount = items.filter((item) => item.type === "document" && item.embeddingStatus === "PENDING").length;
+  const documentProcessingCount = items.filter((item) => item.type === "document" && item.embeddingStatus === "PROCESSING").length;
+  const documentCompletedCount = items.filter((item) => item.type === "document" && item.embeddingStatus === "COMPLETED").length;
+  const documentFailedCount = items.filter((item) => item.type === "document" && item.embeddingStatus === "FAILED").length;
+
+  const knowledgeBasePendingCount = items.filter((item) => item.type === "knowledgeBase" && item.embeddingStatus === "PENDING").length;
+  const knowledgeBaseProcessingCount = items.filter((item) => item.type === "knowledgeBase" && item.embeddingStatus === "PROCESSING").length;
+  const knowledgeBaseCompletedCount = items.filter((item) => item.type === "knowledgeBase" && item.embeddingStatus === "COMPLETED").length;
+  const knowledgeBaseFailedCount = items.filter((item) => item.type === "knowledgeBase" && item.embeddingStatus === "FAILED").length;
 
   const handleBulkProcess = async (
     status: "PROCESSING" | "COMPLETED" | "FAILED",
@@ -294,13 +311,22 @@ const DataVectorization = () => {
                     <div className="text-3xl font-bold text-violet-900">
                       {postCount}
                     </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-violet-700 font-medium">
-                        {items.length > 0 ? ((postCount / items.length) * 100).toFixed(0) : 0}% of total
-                      </span>
-                      <div className="flex items-center space-x-1 text-violet-600">
-                        <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
-                        <span>Live</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-violet-600">Pending:</span>
+                        <span className="font-medium text-violet-800">{postPendingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-violet-600">Processing:</span>
+                        <span className="font-medium text-violet-800">{postProcessingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-violet-600">Completed:</span>
+                        <span className="font-medium text-violet-800">{postCompletedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-violet-600">Failed:</span>
+                        <span className="font-medium text-violet-800">{postFailedCount}</span>
                       </div>
                     </div>
                   </div>
@@ -331,13 +357,22 @@ const DataVectorization = () => {
                     <div className="text-3xl font-bold text-blue-900">
                       {documentCount}
                     </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-700 font-medium">
-                        {items.length > 0 ? ((documentCount / items.length) * 100).toFixed(0) : 0}% of total
-                      </span>
-                      <div className="flex items-center space-x-1 text-blue-600">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span>Live</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600">Pending:</span>
+                        <span className="font-medium text-blue-800">{documentPendingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600">Processing:</span>
+                        <span className="font-medium text-blue-800">{documentProcessingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600">Completed:</span>
+                        <span className="font-medium text-blue-800">{documentCompletedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600">Failed:</span>
+                        <span className="font-medium text-blue-800">{documentFailedCount}</span>
                       </div>
                     </div>
                   </div>
@@ -368,13 +403,22 @@ const DataVectorization = () => {
                     <div className="text-3xl font-bold text-emerald-900">
                       {knowledgeBaseCount}
                     </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-emerald-700 font-medium">
-                        {items.length > 0 ? ((knowledgeBaseCount / items.length) * 100).toFixed(0) : 0}% of total
-                      </span>
-                      <div className="flex items-center space-x-1 text-emerald-600">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <span>Live</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-600">Pending:</span>
+                        <span className="font-medium text-emerald-800">{knowledgeBasePendingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-600">Processing:</span>
+                        <span className="font-medium text-emerald-800">{knowledgeBaseProcessingCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-600">Completed:</span>
+                        <span className="font-medium text-emerald-800">{knowledgeBaseCompletedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-600">Failed:</span>
+                        <span className="font-medium text-emerald-800">{knowledgeBaseFailedCount}</span>
                       </div>
                     </div>
                   </div>
@@ -417,6 +461,44 @@ const DataVectorization = () => {
               <TabsTrigger value="document">Documents</TabsTrigger>
               <TabsTrigger value="knowledgeBase">Knowledge Base</TabsTrigger>
             </TabsList>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Filter by status:</span>
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+              >
+                All
+              </Button>
+              <Button
+                variant={statusFilter === "PENDING" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("PENDING")}
+              >
+                Pending
+              </Button>
+              <Button
+                variant={statusFilter === "PROCESSING" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("PROCESSING")}
+              >
+                Processing
+              </Button>
+              <Button
+                variant={statusFilter === "COMPLETED" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("COMPLETED")}
+              >
+                Completed
+              </Button>
+              <Button
+                variant={statusFilter === "FAILED" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("FAILED")}
+              >
+                Failed
+              </Button>
+            </div>
 
             <TabsContent value={activeTab} className="mt-4">
               {isLoading ? (
