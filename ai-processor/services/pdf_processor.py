@@ -74,11 +74,21 @@ class PDFProcessor:
             #     print(f"⚠️  Image extraction failed: {e}")
 
             return content
-            
+
         finally:
-            # Clean up temp file
+            # Clean up temp file with retry mechanism for Windows file locking
             if os.path.exists(temp_path):
-                os.remove(temp_path)
+                import time
+                max_retries = 5
+                for attempt in range(max_retries):
+                    try:
+                        os.remove(temp_path)
+                        break
+                    except PermissionError:
+                        if attempt < max_retries - 1:
+                            time.sleep(0.5)  # Wait 500ms before retry
+                        else:
+                            print(f"⚠️  Could not delete temp file after {max_retries} attempts: {temp_path}")
     
     def _extract_text(self, pdf_path: str) -> str:
         """Extract text from PDF using pdfplumber"""

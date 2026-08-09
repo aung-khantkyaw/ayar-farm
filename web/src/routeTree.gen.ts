@@ -19,6 +19,7 @@ import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcem
 import { Route as AdminChatRoomRouteImport } from './routes/admin.chat-room'
 import { Route as AdminSystemDocumentsRouteImport } from './routes/admin.system-documents'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AiAiPlaygroundRouteImport } from './routes/ai.ai-playground'
 import { Route as AiApiKeysRouteImport } from './routes/ai.api-keys'
 import { Route as AiDataVectorizationRouteImport } from './routes/ai.data-vectorization'
 import { Route as AiKnowledgeBaseRouteImport } from './routes/ai.knowledge-base'
@@ -83,6 +84,11 @@ const AdminSystemDocumentsRoute = AdminSystemDocumentsRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiAiPlaygroundRoute = AiAiPlaygroundRouteImport.update({
+  id: '/ai/ai-playground',
+  path: '/ai/ai-playground',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AiApiKeysRoute = AiApiKeysRouteImport.update({
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRoute
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRoute
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRoute
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/ai-playground'
     | '/ai/api-keys'
     | '/ai/data-vectorization'
     | '/ai/knowledge-base'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/ai-playground'
     | '/ai/api-keys'
     | '/ai/data-vectorization'
     | '/ai/knowledge-base'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/admin/chat-room'
     | '/admin/system-documents'
     | '/admin/users'
+    | '/ai/ai-playground'
     | '/ai/api-keys'
     | '/ai/data-vectorization'
     | '/ai/knowledge-base'
@@ -339,6 +351,7 @@ export interface RootRouteChildren {
   AdminChatRoomRoute: typeof AdminChatRoomRoute
   AdminSystemDocumentsRoute: typeof AdminSystemDocumentsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AiAiPlaygroundRoute: typeof AiAiPlaygroundRoute
   AiApiKeysRoute: typeof AiApiKeysRoute
   AiDataVectorizationRoute: typeof AiDataVectorizationRoute
   AiKnowledgeBaseRoute: typeof AiKnowledgeBaseRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai/ai-playground': {
+      id: '/ai/ai-playground'
+      path: '/ai/ai-playground'
+      fullPath: '/ai/ai-playground'
+      preLoaderRoute: typeof AiAiPlaygroundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ai/api-keys': {
@@ -547,6 +567,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminChatRoomRoute: AdminChatRoomRoute,
   AdminSystemDocumentsRoute: AdminSystemDocumentsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AiAiPlaygroundRoute: AiAiPlaygroundRoute,
   AiApiKeysRoute: AiApiKeysRoute,
   AiDataVectorizationRoute: AiDataVectorizationRoute,
   AiKnowledgeBaseRoute: AiKnowledgeBaseRoute,

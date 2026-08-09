@@ -22,6 +22,7 @@ import deviceToken from "./routes/device-token";
 import apiKey from "./routes/api-key";
 import knowledgeBase from "./routes/knowledge-base";
 import dataVectorization from "./routes/data-vectorization";
+import aiChat from "./routes/ai-chat";
 
 const app = express();
 
@@ -78,5 +79,6 @@ app.use("/api/device-tokens", deviceToken);
 app.use("/api/api-keys", apiKey);
 app.use("/api/knowledge-base", knowledgeBase);
 app.use("/api/data-vectorization", dataVectorization);
+app.use("/api/ai-chat", aiChat);
 
 export default app;

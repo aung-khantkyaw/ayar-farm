@@ -37,6 +37,7 @@ model Users {
   posts                      Post[]                    @relation("UserPosts")
   postComments               PostComment[]             @relation("UserPostComments")
   postReactions              PostReaction[]            @relation("UserPostReactions")
+  aiChatMessages             AIChatMessage[]           @relation("UserAIChatMessages")
 }
 
 model CropTypes {
@@ -477,4 +478,22 @@ model KnowledgeBase {
   embeddingStatus EmbeddingStatus @default(PENDING)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
+}
+
+model AIChatMessage {
+  id          String      @id @unique @default(uuid())
+  userId      String
+  role        ChatRole    @default(USER)
+  content     String
+  sources     Json?       // Store RAG sources (documents, posts, etc.)
+  createdAt   DateTime    @default(now())
+  user        Users       @relation("UserAIChatMessages", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
 }

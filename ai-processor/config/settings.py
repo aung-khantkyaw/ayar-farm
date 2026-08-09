@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env.example instead of .env
-env_path = Path(__file__).parent.parent / '.env.example'
-load_dotenv(env_path)
+# env_path = Path(__file__).parent.parent / '.env.example'
+load_dotenv()
 
 class Settings:
     REDIS_URL: str = os.getenv('REDIS_URL')
