@@ -34,6 +34,20 @@ export const api = {
     return handleResponse(response);
   },
 
+  async postStream(endpoint: string, data: any, token?: string, signal?: AbortSignal) {
+    const isFormData = data instanceof FormData;
+    const headers: HeadersInit = {};
+    if (!isFormData) headers['Content-Type'] = 'application/json';
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
+      signal,
+    });
+  },
+
   async put(endpoint: string, data: any, token?: string) {
     const isFormData = data instanceof FormData;
     const headers: HeadersInit = {};

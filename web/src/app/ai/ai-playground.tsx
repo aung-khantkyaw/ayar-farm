@@ -130,7 +130,7 @@ export default function AIPlayground() {
     try {
       const token = localStorage.getItem("token") || undefined;
       await api.delete(`/chat-rooms/${roomToDelete.id}`, token);
-      setChatRooms(chatRooms.filter(room => room.id !== roomToDelete.id));
+      setChatRooms(chatRooms.filter((room) => room.id !== roomToDelete.id));
       if (selectedRoom?.id === roomToDelete.id) {
         setSelectedRoom(null);
         setMessages([]);
@@ -193,10 +193,23 @@ export default function AIPlayground() {
     if (selectedRoom && messages.length === 0) {
       try {
         const token = localStorage.getItem("token") || undefined;
-        const truncatedTitle = userMessage.length > 50 ? userMessage.substring(0, 50) + "..." : userMessage;
-        await api.put(`/chat-rooms/${selectedRoom.id}`, { title: truncatedTitle }, token);
+        const truncatedTitle =
+          userMessage.length > 50
+            ? userMessage.substring(0, 50) + "..."
+            : userMessage;
+        await api.put(
+          `/chat-rooms/${selectedRoom.id}`,
+          { title: truncatedTitle },
+          token,
+        );
         setSelectedRoom({ ...selectedRoom, title: truncatedTitle });
-        setChatRooms(chatRooms.map(room => room.id === selectedRoom.id ? { ...room, title: truncatedTitle } : room));
+        setChatRooms(
+          chatRooms.map((room) =>
+            room.id === selectedRoom.id
+              ? { ...room, title: truncatedTitle }
+              : room,
+          ),
+        );
       } catch (error) {
         console.error("Failed to update room title:", error);
       }
@@ -206,20 +219,14 @@ export default function AIPlayground() {
       const token = localStorage.getItem("token") || undefined;
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/ai-chat/stream`,
+      const response = await api.postStream(
+        "/ai-chat/stream",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            question: userMessage,
-            roomId: selectedRoom?.id,
-          }),
-          signal: abortControllerRef.current.signal,
+          question: userMessage,
+          roomId: selectedRoom?.id,
         },
+        token,
+        abortControllerRef.current.signal,
       );
 
       if (!response.ok) {
@@ -675,7 +682,9 @@ export default function AIPlayground() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <p className="text-gray-700">
-                Are you sure you want to delete "{roomToDelete?.title || "this chat room"}"? This action cannot be undone and will delete all messages in this room.
+                Are you sure you want to delete "
+                {roomToDelete?.title || "this chat room"}"? This action cannot
+                be undone and will delete all messages in this room.
               </p>
               <div className="flex gap-3 justify-end">
                 <button
