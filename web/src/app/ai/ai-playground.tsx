@@ -12,6 +12,8 @@ import {
   MessageSquare,
   ChevronRight,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api } from "@/lib/api";
 
 import { SiteHeader } from "@/components/site-header";
@@ -462,9 +464,32 @@ export default function AIPlayground() {
                               : "bg-white border border-slate-200 text-slate-900"
                           }`}
                         >
-                          <p className="whitespace-pre-wrap leading-relaxed">
-                            {message.content}
-                          </p>
+                          <div className="prose prose-sm prose-slate m-0">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ node, ...props }) => (
+                                  <p className="whitespace-pre-wrap leading-relaxed mt-0" {...props} />
+                                ),
+                                a: ({ node, ...props }) => (
+                                  <a className="text-slate-900 underline" {...props} />
+                                ),
+                                li: ({ node, ...props }) => (
+                                  <li className="ml-5 list-disc" {...props} />
+                                ),
+                                code: ({ node, className, ...props }) => (
+                                  <code
+                                    className={`rounded-md bg-slate-100 px-1 py-0.5 text-sm font-mono ${
+                                      className || ""
+                                    }`}
+                                    {...props}
+                                  />
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
                           {message.sources &&
                             Array.isArray(message.sources) &&
                             message.sources.length > 0 && (
