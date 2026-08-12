@@ -1,41 +1,70 @@
-import { Button } from "@/components/ui/button"
-import { PhoneMockup } from "@/components/PhoneMockup"
-import { ArrowRight, Download, Play } from "lucide-react"
-import { useLanguage } from "@/lib/LanguageContext"
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
-import type { ActiveVideo } from "@/lib/interface"
+import { Button } from "@/components/ui/button";
+import { PhoneMockup } from "@/components/PhoneMockup";
+import { ArrowRight, Download, Play } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import type { ActiveVideo, Application } from "@/lib/interface";
 
 export function Hero() {
-  const { language } = useLanguage()
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null)
-  const [videoLoading, setVideoLoading] = useState(true)
+  const { language } = useLanguage();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null);
+  const [videoLoading, setVideoLoading] = useState(true);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [, setAppsLoading] = useState(true);
 
   const fetchActiveVideo = async () => {
     try {
       const response = await api.get(
         "/resources/resources?type=VIDEO&isActive=true",
-      )
+      );
 
       if (response?.resources) {
-        setActiveVideo(response.resources)
+        setActiveVideo(response.resources);
       }
     } catch (error) {
-      console.error("Error fetching active video:", error)
+      console.error("Error fetching active video:", error);
     } finally {
-      setVideoLoading(false)
+      setVideoLoading(false);
     }
-  }
+  };
+
+  const fetchActiveApplications = async () => {
+    try {
+      const response = await api.get(
+        "/resources/resources?type=APPLICATION&isActive=true",
+      );
+
+      if (response?.resources) {
+        const resources = response.resources;
+        setApplications(Array.isArray(resources) ? resources : [resources]);
+      } else {
+        setApplications([]);
+      }
+    } catch (error) {
+      console.error("Error fetching active applications:", error);
+      setApplications([]);
+    } finally {
+      setAppsLoading(false);
+    }
+  };
+
+  const handleDownload = async (appId: string, appUrl: string) => {
+    try {
+      await api.patch(`/resources/resources/${appId}`);
+      window.open(appUrl, "_blank");
+    } catch (error) {
+      console.error("Error downloading application:", error);
+      window.open(appUrl, "_blank");
+    }
+  };
 
   useEffect(() => {
-    fetchActiveVideo()
-  }, [])
+    fetchActiveVideo();
+    fetchActiveApplications();
+  }, []);
 
   const content = {
     my: {
@@ -59,18 +88,17 @@ export function Hero() {
         "Connect with farmers, access expert knowledge, get real-time market prices, and receive AI-powered farming assistance—all in one mobile app.",
       downloadButton: "Download for Android",
       learnMoreButton: "Learn More",
-      features: [
-        "Free to use",
-        "Farmer community",
-        "AI-powered assistance",
-      ],
+      features: ["Free to use", "Farmer community", "AI-powered assistance"],
     },
   };
 
-  const t = content[language]
+  const t = content[language];
 
   return (
-    <section id="home" className="min-h-screen pt-16 flex items-center bg-gradient-to-b from-background to-muted/20">
+    <section
+      id="home"
+      className="min-h-screen pt-16 flex items-center bg-gradient-to-b from-background to-muted/20"
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
@@ -88,10 +116,25 @@ export function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="gap-2 text-base">
-                <Download className="w-5 h-5" />
-                {t.downloadButton}
-              </Button>
+              {applications.length > 0 ? (
+                applications.slice(0, 1).map((app) => (
+                  <Button
+                    key={app.id}
+                    size="lg"
+                    onClick={() => handleDownload(app.id, app.resource_url[0])}
+                    className="gap-2 text-base"
+                  >
+                    <Download className="w-5 h-5" />
+                    {t.downloadButton}
+                  </Button>
+                ))
+              ) : (
+                <Button size="lg" className="gap-2 text-base">
+                  <Download className="w-5 h-5" />
+                  {t.downloadButton}
+                </Button>
+              )}
+
               <Button size="lg" variant="outline" className="gap-2 text-base">
                 {t.learnMoreButton}
                 <ArrowRight className="w-5 h-5" />
@@ -173,5 +216,5 @@ export function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }
