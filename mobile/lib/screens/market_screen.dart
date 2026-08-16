@@ -424,46 +424,6 @@ class _MarketScreenState extends State<MarketScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: surfaceColor,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: textMuted,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedFontSize: 10,
-        unselectedFontSize: 10,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          } else if (index == 1) {
-            Navigator.pop(context);
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            activeIcon: const Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.grid_view),
-            activeIcon: const Icon(Icons.grid_view),
-            label: AppLocalizations.of(context)!.navCategory,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.groups_outlined),
-            activeIcon: const Icon(Icons.groups),
-            label: AppLocalizations.of(context)!.navChatting,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            activeIcon: const Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navSetting,
-          ),
-        ],
-      ),
       body:
           _isLoading
               ? const Center(

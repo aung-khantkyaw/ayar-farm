@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { api } from "@/lib/api";
 
 import { SiteHeader } from "@/components/site-header";
@@ -52,6 +53,11 @@ interface ChatRoom {
 }
 
 export default function AIPlayground() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const roomId = pathname.match(/^\/ai\/ai-playground\/([^/]+)\/?$/)?.[1];
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +71,7 @@ export default function AIPlayground() {
   const [roomToDelete, setRoomToDelete] = useState<ChatRoom | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pendingRoomIdRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -78,6 +85,54 @@ export default function AIPlayground() {
     loadChatRooms();
   }, []);
 
+  useEffect(() => {
+    if (!roomId) {
+      setSelectedRoom(null);
+      setMessages([]);
+      return;
+    }
+
+    // Preserve the optimistic first message only for the room that was just created.
+    if (pendingRoomIdRef.current === roomId) {
+      pendingRoomIdRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadRoom = async () => {
+      try {
+        const token = localStorage.getItem("token") || undefined;
+        const [roomResult, historyResult] = await Promise.all([
+          api.get(`/chat-rooms/${roomId}`, token),
+          api.get(
+            `/ai-chat/history?roomId=${encodeURIComponent(roomId)}`,
+            token,
+          ),
+        ]);
+        const room = roomResult.chatRoom;
+        if (!room) {
+          throw new Error("Chat room not found");
+        }
+        if (cancelled) return;
+        setSelectedRoom(room);
+        // Chat history is the source of truth for room messages. The room API is
+        // used only for room metadata, so messages are still shown if its include
+        // payload changes or is intentionally omitted.
+        setMessages(historyResult.data || []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load room messages:", error);
+        navigate({ to: "/ai/ai-playground", replace: true });
+      }
+    };
+
+    loadRoom();
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, navigate]);
+
   const loadChatRooms = async () => {
     try {
       const token = localStorage.getItem("token") || undefined;
@@ -88,37 +143,15 @@ export default function AIPlayground() {
     }
   };
 
-  const createNewRoom = async () => {
-    try {
-      const token = localStorage.getItem("token") || undefined;
-      const result = await api.post(
-        "/chat-rooms",
-        { title: "New Chat" },
-        token,
-      );
-      const newRoom = result.chatRoom;
-      setChatRooms([newRoom, ...chatRooms]);
-      setSelectedRoom(newRoom);
-      setMessages([]);
-    } catch (error) {
-      console.error("Failed to create chat room:", error);
-    }
+  const createNewRoom = () => {
+    navigate({ to: "/ai/ai-playground" });
   };
 
-  const selectRoom = async (room: ChatRoom) => {
-    setSelectedRoom(room);
-    try {
-      const token = localStorage.getItem("token") || undefined;
-      const result = await api.get(`/chat-rooms/${room.id}`, token);
-      const roomData = result.chatRoom;
-      if (roomData && roomData.messages) {
-        setMessages(roomData.messages);
-      } else {
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error("Failed to load room messages:", error);
-    }
+  const selectRoom = (room: ChatRoom) => {
+    navigate({
+      to: "/ai/ai-playground/$roomId",
+      params: { roomId: room.id },
+    });
   };
 
   const deleteRoom = async (room: ChatRoom) => {
@@ -134,42 +167,12 @@ export default function AIPlayground() {
       await api.delete(`/chat-rooms/${roomToDelete.id}`, token);
       setChatRooms(chatRooms.filter((room) => room.id !== roomToDelete.id));
       if (selectedRoom?.id === roomToDelete.id) {
-        setSelectedRoom(null);
-        setMessages([]);
+        navigate({ to: "/ai/ai-playground" });
       }
       setShowDeleteConfirm(false);
       setRoomToDelete(null);
     } catch (error) {
       console.error("Failed to delete chat room:", error);
-    }
-  };
-
-  const loadChatHistory = async () => {
-    try {
-      const token = localStorage.getItem("token") || undefined;
-      const result = await api.get("/ai-chat/history", token);
-      setMessages(result.data || []);
-    } catch (error) {
-      console.error("Failed to load chat history:", error);
-    }
-  };
-
-  useEffect(() => {
-    loadChatHistory();
-  }, []);
-
-  const clearChatHistory = async () => {
-    try {
-      const token = localStorage.getItem("token") || undefined;
-      if (selectedRoom) {
-        await api.delete(`/ai-chat/history?roomId=${selectedRoom.id}`, token);
-      } else {
-        await api.delete("/ai-chat/history", token);
-      }
-      setMessages([]);
-      setCurrentResponse("");
-    } catch (error) {
-      console.error("Failed to clear chat history:", error);
     }
   };
 
@@ -191,8 +194,36 @@ export default function AIPlayground() {
     };
     setMessages((prev) => [...prev, newUserMessage]);
 
+    let activeRoom = selectedRoom;
+
+    // A room is created only after the user sends their first question.
+    if (!activeRoom) {
+      try {
+        const token = localStorage.getItem("token") || undefined;
+        const result = await api.post(
+          "/chat-rooms",
+          { title: "New Chat" },
+          token,
+        );
+        activeRoom = result.chatRoom;
+        setChatRooms((previousRooms) => [activeRoom!, ...previousRooms]);
+        setSelectedRoom(activeRoom);
+        pendingRoomIdRef.current = activeRoom!.id;
+        navigate({
+          to: "/ai/ai-playground/$roomId",
+          params: { roomId: activeRoom!.id },
+          replace: true,
+        });
+      } catch (error) {
+        console.error("Failed to create chat room:", error);
+        setIsLoading(false);
+        setIsStreaming(false);
+        return;
+      }
+    }
+
     // Update room title if this is the first message in the room
-    if (selectedRoom && messages.length === 0) {
+    if (activeRoom && messages.length === 0) {
       try {
         const token = localStorage.getItem("token") || undefined;
         const truncatedTitle =
@@ -200,14 +231,14 @@ export default function AIPlayground() {
             ? userMessage.substring(0, 50) + "..."
             : userMessage;
         await api.put(
-          `/chat-rooms/${selectedRoom.id}`,
+          `/chat-rooms/${activeRoom.id}`,
           { title: truncatedTitle },
           token,
         );
-        setSelectedRoom({ ...selectedRoom, title: truncatedTitle });
-        setChatRooms(
-          chatRooms.map((room) =>
-            room.id === selectedRoom.id
+        setSelectedRoom({ ...activeRoom, title: truncatedTitle });
+        setChatRooms((rooms) =>
+          rooms.map((room) =>
+            room.id === activeRoom!.id
               ? { ...room, title: truncatedTitle }
               : room,
           ),
@@ -225,7 +256,7 @@ export default function AIPlayground() {
         "/ai-chat/stream",
         {
           question: userMessage,
-          roomId: selectedRoom?.id,
+          roomId: activeRoom!.id,
         },
         token,
         abortControllerRef.current.signal,
@@ -243,20 +274,29 @@ export default function AIPlayground() {
       }
 
       let fullResponse = "";
+      let eventBuffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        eventBuffer += decoder.decode(value, { stream: true });
+        const events = eventBuffer.split("\n\n");
+        eventBuffer = events.pop() || "";
 
-        for (const line of lines) {
+        for (const event of events) {
+          const line = event
+            .split("\n")
+            .find((item) => item.startsWith("data: "));
+          if (!line) continue;
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
 
-              if (data.type === "chunk") {
+              if (data.type === "user_message") {
+                // The server has persisted the question; show the thinking state now.
+                setIsLoading(false);
+              } else if (data.type === "chunk") {
                 fullResponse += data.content;
                 setCurrentResponse(fullResponse);
               } else if (data.type === "done") {
@@ -413,13 +453,6 @@ export default function AIPlayground() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={clearChatHistory}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded-2xl shadow-sm transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Clear Chat
-              </button>
             </div>
 
             {/* Main Content with Sidebar */}
@@ -469,10 +502,16 @@ export default function AIPlayground() {
                               remarkPlugins={[remarkGfm]}
                               components={{
                                 p: ({ node, ...props }) => (
-                                  <p className="whitespace-pre-wrap leading-relaxed mt-0" {...props} />
+                                  <p
+                                    className="whitespace-pre-wrap leading-relaxed mt-0"
+                                    {...props}
+                                  />
                                 ),
                                 a: ({ node, ...props }) => (
-                                  <a className="text-slate-900 underline" {...props} />
+                                  <a
+                                    className="text-slate-900 underline"
+                                    {...props}
+                                  />
                                 ),
                                 li: ({ node, ...props }) => (
                                   <li className="ml-5 list-disc" {...props} />
@@ -539,27 +578,23 @@ export default function AIPlayground() {
                       </div>
                     ))}
 
-                    {isStreaming && currentResponse && (
+                    {isStreaming && (
                       <div className="flex gap-4 justify-start">
                         <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Sparkles className="w-5 h-5 text-white" />
                         </div>
                         <div className="max-w-2xl rounded-2xl px-5 py-3 bg-white border border-slate-200 text-slate-900">
-                          <p className="whitespace-pre-wrap">
-                            {currentResponse}
-                          </p>
-                          <span className="inline-block w-2 h-5 bg-slate-900 animate-pulse ml-1" />
-                        </div>
-                      </div>
-                    )}
-
-                    {isLoading && !isStreaming && (
-                      <div className="flex gap-4 justify-start">
-                        <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="max-w-2xl rounded-2xl px-5 py-3 bg-white border border-slate-200">
-                          <Loader2 className="w-5 h-5 text-slate-900 animate-spin" />
+                          {currentResponse ? (
+                            <p className="whitespace-pre-wrap">
+                              {currentResponse}
+                              <span className="inline-block w-1 h-5 bg-slate-900 animate-pulse ml-2" />
+                            </p>
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Thinking...
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -579,11 +614,11 @@ export default function AIPlayground() {
                         placeholder="Ask about farming, livestock, or breeding..."
                         className="h-[48px] flex-1 resize-none rounded-3xl border border-gray-300 bg-white px-5 py-3 text-sm shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-slate-900"
                         rows={1}
-                        disabled={isLoading}
+                        disabled={isStreaming}
                       />
                       <button
                         onClick={sendMessage}
-                        disabled={!input.trim() || isLoading}
+                        disabled={!input.trim() || isStreaming}
                         className="inline-flex h-[48px] items-center justify-center gap-2 rounded-3xl bg-slate-900 px-6 text-sm font-semibold text-white shadow hover:bg-slate-800 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
                       >
                         {isLoading ? (

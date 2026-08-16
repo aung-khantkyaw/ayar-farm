@@ -35,6 +35,7 @@ import { Route as ResourceAgrometBulletinsRouteImport } from './routes/resource.
 import { Route as ResourceApplicationsRouteImport } from './routes/resource.applications'
 import { Route as ResourceLoansRouteImport } from './routes/resource.loans'
 import { Route as ResourceVideosRouteImport } from './routes/resource.videos'
+import { Route as AiAiPlaygroundRoomIdRouteImport } from './routes/ai.ai-playground.$roomId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -167,6 +168,11 @@ const ResourceVideosRoute = ResourceVideosRouteImport.update({
   path: '/resource/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiAiPlaygroundRoomIdRoute = AiAiPlaygroundRoomIdRouteImport.update({
+  id: '/$roomId',
+  path: '/$roomId',
+  getParentRoute: () => AiAiPlaygroundRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -179,7 +185,7 @@ export interface FileRoutesByFullPath {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/ai/ai-playground': typeof AiAiPlaygroundRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRouteWithChildren
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/resource/applications': typeof ResourceApplicationsRoute
   '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
+  '/ai/ai-playground/$roomId': typeof AiAiPlaygroundRoomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -207,7 +214,7 @@ export interface FileRoutesByTo {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/ai/ai-playground': typeof AiAiPlaygroundRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRouteWithChildren
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/resource/applications': typeof ResourceApplicationsRoute
   '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
+  '/ai/ai-playground/$roomId': typeof AiAiPlaygroundRoomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -236,7 +244,7 @@ export interface FileRoutesById {
   '/admin/chat-room': typeof AdminChatRoomRoute
   '/admin/system-documents': typeof AdminSystemDocumentsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/ai/ai-playground': typeof AiAiPlaygroundRoute
+  '/ai/ai-playground': typeof AiAiPlaygroundRouteWithChildren
   '/ai/api-keys': typeof AiApiKeysRoute
   '/ai/data-vectorization': typeof AiDataVectorizationRoute
   '/ai/knowledge-base': typeof AiKnowledgeBaseRoute
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/resource/applications': typeof ResourceApplicationsRoute
   '/resource/loans': typeof ResourceLoansRoute
   '/resource/videos': typeof ResourceVideosRoute
+  '/ai/ai-playground/$roomId': typeof AiAiPlaygroundRoomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/resource/applications'
     | '/resource/loans'
     | '/resource/videos'
+    | '/ai/ai-playground/$roomId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/resource/applications'
     | '/resource/loans'
     | '/resource/videos'
+    | '/ai/ai-playground/$roomId'
   id:
     | '__root__'
     | '/'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/resource/applications'
     | '/resource/loans'
     | '/resource/videos'
+    | '/ai/ai-playground/$roomId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -351,7 +363,7 @@ export interface RootRouteChildren {
   AdminChatRoomRoute: typeof AdminChatRoomRoute
   AdminSystemDocumentsRoute: typeof AdminSystemDocumentsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AiAiPlaygroundRoute: typeof AiAiPlaygroundRoute
+  AiAiPlaygroundRoute: typeof AiAiPlaygroundRouteWithChildren
   AiApiKeysRoute: typeof AiApiKeysRoute
   AiDataVectorizationRoute: typeof AiDataVectorizationRoute
   AiKnowledgeBaseRoute: typeof AiKnowledgeBaseRoute
@@ -553,8 +565,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourceVideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai/ai-playground/$roomId': {
+      id: '/ai/ai-playground/$roomId'
+      path: '/$roomId'
+      fullPath: '/ai/ai-playground/$roomId'
+      preLoaderRoute: typeof AiAiPlaygroundRoomIdRouteImport
+      parentRoute: typeof AiAiPlaygroundRoute
+    }
   }
 }
+
+interface AiAiPlaygroundRouteChildren {
+  AiAiPlaygroundRoomIdRoute: typeof AiAiPlaygroundRoomIdRoute
+}
+
+const AiAiPlaygroundRouteChildren: AiAiPlaygroundRouteChildren = {
+  AiAiPlaygroundRoomIdRoute: AiAiPlaygroundRoomIdRoute,
+}
+
+const AiAiPlaygroundRouteWithChildren = AiAiPlaygroundRoute._addFileChildren(
+  AiAiPlaygroundRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -567,7 +598,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminChatRoomRoute: AdminChatRoomRoute,
   AdminSystemDocumentsRoute: AdminSystemDocumentsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AiAiPlaygroundRoute: AiAiPlaygroundRoute,
+  AiAiPlaygroundRoute: AiAiPlaygroundRouteWithChildren,
   AiApiKeysRoute: AiApiKeysRoute,
   AiDataVectorizationRoute: AiDataVectorizationRoute,
   AiKnowledgeBaseRoute: AiKnowledgeBaseRoute,
