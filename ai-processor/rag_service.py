@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
@@ -13,6 +14,14 @@ from database.connection import get_db_connection
 from services.api_key_manager import api_key_manager
 
 app = FastAPI(title="RAG Chat Service")
+ 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.CORS_ALLOWED_ORIGINS],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ChatRequest(BaseModel):
     question: str
@@ -600,6 +609,11 @@ class RAGService:
         return has_farming or has_livestock or has_region
 
 rag_service = RAGService()
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"status": "RAG Chat Service"}
 
 @app.post("/chat")
 async def chat(request: ChatRequest):

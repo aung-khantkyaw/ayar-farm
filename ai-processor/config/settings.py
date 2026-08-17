@@ -11,7 +11,8 @@ class Settings:
     DATABASE_URL: str = os.getenv('DATABASE_URL')
     QDRANT_URL: str = os.getenv('QDRANT_URL')
     QDRANT_API_KEY: str = os.getenv('QDRANT_API_KEY')
-    
+    CORS_ALLOWED_ORIGINS: str = os.getenv('CORS_ALLOWED_ORIGINS')
+
     # Stream names
     API_KEY_UPDATES_STREAM: str = 'api_key_updates'
     VECTOR_TASK_STREAM: str = 'vector_task_stream'

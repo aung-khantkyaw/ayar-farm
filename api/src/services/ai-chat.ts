@@ -1,7 +1,7 @@
 import { prisma } from "../prisma/client";
 import axios from 'axios';
 
-const PYTHON_RAG_SERVICE_URL = process.env.PYTHON_RAG_SERVICE_URL || '	http://localhost:8001';
+const PYTHON_RAG_SERVICE_URL = process.env.PYTHON_RAG_SERVICE_URL || 'http://localhost:8001';
 
 export class AIChatService {
     /**
