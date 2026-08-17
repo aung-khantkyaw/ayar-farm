@@ -18,31 +18,51 @@ registerSocketHandlers(io);
 const RAG_SERVICE_URL = process.env.PYTHON_RAG_SERVICE_URL || 'http://localhost:8001';
 
 const wakeUpAIProcessor = async () => {
-  const maxRetries = 15;
-  const retryDelay = 4000; // 4 seconds
+  const maxWakeUpTime = 2 * 60 * 1000; // 2 minutes
+  const retryDelay = 4000; // Retry every 4 seconds
+  const requestTimeout = 15000; // 15 seconds per request
+
+  const startTime = Date.now();
+  let attempt = 0;
 
   console.log('🔄 Waking up AI Processor...');
-  
-  for (let i = 0; i < maxRetries; i++) {
+
+  while (Date.now() - startTime < maxWakeUpTime) {
+    attempt++;
+
     try {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      console.log(`⏳ Wake-up attempt ${attempt} (${elapsed}s elapsed)...`);
+
       const response = await fetch(`${RAG_SERVICE_URL}/health`, {
-        signal: AbortSignal.timeout(15000) // 15 second timeout
+        signal: AbortSignal.timeout(requestTimeout),
       });
-      
+
       if (response.ok) {
         console.log('✅ AI Processor is awake and ready');
         return true;
       }
+
+      console.warn(
+        `⚠️ AI Processor responded with status ${response.status}`
+      );
     } catch (error) {
-      console.log(`⏳ Wake-up attempt ${i + 1}/${maxRetries} failed, retrying...`);
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+
+      console.log(
+        `⏳ Wake-up attempt ${attempt} failed (${elapsed}s elapsed), retrying...`
+      );
     }
-    
-    if (i < maxRetries - 1) {
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+
+    // Don't wait if 2-minute limit has already been reached
+    if (Date.now() - startTime >= maxWakeUpTime) {
+      break;
     }
+
+    await new Promise((resolve) => setTimeout(resolve, retryDelay));
   }
-  
-  console.log('⚠️  Failed to wake up AI Processor after multiple attempts');
+
+  console.log('⚠️ Failed to wake up AI Processor within 2 minutes');
   return false;
 };
 
