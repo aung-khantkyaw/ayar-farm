@@ -89,7 +89,7 @@ export function NotFound() {
           <div className="flex justify-center items-center mt-4 space-x-2">
             <Leaf className="w-4 h-4 text-green-500 animate-pulse" />
             <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-              AyarFarm - Growing Together
+              AyeyarFarm - Growing Together
             </span>
             <Leaf className="w-4 h-4 text-green-500 animate-pulse" />
           </div>

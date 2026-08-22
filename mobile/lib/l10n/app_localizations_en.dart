@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helloWorld => 'Hello World!';
 
   @override
-  String get appTitle => 'Ayar Farm Link';
+  String get appTitle => 'Ayeyar Farm Link';
 
   @override
   String get pushedButtonMessage =>

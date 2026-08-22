@@ -1,78 +1,152 @@
+name: ayar-farm
+
 services:
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    ports:
-      - "3000:3000"
     env_file:
       - ./api/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      PYTHON_RAG_SERVICE_URL: http://ai-processor:8001
+    ports:
+      - "3000:3000"
     depends_on:
-      - database
-    restart: always
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      ai-processor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('net').connect(3000, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    init: true
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
 
   web:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
-    ports:
-      - "4173:4173"
     env_file:
       - ./web/.env
+    ports:
+      - "5173:4173"
     depends_on:
-      - api
-    restart: always
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('net').connect(4173, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    init: true
+    restart: unless-stopped
+    networks:
+      - frontend
 
   mobile:
     build:
       context: .
       dockerfile: docker/Dockerfile.mobile
+      target: prod
     ports:
-      - "80:80"
-    restart: always
+      - "8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - frontend
 
   ai-processor:
     build:
       context: .
       dockerfile: docker/Dockerfile.ai-processor
-    ports:
-      - "8001:8001"
     env_file:
       - ./ai-processor/.env
+    environment:
+      PORT: 8001
+    expose:
+      - "8001"
     depends_on:
-      - database
-      - redis
-      - qdrant
-    restart: always
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: always
-
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    restart: always
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8001/health', timeout=3)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    init: true
+    restart: unless-stopped
+    networks:
+      - backend
 
   database:
     build:
       context: .
       dockerfile: docker/Dockerfile.database
-    ports:
-      - "5432:5432"
+    # Kept on the private network; use `docker compose exec database psql ...`
+    # for administrative access instead of publishing PostgreSQL to the host.
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend
+
+  qdrant:
+    image: qdrant/qdrant:v1.16.2
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+    networks:
+      - backend
 
 volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+
+networks:
+  frontend:
+  backend:
+    internal: true

@@ -46,9 +46,9 @@ export function DownloadCTA() {
 
   const content = {
     my: {
-      title: "AyarFarm Link ကို ယနေ့ပင် ဒေါင်းလုဒ်ရယူလိုက်ပါ",
+      title: "AyeyarFarm Link ကို ယနေ့ပင် ဒေါင်းလုဒ်ရယူလိုက်ပါ",
       description:
-        "AyarFarm Link ကို အသုံးပြုနေကြသော ထောင်ပေါင်းများစွာသော တောင်သူများနှင့်အတူ ပူးပေါင်းပါဝင်ပြီး သင့်စိုက်ပျိုးမွေးမြူရေးလုပ်ငန်းများကို တိုးတက်ကောင်းမွန်စေကာ အထွက်နှုန်းများကို တိုးမြှင့်လိုက်ပါ။",
+        "AyeyarFarm Link ကို အသုံးပြုနေကြသော ထောင်ပေါင်းများစွာသော တောင်သူများနှင့်အတူ ပူးပေါင်းပါဝင်ပြီး သင့်စိုက်ပျိုးမွေးမြူရေးလုပ်ငန်းများကို တိုးတက်ကောင်းမွန်စေကာ အထွက်နှုန်းများကို တိုးမြှင့်လိုက်ပါ။",
       downloadButton: "Android အတွက် ဒေါင်းလုဒ်ရယူရန်",
       playStoreButton: "Google Play Store",
       features: [
@@ -60,9 +60,9 @@ export function DownloadCTA() {
         "Android 5.0 နှင့်အထက် အသုံးပြုထားသော Android ဖုန်းများတွင် ရယူအသုံးပြုနိုင်ပါသည်။",
     },
     en: {
-      title: "Download AyarFarm Link Today",
+      title: "Download AyeyarFarm Link Today",
       description:
-        "Join thousands of farmers already using AyarFarm Link to improve their agricultural practices and increase their yields.",
+        "Join thousands of farmers already using AyeyarFarm Link to improve their agricultural practices and increase their yields.",
       downloadButton: "Download for Android",
       playStoreButton: "Google Play Store",
       features: ["100% Free", "No Hidden Fees", "Secure & Private"],

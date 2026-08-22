@@ -1,8 +1,8 @@
-# AyarFarm Web Dashboard
+# AyeyarFarm Web Dashboard
 
 ## Overview
 
-AyarFarm Web Dashboard is a React-based admin panel designed for managing the AyarFarm agricultural platform in Myanmar. Built with TypeScript and modern web technologies, it provides a comprehensive interface for content management, user administration, and data analytics.
+AyeyarFarm Web Dashboard is a React-based admin panel designed for managing the AyeyarFarm agricultural platform in Myanmar. Built with TypeScript and modern web technologies, it provides a comprehensive interface for content management, user administration, and data analytics.
 
 ## Features
 
@@ -65,20 +65,25 @@ npm run test
 ## Project Structure
 
 ### `/src/app`
+
 Page components organized by feature:
+
 - `admin/` - Admin management pages (applications, chat-room, users, videos)
 - `categories/` - Category pages (crops, fisheries, livestock, machines)
 - `auth.tsx` - Authentication page
 - `home.tsx` - Dashboard home
 
 ### `/src/components`
+
 - `ui/` - Shadcn UI components (buttons, forms, tables, dialogs)
 - `dashboard/` - Dashboard widgets (stats, market-weather)
 - Layout components (sidebar, header, navigation)
 - Feature components (data-table, chat-room-management)
 
 ### `/src/routes`
+
 File-based routing with TanStack Router:
+
 - `__root.tsx` - Root layout
 - `index.tsx` - Home route
 - `login.tsx`, `forgot-password.tsx`, `reset-password.tsx` - Auth routes
@@ -87,13 +92,16 @@ File-based routing with TanStack Router:
 - `dashboard.tsx` - Dashboard route
 
 ### `/src/providers`
+
 Context providers for state management:
+
 - `auth-provider.tsx` - Authentication state
 - `admin-provider.tsx` - Admin data
 - `socket-provider.tsx` - Real-time connections
 - Category providers (crop, fishery, livestock, machine)
 
 ### `/src/lib`
+
 - `api.ts` - API client functions
 - `config.ts` - App configuration
 - `interface.ts` - TypeScript interfaces
@@ -101,24 +109,30 @@ Context providers for state management:
 - `utils.ts` - Helper utilities
 
 ### `/src/hooks`
+
 Custom React hooks (e.g., `use-mobile.ts`)
 
 ## Development
 
 ### Adding Routes
+
 Create files in `src/routes/` following the naming convention:
+
 - `page-name.tsx` for `/page-name`
 - `parent.child.tsx` for `/parent/child`
 
 ### Adding UI Components
+
 ```bash
 pnpx shadcn@latest add [component]
 ```
 
 ### Data Fetching
+
 Use TanStack Router loaders or React Query for API calls via `lib/api.ts`
 
 ### Real-time Features
+
 Socket.io client configured in `lib/socket.ts`, wrapped by `socket-provider.tsx`
 
 ## Learn More

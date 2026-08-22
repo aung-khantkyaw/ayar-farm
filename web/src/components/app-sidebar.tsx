@@ -165,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <a href="/">
                 <IconLeaf className="!size-5" />
                 <span className="text-base font-semibold">
-                  AyarFarmLink MSME
+                  AyeyarFarmLink MSME
                 </span>
               </a>
             </SidebarMenuButton>

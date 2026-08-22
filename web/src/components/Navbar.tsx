@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button"
-import { Menu, X, Globe } from "lucide-react"
-import { useState } from "react"
-import { useLanguage } from "@/lib/LanguageContext"
+import { Button } from "@/components/ui/button";
+import { Menu, X, Globe } from "lucide-react";
+import { useState } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { language, setLanguage } = useLanguage()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { language, setLanguage } = useLanguage();
 
   const navItems = {
     my: [
@@ -21,10 +21,10 @@ export function Navbar() {
       { name: "AI Assistant", href: "#ai-assistant" },
       { name: "Community", href: "#community" },
       { name: "Download", href: "#download" },
-    ]
-  }
+    ],
+  };
 
-  const currentNavItems = navItems[language]
+  const currentNavItems = navItems[language];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -33,11 +33,17 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/AyarFarmNotText.png" alt="AyarFarm Link Logo" width={32} height={32} className="w-full h-full object-cover" />
+              <img
+                src="/AyarFarmNotText.png"
+                alt="AyeyarFarm Link Logo"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
             </div>
-            <span className="font-semibold text-lg">AyarFarm Link</span>
+            <span className="font-semibold text-lg">AyeyarFarm Link</span>
           </div>
- 
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {currentNavItems.map((item) => (
@@ -50,7 +56,7 @@ export function Navbar() {
               </a>
             ))}
           </div>
- 
+
           {/* Language Toggle */}
           <div className="hidden md:flex items-center gap-4">
             <Button
@@ -63,20 +69,20 @@ export function Navbar() {
               {language === "my" ? "မြန်မာ" : "English"}
             </Button>
           </div>
- 
+
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <X  className="w-6 h-6" />
+              <X className="w-6 h-6" />
             ) : (
               <Menu className="w-6 h-6" />
             )}
           </button>
         </div>
- 
+
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
@@ -105,5 +111,5 @@ export function Navbar() {
         )}
       </div>
     </nav>
-  )
+  );
 }

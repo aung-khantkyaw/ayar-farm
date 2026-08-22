@@ -25,7 +25,7 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-lg font-semibold text-foreground">
-          {getGreeting(time)}, {user?.name || "AyarFarm"}
+          {getGreeting(time)}, {user?.name || "AyeyarFarm"}
         </h1>
       </div>
       <div className="flex-1" />

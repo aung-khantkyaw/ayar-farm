@@ -68,7 +68,7 @@ export function Hero() {
 
   const content = {
     my: {
-      title: "AyarFarm Link",
+      title: "AyeyarFarm Link",
       subtitle: "သင့်စိုက်ပျိုးမွေးမြူရေး ဗဟုသုတမိတ်ဖက်",
       description:
         "လယ်သမားများနှင့် ချိတ်ဆက်ပါ၊ ကျွမ်းကျင်သူများထံမှ ဗဟုသုတများကို လေ့လာပါ၊ အချိန်နှင့်တစ်ပြေးညီ ဈေးကွက်ပေါက်ဈေးများကို ရယူပါ၊ AI နည်းပညာသုံး အကူအညီဖြင့် မေးမြန်းဆွေးနွေးပါ — အားလုံးကို မိုဘိုင်းအက်ပ် တစ်ခုတည်းတွင် အသုံးပြုနိုင်ပါသည်။",
@@ -82,7 +82,7 @@ export function Hero() {
     },
 
     en: {
-      title: "AyarFarm Link",
+      title: "AyeyarFarm Link",
       subtitle: "Your Agricultural Knowledge Companion",
       description:
         "Connect with farmers, access expert knowledge, get real-time market prices, and receive AI-powered farming assistance—all in one mobile app.",

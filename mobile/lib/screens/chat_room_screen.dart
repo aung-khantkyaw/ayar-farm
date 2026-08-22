@@ -832,7 +832,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
         CommonSnackbar.show(
           context,
-          message: 'Successfully downloaded $fileName to AyarFarm folder!',
+          message: 'Successfully downloaded $fileName to AyeyarFarm folder!',
           type: SnackBarType.info,
           position: SnackBarPosition.bottom,
         );

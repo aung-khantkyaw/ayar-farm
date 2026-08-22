@@ -1,30 +1,34 @@
-import { Separator } from "@/components/ui/separator"
-import { useLanguage } from "@/lib/LanguageContext"
+import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export function Footer() {
-  const { language } = useLanguage()
+  const { language } = useLanguage();
 
   const content = {
     my: {
-      description: "သင့်အတွက် ယုံကြည်စိတ်ချရသော စိုက်ပျိုးမွေးမြူရေး ဗဟုသုတမျှဝေရာ ပလပ်ဖောင်း။ တောင်သူလယ်သမား အသိုင်းအဝိုင်းနှင့် ချိတ်ဆက်ပါ၊ လေ့လာသင်ယူပါ၊ အတူတကွ တိုးတက်အောင်မြင်လိုက်ပါ။",
+      description:
+        "သင့်အတွက် ယုံကြည်စိတ်ချရသော စိုက်ပျိုးမွေးမြူရေး ဗဟုသုတမျှဝေရာ ပလပ်ဖောင်း။ တောင်သူလယ်သမား အသိုင်းအဝိုင်းနှင့် ချိတ်ဆက်ပါ၊ လေ့လာသင်ယူပါ၊ အတူတကွ တိုးတက်အောင်မြင်လိုက်ပါ။",
       quickLinks: "အမြန်လင့်ခ်များ",
       contact: "ဆက်သွယ်ရန်",
       followUs: "ကျွန်ုပ်တို့ကို Follow လုပ်ထားပါ",
-      rights: "© {year} AyarFarm Link. မူပိုင်ခွင့် အပြည့်အဝရှိသည်။",
-      address: "Polytechnic University (မအူပင်) - Faculty of Computing\nမအူပင် - မော်လမြိုင်ကျွန်းလမ်း၊ မအူပင်မြို့၊ ဧရာဝတီတိုင်းဒေသကြီး",
+      rights: "© {year} AyeyarFarm Link. မူပိုင်ခွင့် အပြည့်အဝရှိသည်။",
+      address:
+        "Polytechnic University (မအူပင်) - Faculty of Computing\nမအူပင် - မော်လမြိုင်ကျွန်းလမ်း၊ မအူပင်မြို့၊ ဧရာဝတီတိုင်းဒေသကြီး",
     },
     en: {
-      description: "Your trusted agricultural knowledge sharing platform. Connect, learn, and grow with the farming community.",
+      description:
+        "Your trusted agricultural knowledge sharing platform. Connect, learn, and grow with the farming community.",
       quickLinks: "Quick Links",
       contact: "Contact",
       followUs: "Follow Us",
-      rights: "© {year} AyarFarm Link. All rights reserved.",
-      address: "Polytechnic University (Maubin) - Faculty of Computing\nMaubin - Mawlamyinegyun Road, Maubin, Ayeyarwady Region",
+      rights: "© {year} AyeyarFarm Link. All rights reserved.",
+      address:
+        "Polytechnic University (Maubin) - Faculty of Computing\nMaubin - Mawlamyinegyun Road, Maubin, Ayeyarwady Region",
     },
   };
 
-  const t = content[language]
-  const currentYear = new Date().getFullYear()
+  const t = content[language];
+  const currentYear = new Date().getFullYear();
 
   const quickLinks = {
     my: [
@@ -39,7 +43,7 @@ export function Footer() {
       { name: "AI Assistant", href: "#ai-assistant" },
       { name: "Community", href: "#community" },
     ],
-  }
+  };
 
   const legalLinks = {
     my: [
@@ -50,7 +54,7 @@ export function Footer() {
       { name: "Privacy Policy", href: "#" },
       { name: "Terms of Service", href: "#" },
     ],
-  }
+  };
 
   return (
     <footer className="bg-muted/50 border-t border-border">
@@ -60,13 +64,17 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg overflow-hidden">
-                <img src="/AyarFarmNotText.png" alt="AyarFarm Link Logo" width={32} height={32} className="w-full h-full object-cover" />
+                <img
+                  src="/AyarFarmNotText.png"
+                  alt="AyeyarFarm Link Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <span className="font-semibold text-lg">AyarFarm Link</span>
+              <span className="font-semibold text-lg">AyeyarFarm Link</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {t.description}
-            </p>
+            <p className="text-sm text-muted-foreground">{t.description}</p>
           </div>
 
           {/* Quick Links */}
@@ -128,5 +136,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-# AyarFarm Mobile App
+# AyeyarFarm Mobile App
 
 Mobile application for farmers to access agricultural resources and management tools.
 

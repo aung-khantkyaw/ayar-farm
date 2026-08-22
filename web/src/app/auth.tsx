@@ -49,7 +49,7 @@ const AuthConfirm = () => {
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       const newOtp = [...otp];
@@ -179,7 +179,7 @@ const AuthSuccess = () => {
             အကောင့်အတည်ပြုပြီးပါပြီ!
           </CardTitle>
           <CardDescription className="text-base">
-            <span className="text-[#53B154] font-semibold">AyarFarm</span> မှ
+            <span className="text-[#53B154] font-semibold">AyeyarFarm</span> မှ
             ကြိုဆိုပါတယ်!
             <br />
             သင့်အကောင့်ကို အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ
@@ -226,7 +226,7 @@ const AuthSuccess = () => {
           {/* Welcome Message */}
           <div className="text-center space-y-2">
             <h4 className="font-semibold text-gray-900">
-              AyarFarm ကို အသုံးပြုရန် အဆင်သင့်ဖြစ်ပါပြီ
+              AyeyarFarm ကို အသုံးပြုရန် အဆင်သင့်ဖြစ်ပါပြီ
             </h4>
             <p className="text-sm text-gray-600">
               လယ်သမားများအတွက် ဗဟုသုတ၊ စျေးနှုန်းအချက်အလက်များနှင့်
@@ -241,7 +241,7 @@ const AuthSuccess = () => {
               className="w-full bg-gradient-to-r from-[#53B154] to-[#4FC3F7] hover:from-[#388e3c] hover:to-[#0288d1] text-white py-3 text-base font-semibold"
             >
               <ArrowRight className="mr-2 h-5 w-5" />
-              AyarFarm စတင်သုံးမယ်
+              AyeyarFarm စတင်သုံးမယ်
             </Button>
 
             <Button
@@ -303,7 +303,7 @@ const AuthError = () => {
       // If still not found, try to get from hash parameters (for mobile app redirects)
       if (!identifier) {
         const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
+          window.location.hash.substring(1),
         );
         identifier = hashParams.get("email") || hashParams.get("phone_number");
       }
@@ -340,13 +340,13 @@ const AuthError = () => {
       // Handle specific error cases
       if (error?.message?.includes("rate_limit")) {
         toast.error(
-          "အတည်ပြုလင့်ပို့မှု များလွန်းပါသည်။ ၅ မိနစ်အကြာတွင် ပြန်လည်ကြိုးစားပါ။"
+          "အတည်ပြုလင့်ပို့မှု များလွန်းပါသည်။ ၅ မိနစ်အကြာတွင် ပြန်လည်ကြိုးစားပါ။",
         );
       } else if (error?.message?.includes("not_found")) {
         toast.error("ဤအချက်အလက်နှင့် မည်သည့်အကောင့်မျှ မရှိပါ။");
       } else {
         toast.error(
-          "လင့်ပို့မှုမအောင်မြင်ပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်လည်ကြိုးစားပါ။"
+          "လင့်ပို့မှုမအောင်မြင်ပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်လည်ကြိုးစားပါ။",
         );
       }
     } finally {
@@ -634,7 +634,7 @@ const UnauthorizedPage = () => {
               <div className="flex flex-col items-center gap-2 p-3 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors">
                 <CheckCircle className="w-8 h-8 text-green-600" />
                 <span className="text-sm text-center">
-                  AyarFarmLink Team အဖွဲ့ဝင်ဖြစ်ခြင်း
+                  AyeyarFarmLink Team အဖွဲ့ဝင်ဖြစ်ခြင်း
                 </span>
               </div>
             </div>
@@ -669,7 +669,7 @@ const UnauthorizedPage = () => {
           <div className="flex justify-center items-center mt-4 space-x-2">
             <Shield className="w-4 h-4 text-red-500 animate-pulse" />
             <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-              AyarFarm - လုံခြုံစိတ်ချရသော စိုက်ပျိုးရေး
+              AyeyarFarm - လုံခြုံစိတ်ချရသော စိုက်ပျိုးရေး
             </span>
             <Shield className="w-4 h-4 text-red-500 animate-pulse" />
           </div>

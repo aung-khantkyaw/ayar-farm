@@ -56,6 +56,9 @@ class CategoryScreen extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
+                  // Reserve enough vertical room for translated and scaled
+                  // labels; the card image itself flexes into the remainder.
+                  childAspectRatio: 0.8,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
                   children: [
@@ -267,9 +270,6 @@ class CategoryScreen extends StatelessWidget {
     Color textSub, {
     VoidCallback? onTap,
   }) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageHeight = screenWidth * 0.22; // 22.5% of screen width
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -288,13 +288,14 @@ class CategoryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: imageHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: AssetImage(imageUrl),
-                  fit: BoxFit.cover,
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: AssetImage(imageUrl),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -308,6 +309,8 @@ class CategoryScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
               subtitle,
@@ -356,12 +359,16 @@ class CategoryScreen extends StatelessWidget {
                   children: [
                     Icon(Icons.calculate_outlined, color: primary),
                     const SizedBox(width: 8),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: textMain,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: textMain,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -452,12 +459,16 @@ class CategoryScreen extends StatelessWidget {
                     children: [
                       Icon(icon, color: iconColor, size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: titleColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            color: titleColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -477,6 +488,8 @@ class CategoryScreen extends StatelessWidget {
                       Text(
                         subtitle,
                         style: TextStyle(color: subtitleColor, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
