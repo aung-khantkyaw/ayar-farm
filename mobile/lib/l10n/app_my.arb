@@ -297,5 +297,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "aiChatSuggestionCropDisease": "သီးနှံရောဂါ",
+  "aiChatSuggestionSoilHealth": "မြေကျန်းမာရေး",
+  "aiChatSuggestionWeatherAdvice": "ရာသီဥတု အကြံဉာဏ်",
+  "aiChatSuggestionMarketPrices": "စျေးကွက်စျေးနှုန်းများ"
 }

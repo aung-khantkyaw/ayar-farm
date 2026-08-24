@@ -858,4 +858,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String aiChatByAuthor(String author) {
     return 'By: $author';
   }
+
+  @override
+  String get aiChatSuggestionCropDisease => 'Crop Disease';
+
+  @override
+  String get aiChatSuggestionSoilHealth => 'Soil Health';
+
+  @override
+  String get aiChatSuggestionWeatherAdvice => 'Weather Advice';
+
+  @override
+  String get aiChatSuggestionMarketPrices => 'Market Prices';
 }

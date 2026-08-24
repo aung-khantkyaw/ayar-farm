@@ -300,7 +300,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "aiChatSuggestionCropDisease": "Crop Disease",
+  "aiChatSuggestionSoilHealth": "Soil Health",
+  "aiChatSuggestionWeatherAdvice": "Weather Advice",
+  "aiChatSuggestionMarketPrices": "Market Prices"
 }
 
    

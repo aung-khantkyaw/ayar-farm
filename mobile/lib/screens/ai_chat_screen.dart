@@ -5,7 +5,6 @@ import '../models/ai_chat_models.dart';
 import '../services/ai_chat_service.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
-import '../widgets/common_header.dart';
 import 'pdf_reader_screen.dart';
 
 class AiChatScreen extends StatefulWidget {
@@ -98,12 +97,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
       _selectedRoom = null;
       _messages = [];
     });
-    Navigator.pop(context); // Close drawer
+    Navigator.pop(context);
   }
 
   void _selectRoom(AiChatRoom room) {
     _loadRoom(room.id);
-    Navigator.pop(context); // Close drawer
+    Navigator.pop(context);
   }
 
   Future<void> _deleteRoom(AiChatRoom room) async {
@@ -164,7 +163,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     late final AiChatRoom activeRoom;
 
-    // Create a room before sending the first message.
     if (_selectedRoom == null) {
       try {
         activeRoom = await _aiChatService.createChatRoom(title: AppLocalizations.of(context)!.aiChatNewChat);
@@ -184,7 +182,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
       activeRoom = _selectedRoom!;
     }
 
-    // Update room title if first message
     if (_messages.length == 1) {
       final truncatedTitle =
           text.length > 50 ? '${text.substring(0, 50)}...' : text;
@@ -203,7 +200,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
       }
     }
 
-    // Stream response
     String fullResponse = "";
     try {
       final stream = _aiChatService.streamMessage(
@@ -351,21 +347,27 @@ class _AiChatScreenState extends State<AiChatScreen> {
     return '${ApiConstants.baseUrl.replaceAll('/api', '')}/$fileUrl';
   }
 
+  // ─── UI ─────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor =
-        isDark ? const Color(0xFF102215) : const Color(0xFFF6F8F6);
+        isDark ? const Color(0xFF0D0D0D) : const Color(0xFFFFFFFF);
     final surfaceColor =
-        isDark ? const Color(0xFF1A2C1E) : Colors.white;
+        isDark ? const Color(0xFF171717) : const Color(0xFFF7F7F8);
     final textPrimary =
-        isDark ? Colors.white : const Color(0xFF1A1A1A);
+        isDark ? Colors.white : const Color(0xFF0D0D0D);
     final textSecondary =
-        isDark ? const Color(0xFF8BA892) : const Color(0xFF6B7280);
+        isDark ? const Color(0xFF8E8E8E) : const Color(0xFF6E6E6E);
     final primaryColor = const Color(0xFF2BEE5B);
     final borderColor =
-        isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB);
+        isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E5E5);
+    final userBubbleColor =
+        isDark ? const Color(0xFF2F2F2F) : const Color(0xFFF3F3F3);
+    final inputBg =
+        isDark ? const Color(0xFF2F2F2F) : const Color(0xFFF4F4F4);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -376,61 +378,55 @@ class _AiChatScreenState extends State<AiChatScreen> {
       body: SafeArea(
         bottom: false,
         child: Padding(
-          // MainScreen draws CommonBottomNav over its child screens.
           padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             children: [
-              const CommonHeader(),
-              Container(
-                padding: const EdgeInsets.only(bottom: 20),
-                color: surfaceColor,
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.menu_rounded, color: textPrimary),
-                      tooltip: AppLocalizations.of(context)!.aiChatHistoryTooltip,
-                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.aiChatTitle,
-                            style: TextStyle(
-                              color: textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppLocalizations.of(context)!.aiChatSubtitle,
-                            style: TextStyle(color: textSecondary, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildAppBar(textPrimary, textSecondary, primaryColor),
               Expanded(
                 child: _messages.isEmpty && !_isLoading
-                    ? _buildWelcomeView(textPrimary, textSecondary)
-                    : _buildMessagesList(textPrimary, textSecondary, isDark),
+                    ? _buildWelcomeView(textPrimary, textSecondary, primaryColor, inputBg)
+                    : _buildMessagesList(
+                        textPrimary, textSecondary, isDark, userBubbleColor, inputBg,
+                      ),
               ),
               _buildInputArea(
-                surfaceColor,
-                textPrimary,
-                textSecondary,
-                borderColor,
-                primaryColor,
-                isDark,
+                inputBg, textPrimary, textSecondary, borderColor, primaryColor, isDark,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(Color textPrimary, Color textSecondary, Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: textPrimary.withOpacity(0.06),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(Icons.menu_rounded, color: textPrimary, size: 22),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          const Spacer(),
+          Text(
+            AppLocalizations.of(context)!.aiChatTitle,
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          const SizedBox(width: 48),
+        ],
       ),
     );
   }
@@ -446,34 +442,38 @@ class _AiChatScreenState extends State<AiChatScreen> {
       backgroundColor: surfaceColor,
       child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: _createNewRoom,
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(Icons.add_rounded, size: 18),
                   label: Text(AppLocalizations.of(context)!.aiChatNewChat),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.black,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textPrimary,
+                    side: BorderSide(color: borderColor),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 8),
             Expanded(
               child: _chatRooms.isEmpty
                   ? Center(
-                      child: Text(
-                        AppLocalizations.of(context)!.aiChatNoRooms,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: textSecondary, fontSize: 14),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          AppLocalizations.of(context)!.aiChatNoRooms,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: textSecondary, fontSize: 13),
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -488,43 +488,46 @@ class _AiChatScreenState extends State<AiChatScreen> {
                           background: Container(
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 16),
+                            margin: const EdgeInsets.symmetric(vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.red.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.delete, color: Colors.red),
+                            child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                           ),
                           confirmDismiss: (_) async {
                             _deleteRoom(room);
                             return false;
                           },
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.chat_bubble_outline,
-                              color: isSelected ? primaryColor : textSecondary,
-                              size: 20,
-                            ),
-                            title: Text(
-                              room.title.isEmpty ? AppLocalizations.of(context)!.aiChatNewChat : room.title,
-                              style: TextStyle(
-                                color: isSelected ? primaryColor : textPrimary,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                fontSize: 14,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                color: isSelected ? textPrimary : textSecondary,
+                                size: 18,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              title: Text(
+                                room.title.isEmpty
+                                    ? AppLocalizations.of(context)!.aiChatNewChat
+                                    : room.title,
+                                style: TextStyle(
+                                  color: isSelected ? textPrimary : textSecondary,
+                                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              selected: isSelected,
+                              selectedTileColor: primaryColor.withOpacity(0.08),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                              dense: true,
+                              onTap: () => _selectRoom(room),
                             ),
-                            selected: isSelected,
-                            selectedTileColor: primaryColor.withOpacity(0.1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                            onTap: () => _selectRoom(room),
                           ),
                         );
                       },
@@ -536,43 +539,62 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  Widget _buildWelcomeView(Color textPrimary, Color textSecondary) {
+  Widget _buildWelcomeView(
+    Color textPrimary, Color textSecondary, Color primaryColor, Color inputBg,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 32),
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          primaryColor,
+                          primaryColor.withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.25),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: const Icon(
-                      Icons.auto_awesome,
-                      color: Color(0xFF2BEE5B),
-                      size: 32,
+                      Icons.auto_awesome_rounded,
+                      color: Colors.white,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
-                    AppLocalizations.of(context)!.aiChatWelcomeTitle,
+                    l10n.aiChatWelcomeTitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w600,
                       color: textPrimary,
+                      height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    AppLocalizations.of(context)!.aiChatWelcomeSubtitle,
+                    l10n.aiChatWelcomeSubtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -580,6 +602,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: 32),
+                  _buildSuggestionGrid(textPrimary, textSecondary, primaryColor, inputBg),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -589,104 +614,165 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
+  Widget _buildSuggestionGrid(
+    Color textPrimary, Color textSecondary, Color primaryColor, Color inputBg,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final suggestions = [
+      (Icons.bug_report_outlined, l10n.aiChatSuggestionCropDisease),
+      (Icons.grass_rounded, l10n.aiChatSuggestionSoilHealth),
+      (Icons.wb_sunny_outlined, l10n.aiChatSuggestionWeatherAdvice),
+      (Icons.storefront_outlined, l10n.aiChatSuggestionMarketPrices),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 2.4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: suggestions.map((s) {
+        return GestureDetector(
+          onTap: () {
+            _inputController.text = s.$2;
+            _sendMessage();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: inputBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: textPrimary.withOpacity(0.06),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(s.$1, size: 18, color: primaryColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    s.$2,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildMessagesList(
     Color textPrimary,
     Color textSecondary,
     bool isDark,
+    Color userBubbleColor,
+    Color inputBg,
   ) {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemCount: _messages.length + (_isStreaming ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == _messages.length) {
-          // Streaming indicator
-          return _buildStreamingBubble(textPrimary, textSecondary, isDark);
+          return _buildStreamingBubble(textPrimary, textSecondary, isDark, inputBg);
         }
 
         final message = _messages[index];
         final isUser = message.role == 'USER';
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isUser) ...[
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1A1A1A),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome,
-                    color: Color(0xFF2BEE5B),
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.75,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isUser
-                        ? const Color(0xFF1A1A1A)
-                        : (isDark
-                            ? const Color(0xFF1A2C1E)
-                            : Colors.white),
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: isUser
-                          ? const Radius.circular(16)
-                          : const Radius.circular(4),
-                      bottomRight: isUser
-                          ? const Radius.circular(4)
-                          : const Radius.circular(16),
-                    ),
-                    border: isUser
-                        ? null
-                        : Border.all(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : const Color(0xFFE5E7EB),
-                          ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.content,
-                        style: TextStyle(
-                          color: isUser ? Colors.white : textPrimary,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                      ),
-                      if (message.sources != null &&
-                          message.sources!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _buildSourcesSection(message.sources!, textPrimary),
-                      ],
-                    ],
-                  ),
+        if (isUser) {
+          return _buildUserMessage(message, textPrimary, userBubbleColor);
+        } else {
+          return _buildAssistantMessage(message, textPrimary, textSecondary, isDark);
+        }
+      },
+    );
+  }
+
+  Widget _buildUserMessage(AiMessage message, Color textPrimary, Color userBubbleColor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: userBubbleColor,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                message.content,
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 14,
+                  height: 1.5,
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssistantMessage(
+    AiMessage message, Color textPrimary, Color textSecondary, bool isDark,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2BEE5B).withOpacity(0.15) : const Color(0xFF2BEE5B).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Color(0xFF2BEE5B),
+              size: 14,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.content,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 14,
+                    height: 1.6,
+                  ),
+                ),
+                if (message.sources != null && message.sources!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildSourcesSection(message.sources!, textPrimary, textSecondary),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -694,132 +780,131 @@ class _AiChatScreenState extends State<AiChatScreen> {
     Color textPrimary,
     Color textSecondary,
     bool isDark,
+    Color inputBg,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1A1A1A),
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2BEE5B).withOpacity(0.15) : const Color(0xFF2BEE5B).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.auto_awesome,
+              Icons.auto_awesome_rounded,
               color: Color(0xFF2BEE5B),
-              size: 18,
+              size: 14,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1A2C1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : const Color(0xFFE5E7EB),
-                ),
-              ),
-              child: _currentResponse.isNotEmpty
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _currentResponse,
-                            style: TextStyle(
-                              color: textPrimary,
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        SizedBox(
-                          width: 8,
-                          height: 16,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: textPrimary,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context)!.aiChatThinking,
+            child: _currentResponse.isNotEmpty
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _currentResponse,
                           style: TextStyle(
-                            color: textSecondary,
+                            color: textPrimary,
                             fontSize: 14,
+                            height: 1.6,
                           ),
                         ),
-                      ],
-                    ),
-            ),
+                      ),
+                      const SizedBox(width: 2),
+                      _buildBlinkingCursor(textPrimary),
+                    ],
+                  )
+                : _buildThinkingIndicator(textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSourcesSection(List<AiChatSource> sources, Color textPrimary) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context)!.aiChatSources,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: textPrimary.withOpacity(0.5),
-              letterSpacing: 0.5,
+  Widget _buildBlinkingCursor(Color textPrimary) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value > 0.5 ? 1.0 : 0.2,
+          child: Container(
+            width: 6,
+            height: 16,
+            margin: const EdgeInsets.only(bottom: 2),
+            decoration: BoxDecoration(
+              color: textPrimary,
+              borderRadius: BorderRadius.circular(1),
             ),
           ),
-          const SizedBox(height: 8),
-          ...sources.map((source) => _buildSourceCard(source, textPrimary)),
-        ],
-      ),
+        );
+      },
+      child: null,
     );
   }
 
-  Widget _buildSourceCard(AiChatSource source, Color textPrimary) {
+  Widget _buildThinkingIndicator(Color textSecondary) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            color: textSecondary,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          AppLocalizations.of(context)!.aiChatThinking,
+          style: TextStyle(
+            color: textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSourcesSection(
+    List<AiChatSource> sources, Color textPrimary, Color textSecondary,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.aiChatSources,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: textSecondary,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: sources.map((source) => _buildSourceChip(source, textPrimary, textSecondary)).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSourceChip(
+    AiChatSource source, Color textPrimary, Color textSecondary,
+  ) {
     final type = source.metadata?['type'] ?? source.collection ?? AppLocalizations.of(context)!.unknown;
     final score = source.score != null
         ? '${(source.score! * 100).toStringAsFixed(0)}%'
         : '';
     final title = source.metadata?['title'] as String?;
-    final author = source.metadata?['author'] as String?;
     final hasFile =
         _sourceFileUrl(source) != null ||
         source.metadata?['document_id'] != null;
@@ -827,68 +912,41 @@ class _AiChatScreenState extends State<AiChatScreen> {
     return GestureDetector(
       onTap: () => _handleSourceClick(source),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 6),
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: textPrimary.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: textPrimary.withOpacity(0.08),
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    type.toString().toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    if (score.isNotEmpty)
-                      Text(
-                        score,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: textPrimary.withOpacity(0.5),
-                        ),
-                      ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      hasFile ? Icons.picture_as_pdf_outlined : Icons.info_outline,
-                      size: 12,
-                      color: textPrimary.withOpacity(0.5),
-                    ),
-                  ],
-                ),
-              ],
+            Icon(
+              hasFile ? Icons.picture_as_pdf_outlined : Icons.description_outlined,
+              size: 13,
+              color: textSecondary,
             ),
-            if (title != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                title,
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                title ?? type.toString(),
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
                   color: textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-            ],
-            if (author != null) ...[
-              const SizedBox(height: 2),
+            ),
+            if (score.isNotEmpty) ...[
+              const SizedBox(width: 6),
               Text(
-                AppLocalizations.of(context)!.aiChatByAuthor(author),
+                score,
                 style: TextStyle(
                   fontSize: 11,
-                  color: textPrimary.withOpacity(0.5),
+                  color: textSecondary,
                 ),
               ),
             ],
@@ -899,89 +957,129 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildInputArea(
-    Color surfaceColor,
+    Color inputBg,
     Color textPrimary,
     Color textSecondary,
     Color borderColor,
     Color primaryColor,
     bool isDark,
   ) {
+    final hasText = _inputController.text.trim().isNotEmpty;
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       decoration: BoxDecoration(
-        color: surfaceColor,
-        border: Border(top: BorderSide(color: borderColor)),
+        border: Border(
+          top: BorderSide(
+            color: textPrimary.withOpacity(0.06),
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: borderColor),
-                    ),
+            Container(
+              decoration: BoxDecoration(
+                color: inputBg,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: borderColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
                     child: TextField(
                       controller: _inputController,
                       style: TextStyle(color: textPrimary, fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.aiChatInputHint,
-                        hintStyle: TextStyle(color: textSecondary),
+                        hintText: l10n.aiChatInputHint,
+                        hintStyle: TextStyle(color: textSecondary, fontSize: 14),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
+                          horizontal: 18,
                           vertical: 12,
                         ),
                       ),
-                      maxLines: null,
-                      textInputAction: TextInputAction.send,
+                      maxLines: 5,
+                      minLines: 1,
+                      textInputAction: TextInputAction.newline,
                       onSubmitted: (_) => _sendMessage(),
                       enabled: !_isStreaming,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: (!_inputController.text.trim().isEmpty && !_isStreaming)
-                        ? primaryColor
-                        : textSecondary.withOpacity(0.3),
-                    shape: BoxShape.circle,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6, right: 6),
+                    child: GestureDetector(
+                      onTap: (_isStreaming)
+                          ? () {
+                              _streamSubscription?.cancel();
+                              setState(() {
+                                _isLoading = false;
+                                _isStreaming = false;
+                                if (_currentResponse.isNotEmpty) {
+                                  _messages.add(AiMessage(
+                                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                    role: 'ASSISTANT',
+                                    content: _currentResponse,
+                                    createdAt: DateTime.now(),
+                                  ));
+                                }
+                                _currentResponse = "";
+                              });
+                            }
+                          : (hasText ? _sendMessage : null),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: (_isStreaming)
+                              ? Colors.red.withOpacity(0.9)
+                              : (hasText
+                                  ? primaryColor
+                                  : textSecondary.withOpacity(0.2)),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: _isLoading && !_isStreaming
+                              ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : _isStreaming
+                                  ? const Icon(Icons.stop_rounded, color: Colors.white, size: 18)
+                                  : Icon(
+                                      Icons.arrow_upward_rounded,
+                                      color: hasText ? Colors.white : textSecondary,
+                                      size: 18,
+                                    ),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: IconButton(
-                    onPressed: (!_inputController.text.trim().isEmpty && !_isStreaming)
-                        ? _sendMessage
-                        : null,
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.send, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
-              AppLocalizations.of(context)!.aiChatDisclaimer,
+              l10n.aiChatDisclaimer,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: textSecondary,
+                color: textSecondary.withOpacity(0.7),
               ),
             ),
+            const SizedBox(height: 4),
           ],
         ),
       ),

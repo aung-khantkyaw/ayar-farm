@@ -877,4 +877,16 @@ class AppLocalizationsMy extends AppLocalizations {
   String aiChatByAuthor(String author) {
     return 'စာရေးသူ - $author';
   }
+
+  @override
+  String get aiChatSuggestionCropDisease => 'သီးနှံရောဂါ';
+
+  @override
+  String get aiChatSuggestionSoilHealth => 'မြေကျန်းမာရေး';
+
+  @override
+  String get aiChatSuggestionWeatherAdvice => 'ရာသီဥတု အကြံဉာဏ်';
+
+  @override
+  String get aiChatSuggestionMarketPrices => 'စျေးကွက်စျေးနှုန်းများ';
 }

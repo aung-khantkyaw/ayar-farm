@@ -1765,6 +1765,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By: {author}'**
   String aiChatByAuthor(String author);
+
+  /// No description provided for @aiChatSuggestionCropDisease.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Disease'**
+  String get aiChatSuggestionCropDisease;
+
+  /// No description provided for @aiChatSuggestionSoilHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Soil Health'**
+  String get aiChatSuggestionSoilHealth;
+
+  /// No description provided for @aiChatSuggestionWeatherAdvice.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather Advice'**
+  String get aiChatSuggestionWeatherAdvice;
+
+  /// No description provided for @aiChatSuggestionMarketPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Prices'**
+  String get aiChatSuggestionMarketPrices;
 }
 
 class _AppLocalizationsDelegate
