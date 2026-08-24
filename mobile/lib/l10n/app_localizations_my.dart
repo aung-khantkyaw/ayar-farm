@@ -806,4 +806,75 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get helpResource => 'အကူအညီ အရင်းအမြစ်';
+
+  @override
+  String get aiChatTitle => 'AI စိုက်ပျိုးရေး အကူအညီ';
+
+  @override
+  String get aiChatSubtitle =>
+      'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် မျိုးပွားရေးဆိုင်ရာ မေးခွန်းများ မေးပါ';
+
+  @override
+  String get aiChatHistoryTooltip => 'စကားပြောဆိုမှု မှတ်တမ်း';
+
+  @override
+  String get aiChatNewChat => 'စကားပြောဆိုမှု အသစ်';
+
+  @override
+  String get aiChatNoRooms =>
+      'စကားပြောဆိုမှု ခန်းများ မရှိသေးပါ။\nအသစ်တစ်ခု စတင်ပါ။';
+
+  @override
+  String get aiChatDeleteRoomTitle => 'စကားပြောဆိုမှု ခန်း ဖျက်ရန်';
+
+  @override
+  String aiChatDeleteRoomConfirm(String roomTitle) {
+    return '\"$roomTitle\" ကို ဖျက်ရန် သေချာပါသလား။ ဤလုပ်ဆောင်ချက်ကို ပြန်လည်ဖျက်ချင်လျှင် မဖြစ်နိုင်ပါ။';
+  }
+
+  @override
+  String get aiChatCancel => 'ပယ်ဖျက်ရန်';
+
+  @override
+  String get aiChatDelete => 'ဖျက်ရန်';
+
+  @override
+  String get aiChatFailedToLoadRoom =>
+      'စကားပြောဆိုမှု ခန်းကို ဖွင့်ရန် မအောင်မြင်ပါ';
+
+  @override
+  String get aiChatSourceUnavailable => 'အရင်းအမြစ် ဖိုင် မရှိပါ။';
+
+  @override
+  String get aiChatWelcomeTitle => 'AI စိုက်ပျိုးရေး အကူအညီသို့ ကြိုဆိုပါ၏';
+
+  @override
+  String get aiChatWelcomeSubtitle =>
+      'ကျွန်ုပ်တို့၏ အသိပညာ အခြေခံဖြင့် စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် မျိုးပွားရေးဆိုင်ရာ မေးခွန်းများကို ကူညီနိုင်ပါသည်။';
+
+  @override
+  String get aiChatThinking => 'စဉ်းစားနေပါသည်...';
+
+  @override
+  String get aiChatSources => 'အရင်းအမြစ်များ';
+
+  @override
+  String get aiChatInputHint =>
+      'စိုက်ပျိုးရေး၊ မွေးမြူရေး သို့မဟုတ် မျိုးပွားရေးဆိုင်ရာ မေးပါ...';
+
+  @override
+  String get aiChatDisclaimer =>
+      'AI အဖြေများသည် ကျွန်ုပ်တို့၏ စိုက်ပျိုးရေး အသိပညာ အခြေခံဖြင့် ဖြစ်ပါသည်။ အဖြေများသည် တိကျမှု မရှိနိုင်ပါ။';
+
+  @override
+  String get aiChatError =>
+      'စိတ်မကောင်းပါ၊ အမှားအယွင်း တစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်။ ထပ်ကြိုးစားပါ။';
+
+  @override
+  String get aiChatSourceDocument => 'အရင်းအမြစ် စာရွက်စာတမ်း';
+
+  @override
+  String aiChatByAuthor(String author) {
+    return 'စာရေးသူ - $author';
+  }
 }

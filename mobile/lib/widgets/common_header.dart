@@ -25,7 +25,7 @@ class CommonHeader extends StatelessWidget {
         isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111813);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: backgroundColor.withOpacity(0.95),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -33,14 +33,14 @@ class CommonHeader extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: primaryColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(7),
                   child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                 ),
               ),
@@ -74,10 +74,7 @@ class CommonHeader extends StatelessWidget {
                       );
                     },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
                     color: controlBg,
                     borderRadius: BorderRadius.circular(16),
@@ -120,7 +117,7 @@ class CommonHeader extends StatelessWidget {
                         ),
                       ],
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color:
@@ -133,7 +130,7 @@ class CommonHeader extends StatelessWidget {
                               ? Icons.notifications
                               : Icons.notifications_outlined,
                           color: textMainColor,
-                          size: 26,
+                          size: 22,
                         ),
                       ),
                     ],

@@ -29,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   User? _user;
   bool _isLoading = true;
-  late Future<List<Post>> _postsFuture;
+  Future<List<Post>>? _postsFuture;
   List<Post> _livePosts = [];
   void Function(dynamic)? _postReactionListener;
   void Function(dynamic)? _postCommentListener;
@@ -72,8 +72,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadPosts() {
-    _postsFuture = PostService.getPosts(userId: widget.userId);
-    _postsFuture.then((posts) {
+    final future = PostService.getPosts(userId: widget.userId);
+    _postsFuture = future;
+    future.then((posts) {
       if (mounted) {
         setState(() {
           _livePosts = posts;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/common_bottom_nav.dart';
 import 'home_screen.dart';
+import 'ai_chat_screen.dart';
 import 'category_navigator.dart';
 import 'chatting_screen.dart';
 import 'settings_screen.dart';
@@ -66,6 +67,7 @@ class _MainScreenState extends State<MainScreen> {
     super.didChangeDependencies();
     _screens = [
       const HomeScreen(),
+      const AiChatScreen(),
       const CategoryNavigator(),
       const ChattingScreen(),
       const SettingsScreen(),

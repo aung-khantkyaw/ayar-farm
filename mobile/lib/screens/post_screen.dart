@@ -19,6 +19,8 @@ class PostScreen extends StatefulWidget {
 }
 
 class _PostScreenState extends State<PostScreen> {
+  final LayerLink _reactionPickerLink = LayerLink();
+  OverlayEntry? _reactionPickerOverlay;
   Map<String, dynamic>? post;
   bool loading = true;
   final TextEditingController _commentController = TextEditingController();
@@ -130,59 +132,123 @@ class _PostScreenState extends State<PostScreen> {
     return 'Just now';
   }
 
+  String _postTimeLabel() {
+    final raw = post?['createdAt'] ?? post?['created_at'];
+    if (raw is String) {
+      final date = DateTime.tryParse(raw);
+      if (date != null) return _timeAgo(date);
+    }
+    if (raw is DateTime) return _timeAgo(raw);
+    return '';
+  }
+
   Color get _textSubColorTheme {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark ? const Color(0xFF8BA892) : const Color(0xFF61896B);
   }
 
   void _showReactionPicker() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _reactionOption('LIKE', Icons.thumb_up, 'Like'),
-              _reactionOption('UNLIKE', Icons.thumb_down, 'Unlike'),
-              _reactionOption('SUPPORT', Icons.volunteer_activism, 'Support'),
-              _reactionOption('CARE', Icons.favorite, 'Care'),
-              if (_reactionType != null)
-                ListTile(
-                  leading: const Icon(Icons.close),
-                  title: const Text('Remove reaction'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _setReaction(null);
-                  },
-                ),
-              if (_likes > 0)
-                ListTile(
-                  leading: const Icon(Icons.people_outline),
-                  title: const Text('View reactions'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showPostReactionsSheet();
-                  },
-                ),
-            ],
+    if (_reactionPickerOverlay != null) {
+      _hideReactionPicker();
+      return;
+    }
+
+    _reactionPickerOverlay = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _hideReactionPicker,
+            ),
           ),
-        );
-      },
+          CompositedTransformFollower(
+            link: _reactionPickerLink,
+            targetAnchor: Alignment.topLeft,
+            followerAnchor: Alignment.bottomLeft,
+            offset: const Offset(0, -8),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.16),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _reactionPopupOption('LIKE', Icons.thumb_up, 'Like'),
+                    _reactionPopupOption('UNLIKE', Icons.thumb_down, 'Unlike'),
+                    _reactionPopupOption(
+                      'SUPPORT',
+                      Icons.volunteer_activism,
+                      'Support',
+                    ),
+                    _reactionPopupOption('CARE', Icons.favorite, 'Care'),
+                    if (_reactionType != null) ...[
+                      Container(
+                        width: 1,
+                        height: 28,
+                        color: Theme.of(context).dividerColor,
+                      ),
+                      IconButton(
+                        tooltip: 'Remove reaction',
+                        onPressed: () {
+                          _hideReactionPicker();
+                          _setReaction(null);
+                        },
+                        icon: Icon(Icons.close, color: _textSubColorTheme),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+    Overlay.of(context, rootOverlay: true).insert(_reactionPickerOverlay!);
   }
 
-  Widget _reactionOption(String type, IconData icon, String label) {
+  void _hideReactionPicker() {
+    _reactionPickerOverlay?.remove();
+    _reactionPickerOverlay = null;
+  }
+
+  Widget _reactionPopupOption(String type, IconData icon, String label) {
     final isActive = _reactionType == type;
-    return ListTile(
-      leading: Icon(icon, color: isActive ? const Color(0xFF2BEE5B) : null),
-      title: Text(label),
-      trailing:
-          isActive ? const Icon(Icons.check, color: Color(0xFF2BEE5B)) : null,
-      onTap: () {
-        Navigator.pop(context);
-        _setReaction(type);
-      },
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () {
+          _hideReactionPicker();
+          _setReaction(type);
+        },
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF2BEE5B).withOpacity(0.14) : null,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 21,
+            color: isActive ? const Color(0xFF2BEE5B) : _textSubColorTheme,
+          ),
+        ),
+      ),
     );
   }
 
@@ -976,6 +1042,7 @@ class _PostScreenState extends State<PostScreen> {
 
   @override
   void dispose() {
+    _hideReactionPicker();
     _commentController.dispose();
     final socket = SocketService().socket;
     if (socket != null) {
@@ -1217,11 +1284,11 @@ class _PostScreenState extends State<PostScreen> {
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(64),
+          preferredSize: const Size.fromHeight(56),
           child: SafeArea(
             bottom: false,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: surfaceColor.withOpacity(0.95),
               child: Row(
                 children: [
@@ -1229,8 +1296,8 @@ class _PostScreenState extends State<PostScreen> {
                     onTap: () => Navigator.pop(context, _commentsCount),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark ? Colors.grey[800] : Colors.grey[100],
@@ -1238,7 +1305,7 @@ class _PostScreenState extends State<PostScreen> {
                       child: Icon(Icons.arrow_back, color: textMainColor),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       post != null
@@ -1247,8 +1314,8 @@ class _PostScreenState extends State<PostScreen> {
                           : (AppLocalizations.of(context)!.loadingAuthor),
                       style: TextStyle(
                         color: textMainColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1266,20 +1333,100 @@ class _PostScreenState extends State<PostScreen> {
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // content
                               if (post != null) ...[
-                                Text(
-                                  post!['content'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    height: 1.5,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: surfaceColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .dividerColor
+                                          .withOpacity(0.55),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 20,
+                                          backgroundColor: primaryColor.withOpacity(0.15),
+                                          backgroundImage:
+                                              (post!['author']?['profilePicture'] ??
+                                                          post!['author']?['profile_picture']) !=
+                                                      null
+                                                  ? NetworkImage(
+                                                    (post!['author']?['profilePicture'] ??
+                                                            post!['author']?['profile_picture'])
+                                                        .toString(),
+                                                  )
+                                                  : null,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                post!['author']?['name']?.toString() ??
+                                                    l10n?.unknown ??
+                                                    'Unknown',
+                                                style: TextStyle(
+                                                  color: textMainColor,
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    _postTimeLabel(),
+                                                    style: TextStyle(
+                                                      color: textSubColor,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 5),
+                                                    child: Icon(
+                                                      Icons.public,
+                                                      size: 12,
+                                                      color: textSubColor,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                                  child: Text(
+                                    post!['content'] ?? '',
+                                    style: TextStyle(
+                                      color: textMainColor,
+                                      fontSize: 16,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
                                 // images vertical
                                 if (mediaUrls.isNotEmpty)
                                   ...(mediaUrls
@@ -1312,59 +1459,107 @@ class _PostScreenState extends State<PostScreen> {
                                             ),
                                           ),
                                         ),
-                                      )
-                                      .toList()),
+                                       )
+                                       .toList()),
 
+                                if (_likes > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                                    child: InkWell(
+                                      onTap: _showPostReactionsSheet,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 20,
+                                              height: 20,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF2BEE5B),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.thumb_up,
+                                                size: 12,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '$_likes reactions',
+                                              style: TextStyle(
+                                                color: textSubColor,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.chevron_right,
+                                              size: 18,
+                                              color: textSubColor,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 12),
                                 // reactions & comments row
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(10),
-                                        onTap: _showReactionPicker,
-                                        onLongPress: _showPostReactionsSheet,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: surfaceColor,
-                                            borderRadius: BorderRadius.circular(
-                                              10,
+                                      child: CompositedTransformTarget(
+                                        link: _reactionPickerLink,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(10),
+                                          onTap: _showReactionPicker,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
                                             ),
-                                            border: Border.all(
-                                              color: Theme.of(
-                                                context,
-                                              ).dividerColor.withOpacity(0.5),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                _currentReactionIcon(),
-                                                size: 20,
-                                                color:
-                                                    _reacted
-                                                        ? primaryColor
-                                                        : textSubColor,
+                                            decoration: BoxDecoration(
+                                              color: surfaceColor,
+                                              borderRadius: BorderRadius.circular(
+                                                10,
                                               ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                _likes.toString(),
-                                                style: TextStyle(
+                                              border: Border.all(
+                                                color: Theme.of(
+                                                  context,
+                                                ).dividerColor.withOpacity(0.5),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  _currentReactionIcon(),
+                                                  size: 20,
                                                   color:
                                                       _reacted
                                                           ? primaryColor
                                                           : textSubColor,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _likes.toString(),
+                                                  style: TextStyle(
+                                                    color:
+                                                        _reacted
+                                                            ? primaryColor
+                                                            : textSubColor,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1443,13 +1638,15 @@ class _PostScreenState extends State<PostScreen> {
                       // comment box
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 14,
+                          vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
+                          color: surfaceColor,
                           border: Border(
-                            top: BorderSide(color: Colors.grey.shade200),
+                            top: BorderSide(
+                              color: Theme.of(context).dividerColor.withOpacity(0.6),
+                            ),
                           ),
                         ),
                         child: Column(
@@ -1512,24 +1709,47 @@ class _PostScreenState extends State<PostScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: TextField(
-                                    controller: _commentController,
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          _editingCommentId != null
-                                              ? 'Update your comment'
-                                              : _replyToName != null
-                                              ? "Replying to $_replyToName"
-                                              : AppLocalizations.of(
-                                                context,
-                                              )!.writeComment,
-                                      border: InputBorder.none,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.08)
+                                          : const Color(0xFFF0F2F0),
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    child: TextField(
+                                      controller: _commentController,
+                                      minLines: 1,
+                                      maxLines: 4,
+                                      decoration: InputDecoration(
+                                        hintText:
+                                            _editingCommentId != null
+                                                ? 'Update your comment'
+                                                : _replyToName != null
+                                                ? "Replying to $_replyToName"
+                                                : AppLocalizations.of(
+                                                  context,
+                                                )!.writeComment,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.send),
-                                  onPressed: _postComment,
+                                const SizedBox(width: 8),
+                                Material(
+                                  color: primaryColor,
+                                  shape: const CircleBorder(),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.send_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    onPressed: _postComment,
+                                  ),
                                 ),
                               ],
                             ),

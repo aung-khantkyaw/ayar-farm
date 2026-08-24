@@ -1,7 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:ayar_farm/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
+import '../widgets/common_snackbar.dart';
 import 'pdf_reader_screen.dart';
 
 class DocumentScreen extends StatefulWidget {
@@ -77,6 +82,126 @@ class _DocumentScreenState extends State<DocumentScreen> {
         return AppLocalizations.of(context)!.agrometBulletin;
       default:
         return AppLocalizations.of(context)!.documents;
+    }
+  }
+
+  Future<void> _downloadDocument(String fileUrl, String title) async {
+    if (fileUrl.isEmpty) {
+      CommonSnackbar.show(
+        context,
+        message: 'No file available for download',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
+      );
+      return;
+    }
+
+    CommonSnackbar.show(
+      context,
+      message: 'Starting download...',
+      type: SnackBarType.info,
+      position: SnackBarPosition.bottom,
+    );
+
+    try {
+      // Request permissions
+      if (Platform.isAndroid) {
+        // Try MANAGE_EXTERNAL_STORAGE first (Android 11+), fall back to storage
+        var status = await Permission.manageExternalStorage.request();
+        if (!status.isGranted) {
+          // Fallback for older Android versions
+          status = await Permission.storage.request();
+        }
+        if (!status.isGranted) {
+          if (status.isPermanentlyDenied) {
+            await openAppSettings();
+          }
+          CommonSnackbar.show(
+            context,
+            message: 'Storage permission is required to download files',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+          return;
+        }
+      } else if (Platform.isIOS) {
+        var status = await Permission.photos.request();
+        if (status != PermissionStatus.granted) {
+          CommonSnackbar.show(
+            context,
+            message: 'Photos permission is required to save files',
+            type: SnackBarType.error,
+            position: SnackBarPosition.bottom,
+          );
+          return;
+        }
+      }
+
+      // Build full URL if needed
+      String fullUrl = fileUrl;
+      if (!fullUrl.startsWith('http')) {
+        fullUrl = '${ApiConstants.baseUrl.replaceAll('/api', '')}/$fileUrl';
+      }
+
+      // Determine file name
+      String fileName = fileUrl.split('/').last;
+      if (fileName.isEmpty) {
+        final isPdfFile = fileUrl.toLowerCase().contains('.pdf');
+        fileName = '$title.${isPdfFile ? 'pdf' : 'doc'}';
+      }
+
+      // Download the file
+      final response = await http.get(Uri.parse(fullUrl));
+      if (response.statusCode == 200) {
+        Directory? downloadDir;
+
+        if (Platform.isAndroid) {
+          // Use the public Downloads folder so files are visible in file managers
+          downloadDir = Directory('/storage/emulated/0/Download');
+          if (!await downloadDir.exists()) {
+            // Fallback to app-specific directory if public Downloads is unavailable
+            downloadDir = await getExternalStorageDirectory();
+            if (downloadDir != null) {
+              downloadDir = Directory('${downloadDir.path}/ayarfarm');
+            } else {
+              downloadDir = await getApplicationDocumentsDirectory();
+            }
+          }
+        } else if (Platform.isIOS) {
+          downloadDir = await getApplicationDocumentsDirectory();
+        } else {
+          downloadDir = await getApplicationDocumentsDirectory();
+        }
+
+        if (!await downloadDir.exists()) {
+          await downloadDir.create(recursive: true);
+        }
+
+        final filePath = '${downloadDir.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        CommonSnackbar.show(
+          context,
+          message: 'Downloaded to: $filePath',
+          type: SnackBarType.info,
+          position: SnackBarPosition.bottom,
+        );
+      } else {
+        CommonSnackbar.show(
+          context,
+          message: 'Failed to download file. Status: ${response.statusCode}',
+          type: SnackBarType.error,
+          position: SnackBarPosition.bottom,
+        );
+      }
+    } catch (e) {
+      CommonSnackbar.show(
+        context,
+        message: 'Error downloading file: $e',
+        type: SnackBarType.error,
+        position: SnackBarPosition.bottom,
+      );
     }
   }
 
@@ -160,6 +285,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
                               textMutedColor,
                               backgroundColor,
                               isDark,
+                              primaryColor,
                             );
                           },
                         ),
@@ -179,6 +305,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
     Color textMutedColor,
     Color backgroundColor,
     bool isDark,
+    Color primaryColor,
   ) {
     final title = doc['title'] ?? AppLocalizations.of(context)!.unknown;
     final author = doc['author'] ?? AppLocalizations.of(context)!.anonymous;
@@ -288,7 +415,24 @@ class _DocumentScreenState extends State<DocumentScreen> {
                   ),
                 ),
 
-                // Removed download button
+                // Download button
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _downloadDocument(fileUrl, title),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.download,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

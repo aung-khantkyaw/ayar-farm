@@ -792,4 +792,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpResource => 'Help Resource';
+
+  @override
+  String get aiChatTitle => 'AI Farming Assistant';
+
+  @override
+  String get aiChatSubtitle => 'Ask about farming, livestock, and breeding';
+
+  @override
+  String get aiChatHistoryTooltip => 'Chat history';
+
+  @override
+  String get aiChatNewChat => 'New Chat';
+
+  @override
+  String get aiChatNoRooms => 'No chat rooms yet.\nStart a new chat to begin.';
+
+  @override
+  String get aiChatDeleteRoomTitle => 'Delete Chat Room';
+
+  @override
+  String aiChatDeleteRoomConfirm(String roomTitle) {
+    return 'Are you sure you want to delete \"$roomTitle\"? This action cannot be undone.';
+  }
+
+  @override
+  String get aiChatCancel => 'Cancel';
+
+  @override
+  String get aiChatDelete => 'Delete';
+
+  @override
+  String get aiChatFailedToLoadRoom => 'Failed to load chat room';
+
+  @override
+  String get aiChatSourceUnavailable => 'Source file is not available.';
+
+  @override
+  String get aiChatWelcomeTitle => 'Welcome to AI Farming Assistant';
+
+  @override
+  String get aiChatWelcomeSubtitle =>
+      'I can help you with questions about farming, livestock, and breeding based on our knowledge base.';
+
+  @override
+  String get aiChatThinking => 'Thinking...';
+
+  @override
+  String get aiChatSources => 'SOURCES';
+
+  @override
+  String get aiChatInputHint => 'Ask about farming, livestock, or breeding...';
+
+  @override
+  String get aiChatDisclaimer =>
+      'AI responses are based on our farming knowledge base. Answers may not be accurate.';
+
+  @override
+  String get aiChatError => 'Sorry, I encountered an error. Please try again.';
+
+  @override
+  String get aiChatSourceDocument => 'Source document';
+
+  @override
+  String aiChatByAuthor(String author) {
+    return 'By: $author';
+  }
 }

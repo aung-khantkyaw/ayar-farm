@@ -263,5 +263,39 @@
   "noTermsOfServiceAvailable": "ဝန်ဆောင်မှုစည်းမျဉ်း မရရှိနိုင်ပါ",
   "helpResources": "အကူအညီ အရင်းအမြစ်များ",
   "noHelpResourcesAvailable": "အကူအညီ အရင်းအမြစ်များ မရရှိနိုင်ပါ",
-  "helpResource": "အကူအညီ အရင်းအမြစ်"
+  "helpResource": "အကူအညီ အရင်းအမြစ်",
+  "aiChatTitle": "AI စိုက်ပျိုးရေး အကူအညီ",
+  "aiChatSubtitle": "စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် မျိုးပွားရေးဆိုင်ရာ မေးခွန်းများ မေးပါ",
+  "aiChatHistoryTooltip": "စကားပြောဆိုမှု မှတ်တမ်း",
+  "aiChatNewChat": "စကားပြောဆိုမှု အသစ်",
+  "aiChatNoRooms": "စကားပြောဆိုမှု ခန်းများ မရှိသေးပါ။\nအသစ်တစ်ခု စတင်ပါ။",
+  "aiChatDeleteRoomTitle": "စကားပြောဆိုမှု ခန်း ဖျက်ရန်",
+  "aiChatDeleteRoomConfirm": "\"{roomTitle}\" ကို ဖျက်ရန် သေချာပါသလား။ ဤလုပ်ဆောင်ချက်ကို ပြန်လည်ဖျက်ချင်လျှင် မဖြစ်နိုင်ပါ။",
+  "@aiChatDeleteRoomConfirm": {
+    "placeholders": {
+      "roomTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "aiChatCancel": "ပယ်ဖျက်ရန်",
+  "aiChatDelete": "ဖျက်ရန်",
+  "aiChatFailedToLoadRoom": "စကားပြောဆိုမှု ခန်းကို ဖွင့်ရန် မအောင်မြင်ပါ",
+  "aiChatSourceUnavailable": "အရင်းအမြစ် ဖိုင် မရှိပါ။",
+  "aiChatWelcomeTitle": "AI စိုက်ပျိုးရေး အကူအညီသို့ ကြိုဆိုပါ၏",
+  "aiChatWelcomeSubtitle": "ကျွန်ုပ်တို့၏ အသိပညာ အခြေခံဖြင့် စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် မျိုးပွားရေးဆိုင်ရာ မေးခွန်းများကို ကူညီနိုင်ပါသည်။",
+  "aiChatThinking": "စဉ်းစားနေပါသည်...",
+  "aiChatSources": "အရင်းအမြစ်များ",
+  "aiChatInputHint": "စိုက်ပျိုးရေး၊ မွေးမြူရေး သို့မဟုတ် မျိုးပွားရေးဆိုင်ရာ မေးပါ...",
+  "aiChatDisclaimer": "AI အဖြေများသည် ကျွန်ုပ်တို့၏ စိုက်ပျိုးရေး အသိပညာ အခြေခံဖြင့် ဖြစ်ပါသည်။ အဖြေများသည် တိကျမှု မရှိနိုင်ပါ။",
+  "aiChatError": "စိတ်မကောင်းပါ၊ အမှားအယွင်း တစ်ခု ဖြစ်ပေါ်ခဲ့ပါသည်။ ထပ်ကြိုးစားပါ။",
+  "aiChatSourceDocument": "အရင်းအမြစ် စာရွက်စာတမ်း",
+  "aiChatByAuthor": "စာရေးသူ - {author}",
+  "@aiChatByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  }
 }

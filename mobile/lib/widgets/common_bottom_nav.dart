@@ -35,7 +35,6 @@ class CommonBottomNav extends StatelessWidget {
         bottom: 24, // Safe area padding
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(
             Icons.home,
@@ -46,10 +45,18 @@ class CommonBottomNav extends StatelessWidget {
             textSubColor,
           ),
           _buildNavItem(
+            Icons.auto_awesome,
+            Icons.auto_awesome_outlined,
+            'AI',
+            1,
+            primaryColor,
+            textSubColor,
+          ),
+          _buildNavItem(
             Icons.category,
             Icons.category_outlined,
             AppLocalizations.of(context)!.navCategory,
-            1,
+            2,
             primaryColor,
             textSubColor,
           ),
@@ -57,7 +64,7 @@ class CommonBottomNav extends StatelessWidget {
             Icons.chat_bubble,
             Icons.chat_bubble_outline,
             AppLocalizations.of(context)!.navChatting,
-            2,
+            3,
             primaryColor,
             textSubColor,
           ),
@@ -65,7 +72,7 @@ class CommonBottomNav extends StatelessWidget {
             Icons.settings,
             Icons.settings_outlined,
             AppLocalizations.of(context)!.navSetting,
-            3,
+            4,
             primaryColor,
             textSubColor,
           ),
@@ -83,26 +90,29 @@ class CommonBottomNav extends StatelessWidget {
     Color unselectedColor,
   ) {
     final isSelected = selectedIndex == index;
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isSelected ? selectedIcon : unselectedIcon,
-            color: isSelected ? selectedColor : unselectedColor,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(index),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
               color: isSelected ? selectedColor : unselectedColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
+              size: 20,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? selectedColor : unselectedColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

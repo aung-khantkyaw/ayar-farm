@@ -266,7 +266,41 @@
   "noTermsOfServiceAvailable": "No Terms of Service available",
   "helpResources": "Help Resources",
   "noHelpResourcesAvailable": "No Help Resources available",
-  "helpResource": "Help Resource"
+  "helpResource": "Help Resource",
+  "aiChatTitle": "AI Farming Assistant",
+  "aiChatSubtitle": "Ask about farming, livestock, and breeding",
+  "aiChatHistoryTooltip": "Chat history",
+  "aiChatNewChat": "New Chat",
+  "aiChatNoRooms": "No chat rooms yet.\nStart a new chat to begin.",
+  "aiChatDeleteRoomTitle": "Delete Chat Room",
+  "aiChatDeleteRoomConfirm": "Are you sure you want to delete \"{roomTitle}\"? This action cannot be undone.",
+  "@aiChatDeleteRoomConfirm": {
+    "placeholders": {
+      "roomTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "aiChatCancel": "Cancel",
+  "aiChatDelete": "Delete",
+  "aiChatFailedToLoadRoom": "Failed to load chat room",
+  "aiChatSourceUnavailable": "Source file is not available.",
+  "aiChatWelcomeTitle": "Welcome to AI Farming Assistant",
+  "aiChatWelcomeSubtitle": "I can help you with questions about farming, livestock, and breeding based on our knowledge base.",
+  "aiChatThinking": "Thinking...",
+  "aiChatSources": "SOURCES",
+  "aiChatInputHint": "Ask about farming, livestock, or breeding...",
+  "aiChatDisclaimer": "AI responses are based on our farming knowledge base. Answers may not be accurate.",
+  "aiChatError": "Sorry, I encountered an error. Please try again.",
+  "aiChatSourceDocument": "Source document",
+  "aiChatByAuthor": "By: {author}",
+  "@aiChatByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  }
 }
 
    

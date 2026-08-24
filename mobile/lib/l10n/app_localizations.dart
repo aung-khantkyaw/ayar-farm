@@ -1645,6 +1645,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help Resource'**
   String get helpResource;
+
+  /// No description provided for @aiChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Farming Assistant'**
+  String get aiChatTitle;
+
+  /// No description provided for @aiChatSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about farming, livestock, and breeding'**
+  String get aiChatSubtitle;
+
+  /// No description provided for @aiChatHistoryTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat history'**
+  String get aiChatHistoryTooltip;
+
+  /// No description provided for @aiChatNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New Chat'**
+  String get aiChatNewChat;
+
+  /// No description provided for @aiChatNoRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'No chat rooms yet.\nStart a new chat to begin.'**
+  String get aiChatNoRooms;
+
+  /// No description provided for @aiChatDeleteRoomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Chat Room'**
+  String get aiChatDeleteRoomTitle;
+
+  /// No description provided for @aiChatDeleteRoomConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{roomTitle}\"? This action cannot be undone.'**
+  String aiChatDeleteRoomConfirm(String roomTitle);
+
+  /// No description provided for @aiChatCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get aiChatCancel;
+
+  /// No description provided for @aiChatDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get aiChatDelete;
+
+  /// No description provided for @aiChatFailedToLoadRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load chat room'**
+  String get aiChatFailedToLoadRoom;
+
+  /// No description provided for @aiChatSourceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Source file is not available.'**
+  String get aiChatSourceUnavailable;
+
+  /// No description provided for @aiChatWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to AI Farming Assistant'**
+  String get aiChatWelcomeTitle;
+
+  /// No description provided for @aiChatWelcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'I can help you with questions about farming, livestock, and breeding based on our knowledge base.'**
+  String get aiChatWelcomeSubtitle;
+
+  /// No description provided for @aiChatThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking...'**
+  String get aiChatThinking;
+
+  /// No description provided for @aiChatSources.
+  ///
+  /// In en, this message translates to:
+  /// **'SOURCES'**
+  String get aiChatSources;
+
+  /// No description provided for @aiChatInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about farming, livestock, or breeding...'**
+  String get aiChatInputHint;
+
+  /// No description provided for @aiChatDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI responses are based on our farming knowledge base. Answers may not be accurate.'**
+  String get aiChatDisclaimer;
+
+  /// No description provided for @aiChatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I encountered an error. Please try again.'**
+  String get aiChatError;
+
+  /// No description provided for @aiChatSourceDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Source document'**
+  String get aiChatSourceDocument;
+
+  /// No description provided for @aiChatByAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'By: {author}'**
+  String aiChatByAuthor(String author);
 }
 
 class _AppLocalizationsDelegate

@@ -64,6 +64,8 @@ class CommonPostCard extends StatefulWidget {
 }
 
 class _CommonPostCardState extends State<CommonPostCard> {
+  final LayerLink _reactionPickerLink = LayerLink();
+  OverlayEntry? _reactionPickerOverlay;
   late bool _reacted;
   late int _likes;
   late int _comments;
@@ -97,6 +99,12 @@ class _CommonPostCardState extends State<CommonPostCard> {
         _content = widget.content;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _hideReactionPicker();
+    super.dispose();
   }
 
   Future<void> _editPost() async {
@@ -239,43 +247,107 @@ class _CommonPostCardState extends State<CommonPostCard> {
   }
 
   void _showReactionPicker() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _reactionOption('LIKE', Icons.thumb_up, 'Like'),
-              _reactionOption('UNLIKE', Icons.thumb_down, 'Unlike'),
-              _reactionOption('SUPPORT', Icons.volunteer_activism, 'Support'),
-              _reactionOption('CARE', Icons.favorite, 'Care'),
-              if (_reactionType != null)
-                ListTile(
-                  leading: const Icon(Icons.close),
-                  title: const Text('Remove reaction'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _setReaction(null);
-                  },
-                ),
-            ],
+    if (_reactionPickerOverlay != null) {
+      _hideReactionPicker();
+      return;
+    }
+
+    _reactionPickerOverlay = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _hideReactionPicker,
+            ),
           ),
-        );
-      },
+          CompositedTransformFollower(
+            link: _reactionPickerLink,
+            targetAnchor: Alignment.topLeft,
+            followerAnchor: Alignment.bottomLeft,
+            offset: const Offset(0, -8),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: widget.surfaceColor,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: widget.borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.16),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _reactionPopupOption('LIKE', Icons.thumb_up, 'Like'),
+                    _reactionPopupOption('UNLIKE', Icons.thumb_down, 'Unlike'),
+                    _reactionPopupOption(
+                      'SUPPORT',
+                      Icons.volunteer_activism,
+                      'Support',
+                    ),
+                    _reactionPopupOption('CARE', Icons.favorite, 'Care'),
+                    if (_reactionType != null) ...[
+                      Container(width: 1, height: 28, color: widget.borderColor),
+                      IconButton(
+                        tooltip: 'Remove reaction',
+                        onPressed: () {
+                          _hideReactionPicker();
+                          _setReaction(null);
+                        },
+                        icon: Icon(Icons.close, color: widget.textSubColor),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+    Overlay.of(context, rootOverlay: true).insert(_reactionPickerOverlay!);
   }
 
-  Widget _reactionOption(String type, IconData icon, String label) {
+  void _hideReactionPicker() {
+    _reactionPickerOverlay?.remove();
+    _reactionPickerOverlay = null;
+  }
+
+  Widget _reactionPopupOption(
+    String type,
+    IconData icon,
+    String label,
+  ) {
     final isActive = _reactionType == type;
-    return ListTile(
-      leading: Icon(icon, color: isActive ? widget.primaryColor : null),
-      title: Text(label),
-      trailing: isActive ? Icon(Icons.check, color: widget.primaryColor) : null,
-      onTap: () {
-        Navigator.pop(context);
-        _setReaction(type);
-      },
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () {
+          _hideReactionPicker();
+          _setReaction(type);
+        },
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: isActive ? widget.primaryColor.withOpacity(0.14) : null,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 21,
+            color: isActive ? widget.primaryColor : widget.textSubColor,
+          ),
+        ),
+      ),
     );
   }
 
@@ -356,277 +428,261 @@ class _CommonPostCardState extends State<CommonPostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final mutedBorder = widget.borderColor.withOpacity(0.7);
+
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: widget.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: widget.borderColor),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: mutedBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: widget.onProfileTap,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: NetworkImage(widget.authorAvatarUrl),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: widget.onProfileTap,
+                    child: Row(
                       children: [
-                        Text(
-                          widget.authorName,
-                          style: TextStyle(
-                            color: widget.textMainColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                        CircleAvatar(
+                          radius: 21,
+                          backgroundColor: widget.primaryColor.withOpacity(0.15),
+                          backgroundImage: NetworkImage(widget.authorAvatarUrl),
                         ),
-                        Text(
-                          widget.timeAgo,
-                          style: TextStyle(
-                            color: widget.textSubColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.isCurrentUser)
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_horiz, color: widget.textSubColor),
-                  onSelected: (value) {
-                    if (value == 'edit') _editPost();
-                    if (value == 'delete') _deletePost();
-                  },
-                  itemBuilder:
-                      (ctx) => [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Text(
-                            AppLocalizations.of(context)?.postEdit ??
-                                'Edit post',
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Text(
-                            AppLocalizations.of(context)?.postDelete ??
-                                'Delete post',
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.authorName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: widget.textMainColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    widget.timeAgo,
+                                    style: TextStyle(
+                                      color: widget.textSubColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 5),
+                                    child: Icon(Icons.public, size: 12),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                )
-              else
-                Tooltip(
-                  message: widget.userType ?? 'User',
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: _getUserTypeColor(
-                        widget.userType,
-                      ).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _getUserTypeColor(
-                          widget.userType,
-                        ).withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      _getUserTypeIcon(widget.userType),
-                      size: 16,
-                      color: _getUserTypeColor(widget.userType),
                     ),
                   ),
                 ),
-            ],
+                if (widget.isCurrentUser)
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_horiz, color: widget.textSubColor),
+                    onSelected: (value) {
+                      if (value == 'edit') _editPost();
+                      if (value == 'delete') _deletePost();
+                    },
+                    itemBuilder: (ctx) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text(
+                          AppLocalizations.of(context)?.postEdit ?? 'Edit post',
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          AppLocalizations.of(context)?.postDelete ??
+                              'Delete post',
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Tooltip(
+                    message: widget.userType ?? 'User',
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: _getUserTypeColor(widget.userType).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _getUserTypeIcon(widget.userType),
+                        size: 16,
+                        color: _getUserTypeColor(widget.userType),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
           GestureDetector(
             onTap: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => PostScreen(postId: widget.postId),
-                ),
+                MaterialPageRoute(builder: (_) => PostScreen(postId: widget.postId)),
               );
               if (mounted && result is int) {
-                setState(() {
-                  _comments = result;
-                });
+                setState(() => _comments = result);
               }
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // if (tag != null)
-                //   Container(
-                //     margin: const EdgeInsets.only(bottom: 8),
-                //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                //     decoration: BoxDecoration(
-                //       color: primaryColor.withOpacity(0.2),
-                //       borderRadius: BorderRadius.circular(4),
-                //     ),
-                //     child: Text(
-                //       tag!,
-                //       style: TextStyle(
-                //         color: const Color(0xFF052E11),
-                //         fontSize: 12,
-                //         fontWeight: FontWeight.bold,
-                //       ),
-                //     ),
-                //   ),
-                Text(
-                  _truncateWords(_content, 100),
-                  style: TextStyle(
-                    color: widget.textMainColor,
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                ),
-                if (widget.images != null && widget.images!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  if (widget.images!.length == 1)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        widget.images!.first,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
+                if (_content.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+                    child: Text(
+                      _truncateWords(_content, 30),
+                      style: TextStyle(
+                        color: widget.textMainColor,
+                        fontSize: 15,
+                        height: 1.45,
                       ),
+                    ),
+                  ),
+                if (widget.images != null && widget.images!.isNotEmpty)
+                  if (widget.images!.length == 1)
+                    Image.network(
+                      widget.images!.first,
+                      width: double.infinity,
+                      height: 230,
+                      fit: BoxFit.cover,
                     )
                   else
                     GridView.count(
                       shrinkWrap: true,
                       crossAxisCount: 2,
-                      crossAxisSpacing: 6,
-                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 2,
+                      childAspectRatio: 1.15,
                       physics: const NeverScrollableScrollPhysics(),
-                      children:
-                          widget.images!.map((img) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(img, fit: BoxFit.cover),
-                            );
-                          }).toList(),
+                      children: widget.images!
+                          .map((image) => Image.network(image, fit: BoxFit.cover))
+                          .toList(),
                     ),
-                ],
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Divider(color: widget.borderColor, height: 1),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: _showReactionPicker,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.surfaceColor,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: widget.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.thumb_up, color: Colors.white, size: 12),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _likes.toString(),
+                  style: TextStyle(color: widget.textSubColor, fontSize: 13),
+                ),
+                const Spacer(),
+                Text(
+                  '$_comments comments',
+                  style: TextStyle(color: widget.textSubColor, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: mutedBorder),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: CompositedTransformTarget(
+                    link: _reactionPickerLink,
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: widget.borderColor.withOpacity(0.5),
+                      onTap: _showReactionPicker,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _currentReactionIcon(),
+                              size: 20,
+                              color: _reacted ? widget.primaryColor : widget.textSubColor,
+                            ),
+                            const SizedBox(width: 7),
+                            Text(
+                              'Like',
+                              style: TextStyle(
+                                color: _reacted ? widget.primaryColor : widget.textSubColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _currentReactionIcon(),
-                          size: 20,
-                          color:
-                              _reacted
-                                  ? widget.primaryColor
-                                  : widget.textSubColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _likes.toString(),
-                          style: TextStyle(
-                            color:
-                                _reacted
-                                    ? widget.primaryColor
-                                    : widget.textSubColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PostScreen(postId: widget.postId),
-                      ),
-                    );
-                    if (mounted && result is int) {
-                      setState(() {
-                        _comments = result;
-                      });
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.primaryColor.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: widget.primaryColor.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 20,
-                          color: widget.primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _comments.toString(),
-                          style: TextStyle(
-                            color: widget.primaryColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => PostScreen(postId: widget.postId)),
+                      );
+                      if (mounted && result is int) {
+                        setState(() => _comments = result);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 20, color: widget.textSubColor),
+                          const SizedBox(width: 7),
+                          Text(
+                            'Comment',
+                            style: TextStyle(
+                              color: widget.textSubColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
