@@ -1,66 +1,121 @@
+name: ayar-farm-dev
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEVELOPMENT — Local machine (hot-reload enabled)
+#
+# Same architecture as production: data services are cloud-managed.
+#   PostgreSQL → Neon DB         → DATABASE_URL            (./api/.env, ./ai-processor/.env)
+#   Redis      → Upstash         → REDIS_URL               (./api/.env, ./ai-processor/.env)
+#   Qdrant     → Qdrant Cloud    → QDRANT_URL, QDRANT_API_KEY (./ai-processor/.env)
+#
+# Self-hosted containers: api, web, mobile, ai-processor, ollama
+#
+# Differences from production:
+#   - Source code mounted into containers with hot-reload commands
+#   - All ports exposed to host for debugging (incl. ai-processor :8001,
+#     ollama :11434)
+#   - Lower resource limits sized for a dev machine
+#   - Ollama container name suffixed _dev (can run side-by-side with prod)
+#
+# Ollama models (pull once after first start):
+#   docker compose -f docker-compose.dev.yml exec ollama ollama pull qwen2.5:7b
+#   docker compose -f docker-compose.dev.yml exec ollama ollama pull bge-m3
+#
+# NOTE: Unlike production, MAX_LOADED_MODELS is "1" here — Docker Desktop
+#       typically gets only ~8 GB on a 16 GB Windows machine. Models swap
+#       in/out per request (~7-20s slower RAG responses) instead of risking
+#       OOM kills. Production keeps BOTH resident ("2", 10G limit, no swap).
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    ports:
-      - "3000:3000"
     env_file:
       - ./api/.env
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      PYTHON_RAG_SERVICE_URL: http://ai-processor:8001
+      # ts-node WITHOUT type-checking: boot drops from ~4min to seconds and
+      # stays well under the heap limit. Your IDE still catches type errors.
+      TS_NODE_TRANSPILE_ONLY: "true"
+      NODE_OPTIONS: "--max-old-space-size=1024"
+    ports:
+      - "3000:3000"
     volumes:
       - ./api:/app
       - /app/node_modules
+      - /app/dist
     command: npm run dev
+    depends_on:
+      ai-processor:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1536M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('net').connect(3000, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    init: true
     restart: unless-stopped
+    networks:
+      - frontend
+      - backend
 
   web:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
-    ports:
-      - "5173:5173"
     env_file:
       - ./web/.env
+    environment:
+      # Guarantees Vite HMR fires on Windows bind mounts (see vite.config.ts)
+      VITE_USE_POLLING: "true"
+    ports:
+      - "5173:5173"
     volumes:
       - ./web:/app
       - /app/node_modules
+      - /app/dist
     command: npm run dev -- --host
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('net').connect(5173, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    init: true
     restart: unless-stopped
-
-  ai-processor:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.ai-processor
-    ports:
-      - "8001:8001"
-    env_file:
-      - ./ai-processor/.env
-    volumes:
-      - ./ai-processor:/app
-    depends_on:
-      - database
-      - redis
-      - qdrant
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    restart: unless-stopped
+    networks:
+      - frontend
 
   mobile:
     build:
@@ -71,22 +126,118 @@ services:
       - "8080:8080"
     volumes:
       - ./mobile:/app
+      - /app/.dart_tool
+      - /app/build
     stdin_open: true
     tty: true
-    command: /bin/bash -c "flutter pub get && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
+    command: >
+      sh -c "flutter pub get &&
+             flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
+    networks:
+      - frontend
 
-  database:
+  ai-processor:
     build:
       context: .
-      dockerfile: docker/Dockerfile.database
+      dockerfile: docker/Dockerfile.ai-processor
+    env_file:
+      - ./ai-processor/.env
+    environment:
+      PORT: 8001
+      # Forces uvicorn's watchfiles reloader to poll — guarantees reload on
+      # Windows bind mounts where inotify events may not propagate.
+      WATCHFILES_FORCE_POLLING: "true"
     ports:
-      - "5432:5432"
+      - "8001:8001"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./ai-processor:/app
+      - /app/__pycache__
+    command: python -u dev.py
+    depends_on:
+      ollama:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8001/health', timeout=3)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    init: true
     restart: unless-stopped
+    networks:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ayar_farm_ollama_dev
+    ports:
+      - "11434:11434"
+    environment:
+      OMP_NUM_THREADS: "6"
+      OLLAMA_NUM_PARALLEL: "1"
+      # Option B (dev machine): only ONE model resident at a time.
+      # RAG flow swaps bge-m3 <-> qwen2.5:7b per request (~7-20s slower),
+      # but peak RAM stays ~4.9 GB — safe inside an 8 GB Docker Desktop.
+      # Production uses "2" (both resident, no swap) with a 10G limit.
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_KEEP_ALIVE: "30m"
+      # Same memory insurance as production:
+      OLLAMA_CONTEXT_LENGTH: "4096"   # pin context; prevents silent growth
+      OLLAMA_KV_CACHE_TYPE: "q8_0"    # halves KV cache, negligible quality impact
+    volumes:
+      - ollama_data_dev:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: "6"
+          memory: 7G
+        reservations:
+          cpus: "4"
+          memory: 4G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    networks:
+      - backend
 
 volumes:
-  postgres_data:
-  redis_data:
-  qdrant_data:
+  ollama_data_dev:
+
+networks:
+  frontend:
+  # Not internal — api and ai-processor need outbound HTTPS/TLS access to
+  # Neon DB, Upstash Redis, and Qdrant Cloud over the public internet.
+  backend:

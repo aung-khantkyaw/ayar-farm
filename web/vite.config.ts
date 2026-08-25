@@ -20,6 +20,14 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: '0.0.0.0',
+    // Docker Desktop bind mounts (Windows host) often miss fs events.
+    // Polling guarantees HMR triggers; enabled via VITE_USE_POLLING=true
+    // in docker-compose.dev.yml. No effect on production builds.
+    watch: {
+      usePolling: process.env.VITE_USE_POLLING === 'true',
+      interval: 1000,
+    },
     proxy: {
       '/api/market': {
         target: 'https://mm-market-api.vercel.app',

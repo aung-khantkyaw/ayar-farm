@@ -1,7 +1,31 @@
-node_modules
-dist
-npm-debug.log
+# ── Dependencies (installed INSIDE images by package managers) ──
+# NOTE: bare "node_modules" only matches the repo ROOT — use "**/" to also
+# exclude api/node_modules and web/node_modules. Otherwise Windows-installed
+# binaries get COPY-ed over the Linux ones installed by `npm ci`.
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+
+# ── Build outputs (each image builds its own fresh copies) ──
+**/dist
+**/build
+mobile/.dart_tool
+
+# ── Secrets — injected at RUNTIME via compose env_file ──
+# Never bake these into image layers.
+**/.env
+.env.*
+!.env.example
+
+# ── VCS / IDE ──
 .git
 .gitignore
-mobile/build
-mobile/.dart_tool
+.vscode
+.idea
+
+# ── Docs / logs (not needed in any image) ──
+docs/
+*.md
+*.log
+npm-debug.log

@@ -1,5 +1,21 @@
 name: ayar-farm
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PRODUCTION — Z.com.mm Cloud VPS Standard C4
+#   8 vCPU · 16 GB RAM · Ubuntu · 50 GB Boot disk · 500 IOPS
+#
+# Managed cloud services (no local containers):
+#   PostgreSQL → Neon DB         → DATABASE_URL            (./api/.env, ./ai-processor/.env)
+#   Redis      → Upstash         → REDIS_URL               (./api/.env, ./ai-processor/.env)
+#   Qdrant     → Qdrant Cloud    → QDRANT_URL, QDRANT_API_KEY (./ai-processor/.env)
+#
+# Self-hosted containers: api, web, mobile, ai-processor, ollama
+#
+# Ollama models (pull once after first start):
+#   docker compose exec ollama ollama pull qwen2.5:7b
+#   docker compose exec ollama ollama pull bge-m3
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
   api:
     build:
@@ -14,20 +30,27 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
       ai-processor:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').connect(3000, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     init: true
     restart: unless-stopped
     networks:
@@ -45,12 +68,22 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').connect(4173, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     init: true
     restart: unless-stopped
     networks:
@@ -63,12 +96,22 @@ services:
       target: prod
     ports:
       - "8080:80"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     networks:
       - frontend
@@ -84,69 +127,70 @@ services:
     expose:
       - "8001"
     depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      qdrant:
+      ollama:
         condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8001/health', timeout=3)\""]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     init: true
     restart: unless-stopped
     networks:
       - backend
 
-  database:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.database
-    # Kept on the private network; use `docker compose exec database psql ...`
-    # for administrative access instead of publishing PostgreSQL to the host.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ayar_farm_ollama
+    environment:
+      OMP_NUM_THREADS: "6"
+      OLLAMA_NUM_PARALLEL: "1"
+      # Keep BOTH models resident: qwen2.5:7b (LLM) + bge-m3 (embeddings).
+      # Prevents slow model swaps between RAG search and generation steps.
+      # Peak demand ~6.9 GB vs 10G limit — safe on the 16 GB server.
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_KEEP_ALIVE: "30m"
+      # Memory insurance for the 16 GB host:
+      OLLAMA_CONTEXT_LENGTH: "4096"   # pin context (default); prevents silent growth
+      OLLAMA_KV_CACHE_TYPE: "q8_0"    # halves KV cache (~230MB -> ~120MB), negligible quality impact
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-    networks:
-      - backend
-
-  redis:
-    image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - backend
-
-  qdrant:
-    image: qdrant/qdrant:v1.16.2
-    volumes:
-      - qdrant_data:/qdrant/storage
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: "6"
+          memory: 10G
+        reservations:
+          cpus: "4"
+          memory: 6G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     networks:
       - backend
 
 volumes:
-  postgres_data:
-  redis_data:
-  qdrant_data:
+  ollama_data:
 
 networks:
   frontend:
+  # Not internal — api and ai-processor need outbound HTTPS/TLS access to
+  # Neon DB, Upstash Redis, and Qdrant Cloud over the public internet.
   backend:
-    internal: true

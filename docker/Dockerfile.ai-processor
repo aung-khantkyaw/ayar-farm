@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -22,6 +22,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ai-processor/ ./
 
-EXPOSE $PORT
+# Embeddings (BAAI/bge-m3) and LLM (qwen2.5:7b) are served by the Ollama container.
+# Pull models after startup:
+#   docker compose exec ollama ollama pull bge-m3
+#   docker compose exec ollama ollama pull qwen2.5:7b
+
+EXPOSE 8001
 
 CMD ["python", "-u", "main.py"]
