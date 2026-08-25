@@ -6,8 +6,8 @@ from typing import List, Dict, Any, Optional
 import json
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from google import genai
-from google.genai import types
+from services.ai_client import get_ai_client
+from services.qdrant_client import qdrant_service
 import os
 from config.settings import settings
 from database.connection import get_db_connection
@@ -45,46 +45,79 @@ class RAGService:
             print(f"❌ Failed to initialize Qdrant: {e}")
     
     def search_qdrant(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """Search Qdrant for relevant documents"""
+        """Search Qdrant for relevant documents.
+
+        Uses the ACTIVE provider's embedding model for the query vector and
+        filters results to points embedded by the SAME model — vectors from
+        different models are incompatible and would give meaningless scores.
+        """
         try:
-            # Get active API key for embedding model
             api_key_data = api_key_manager.get_active_api_key()
             if not api_key_data:
-                raise Exception("No active API key available")
-            
-            # Generate embedding for query
-            client = genai.Client(api_key=api_key_data['apiKey'])
-            embedding_model = api_key_data.get('embeddingModelName')
-            
-            response = client.models.embed_content(
-                model=embedding_model,
-                contents=query,
-                config=types.EmbedContentConfig(task_type="retrieval_query")
-            )
-            query_vector = response.embeddings[0].values
-            
-            # Search all collections
+                print("❌ No active API key available")
+                return []
+
+            embedding_info = api_key_manager.get_embedding_info()
+
+            # Generate embedding for query using provider-aware client
+            ai = get_ai_client(api_key_data)
+            query_vector = ai.embed_text(query, task_type="retrieval_query")
+
+            # Sanity check: query dims must match the configured vector size
+            expected_size = embedding_info["vector_size"]
+            if expected_size and len(query_vector) != expected_size:
+                print(
+                    f"❌ Embedding dimension mismatch: model "
+                    f"'{embedding_info['embedding_model']}' produced {len(query_vector)} dims "
+                    f"but ApiKey.vectorSize says {expected_size}. Fix the ApiKey record."
+                )
+                return []
+
+            # Restrict results to points created by the same embedding model
+            search_filter = None
+            if embedding_info["embedding_model"]:
+                search_filter = Filter(must=[
+                    FieldCondition(
+                        key="embedding_model",
+                        match=MatchValue(value=embedding_info["embedding_model"]),
+                    )
+                ])
+
+            # Resolve physical collections matching the ACTIVE provider's
+            # vector size (e.g. 'posts' or 'posts_3072'); label stays logical.
+            collection_targets = []
+            for base in (
+                settings.POSTS_COLLECTION,
+                settings.DOCUMENTS_COLLECTION,
+                settings.KNOWLEDGE_BASE_COLLECTION,
+            ):
+                physical = qdrant_service.resolve_collection_name(base)
+                if physical:
+                    collection_targets.append((base, physical))
+                else:
+                    print(f"⚠️  No compatible collection for '{base}' with active embedding model")
+
             all_results = []
-            collections = ['posts', 'documents', 'knowledge_base']
-            
-            for collection in collections:
+
+            for logical_name, collection in collection_targets:
                 try:
                     search_results = self.qdrant_client.query_points(
                         collection_name=collection,
                         query=query_vector,
+                        query_filter=search_filter,
                         limit=limit,
                         score_threshold=0.5
                     )
-                    
+
                     for result in search_results.points:
                         # Use record_id as the appropriate ID based on collection type
                         record_id = result.payload.get('record_id', '')
-                        post_id = result.payload.get('post_id') or (record_id if collection == 'posts' else None)
-                        document_id = result.payload.get('document_id') or (record_id if collection == 'documents' else None)
-                        kb_id = result.payload.get('kb_id') or (record_id if collection == 'knowledge_base' else None)
-                        
+                        post_id = result.payload.get('post_id') or (record_id if logical_name == 'posts' else None)
+                        document_id = result.payload.get('document_id') or (record_id if logical_name == 'documents' else None)
+                        kb_id = result.payload.get('kb_id') or (record_id if logical_name == 'knowledge_base' else None)
+
                         all_results.append({
-                            'collection': collection,
+                            'collection': logical_name,
                             'score': result.score,
                             'text': result.payload.get('text', ''),
                             'record_id': record_id,
@@ -95,16 +128,18 @@ class RAGService:
                                 'author': result.payload.get('author', ''),
                                 'post_id': post_id,
                                 'document_id': document_id,
-                                'kb_id': kb_id
+                                'kb_id': kb_id,
+                                'embedding_model': result.payload.get('embedding_model', ''),
+                                'vector_size': result.payload.get('vector_size', 0),
                             }
                         })
                 except Exception as e:
                     print(f"⚠️  Failed to search collection {collection}: {e}")
-            
+
             # Sort by score and return top results
             all_results.sort(key=lambda x: x['score'], reverse=True)
             return all_results[:limit]
-            
+
         except Exception as e:
             print(f"❌ Qdrant search failed: {e}")
             return []
@@ -112,12 +147,7 @@ class RAGService:
     def generate_response_stream(self, question: str, context: str, history: List[Dict[str, str]]):
         """Generate streaming response using AI"""
         try:
-            api_key_data = api_key_manager.get_active_api_key()
-            if not api_key_data:
-                raise Exception("No active API key available")
-            
-            client = genai.Client(api_key=api_key_data['apiKey'])
-            llm_model = api_key_data.get('llmModelName')
+            ai = get_ai_client()
             
             # Build system prompt for domain-specific responses
             system_prompt = """You are an agricultural expert assistant for Ayar Farm. 
@@ -138,34 +168,13 @@ class RAGService:
             {context}
             """
             
-            # Build conversation history for Google GenAI
-            # Convert role format: USER -> user, ASSISTANT -> model
-            # Include history in contents array
-            contents = []
-            for msg in history:
-                contents.append({
-                    "role": "user" if msg['role'] == 'USER' else "model",
-                    "parts": [{"text": msg['content']}]
-                })
-            
-            # Add current question
-            contents.append({
-                "role": "user",
-                "parts": [{"text": question}]
-            })
-            
-            # Generate streaming response
-            response = client.models.generate_content_stream(
-                model=llm_model,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt.format(context=context)
-                )
+            # Stream response via provider-aware client
+            yield from ai.generate_stream(
+                question=question,
+                context=context,
+                history=history,
+                system_prompt=system_prompt,
             )
-            
-            for chunk in response:
-                if chunk.text:
-                    yield chunk.text
                     
         except Exception as e:
             print(f"❌ Response generation failed: {e}")

@@ -1,6 +1,6 @@
 import redis
 import threading
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable, List
 from config.settings import settings
 from database.repositories import ApiKeyRepository
 
@@ -10,6 +10,7 @@ class ApiKeyManager:
     _active_api_key: Optional[Dict[str, Any]] = None
     _redis_client: Optional[redis.Redis] = None
     _listening_thread: Optional[threading.Thread] = None
+    _update_callbacks: List[Callable[[], None]] = []
     
     def __new__(cls):
         if cls._instance is None:
@@ -117,24 +118,50 @@ class ApiKeyManager:
                     with self._lock:
                         self._active_api_key = updated_key
                     print(f"✅ Updated active API key to: {api_key_id}")
+                    self._notify_update_callbacks()
             else:
                 # If the current active key was deactivated, fetch a new one
                 with self._lock:
                     if self._active_api_key and self._active_api_key['id'] == api_key_id:
                         new_key = ApiKeyRepository.get_active_api_key()
                         self._active_api_key = new_key
+                        switched = True
                         if new_key:
                             print(f"✅ Switched to new active API key: {new_key['id']}")
                         else:
                             print("⚠️  No active API key available")
-        
+                    else:
+                        switched = False
+                if switched:
+                    self._notify_update_callbacks()
+
         except Exception as e:
             print(f"❌ Error handling API key update: {e}")
     
+    def register_update_callback(self, callback: Callable[[], None]):
+        """Register a callback fired (on the Redis listener thread) whenever
+        the active API key changes — e.g. Qdrant re-provisions collections."""
+        self._update_callbacks.append(callback)
+
+    def _notify_update_callbacks(self):
+        for callback in self._update_callbacks:
+            try:
+                callback()
+            except Exception as e:
+                print(f"❌ API key update callback failed: {e}")
+
     def get_active_api_key(self) -> Optional[Dict[str, Any]]:
         """Get the current active API key"""
         with self._lock:
             return self._active_api_key
+
+    def get_embedding_info(self) -> Dict[str, Any]:
+        """Embedding model name + vector size of the active provider."""
+        data = self.get_active_api_key() or {}
+        return {
+            "embedding_model": data.get("embeddingModelName", ""),
+            "vector_size": int(data.get("vectorSize") or 0),
+        }
     
     def increment_usage(self, api_key_id: str):
         """Increment usage count for an API key"""

@@ -123,25 +123,42 @@ class TaskConsumer:
             
             # Merge task_data with record_data (task_data has file_url from Redis stream)
             merged_data = {**record_data, **task_data}
-            
+
+            # Resolve the physical Qdrant collection for the ACTIVE provider's
+            # vector size BEFORE embedding — skip wasted API calls if missing.
+            base_collection = {
+                TASK_TYPE_POST: settings.POSTS_COLLECTION,
+                TASK_TYPE_DOCUMENT: settings.DOCUMENTS_COLLECTION,
+                TASK_TYPE_KNOWLEDGE_BASE: settings.KNOWLEDGE_BASE_COLLECTION,
+            }.get(task_type)
+            collection_name = (
+                qdrant_service.resolve_collection_name(base_collection)
+                if base_collection
+                else None
+            )
+            if not collection_name:
+                print(
+                    f"❌ No compatible Qdrant collection for '{base_collection}' "
+                    f"with the active provider's vector size. Provision first."
+                )
+                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+                return
+
             # Process based on task type
             vectorized_chunks = []
-            
+
             if task_type == TASK_TYPE_POST:
                 print(f"📝 Processing POST: {record_id}")
                 vectorized_chunks = vectorizer.process_post(merged_data)
-                collection_name = settings.POSTS_COLLECTION
 
             elif task_type == TASK_TYPE_DOCUMENT:
                 print(f"📄 Processing DOCUMENT: {record_id}")
                 vectorized_chunks = vectorizer.process_document(merged_data)
-                collection_name = settings.DOCUMENTS_COLLECTION
 
             elif task_type == TASK_TYPE_KNOWLEDGE_BASE:
                 print(f"📚 Processing KNOWLEDGE_BASE: {record_id}")
                 vectorized_chunks = vectorizer.process_knowledge_base(merged_data)
-                collection_name = settings.KNOWLEDGE_BASE_COLLECTION
-            
+
             else:
                 print(f"❌ Unknown task type: {task_type}")
                 EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)

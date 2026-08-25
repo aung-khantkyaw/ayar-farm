@@ -22,9 +22,13 @@ def start_embedding_worker():
     
     # Initialize API Key Manager (starts Redis listener in background)
     api_key_manager.initialize()
-    
+
     # Initialize Qdrant service
     qdrant_service.initialize()
+
+    # Re-provision Qdrant collections automatically when the active API key
+    # changes (new provider may need a different vector size)
+    api_key_manager.register_update_callback(qdrant_service.ensure_collections)
     
     # Start task consumer
     consumer = TaskConsumer()

@@ -1,155 +1,495 @@
-# AI Processor Worker
+# AI Processor
 
-Background worker service for processing and vectorizing content (posts, documents, knowledge base entries) using AI embeddings and storing them in Qdrant vector database.
+The AI backbone service for the Ayar Farm platform — handles content vectorization, RAG-based chat, and multi-provider AI integration.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Code Structure](#code-structure)
+- [Project Flow](#project-flow)
+- [Model-Aware Vector Storage](#model-aware-vector-storage)
+- [SOLID Design Patterns](#solid-design-patterns)
+- [Adding New Providers](#adding-new-providers)
+- [Configuration](#configuration)
+- [Setup & Running](#setup--running)
+
+---
 
 ## Overview
 
-The AI Processor is a Python-based background worker that:
-- Consumes vectorization tasks from Redis streams
-- Processes different content types (posts, PDF documents, knowledge base entries)
-- Extracts text, tables, and images from PDFs
-- Chunks content into smaller pieces
-- Generates embeddings using AI models (currently Google Gemini)
-- Stores vectors in Qdrant for semantic search
-- Dynamically uses active API keys from database
+AI Processor is a two-in-one service:
+
+1. **Embedding Worker** — Consumes vectorization tasks from Redis streams and stores them in Qdrant vector DB
+2. **RAG Chat Service** — Receives user questions via FastAPI, searches Qdrant, and returns LLM streaming responses
+
+It is built with OOP Design Patterns to be easily extensible for multiple AI providers (Google Gemini, OpenAI, Ollama, OpenRouter).
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────┐
-│   Main Entry    │
-│    main.py      │
-└────────┬────────┘
-         │
-         ├───┬──────────────────────────────────────┐
-         │   │                                      │
-         ▼   ▼                                      ▼
-┌──────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ API Key      │  │ Qdrant Service   │  │ Task Consumer    │
-│ Manager      │  │                  │  │                  │
-└──────────────┘  └──────────────────┘  └────────┬─────────┘
-         │                                      │
-         │                                      ▼
-         │                            ┌──────────────────┐
-         │                            │ Vectorizer       │
-         │                            │                  │
-         │                            └────────┬─────────┘
-         │                                     │
-         │                            ┌────────┴─────────┐
-         │                            │                  │
-         │                            ▼                  ▼
-         │                    ┌──────────────┐  ┌──────────────┐
-         │                    │ PDF Processor│  │ Text Chunker │
-         │                    └──────────────┘  └──────────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Database        │
-│ Repositories     │
-└──────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                      main.py                            │
+│          (Starts Worker Thread + FastAPI Server)         │
+└───────────┬─────────────────────────────┬───────────────┘
+            │                             │
+            ▼                             ▼
+┌───────────────────────┐   ┌─────────────────────────────┐
+│   Embedding Worker    │   │      RAG Chat Service       │
+│   (Background Thread) │   │      (FastAPI + Uvicorn)    │
+└───────────┬───────────┘   └──────────┬──────────────────┘
+            │                          │
+            ▼                          ▼
+┌───────────────────────┐   ┌─────────────────────────────┐
+│  TaskConsumer         │   │  RAGService                 │
+│  (Redis Stream)       │   │  (Qdrant Search + LLM)      │
+└───────────┬───────────┘   └──────────┬──────────────────┘
+            │                          │
+            ▼                          ▼
+┌───────────────────────┐   ┌─────────────────────────────┐
+│  Vectorizer           │   │  AIClient (Facade)          │
+│  (Chunk + Embed)      │   │  └─ ProviderFactory         │
+└───────────┬───────────┘   │     ├─ GoogleProvider       │
+            │               │     ├─ OpenAIProvider       │
+            ▼               │     └─ OllamaProvider       │
+┌───────────────────────┐   └─────────────────────────────┐
+│  AI Providers         │
+│  (Strategy Pattern)   │
+│  ├─ GoogleProvider    │
+│  ├─ OpenAIProvider    │
+│  └─ OllamaProvider    │
+└───────────────────────┘
 ```
+
+---
+
+## Code Structure
+
+```
+ai-processor/
+│
+├── main.py                          # Entry point — starts worker + FastAPI
+├── dev.py                           # Dev mode with hot-reload (uvicorn --reload)
+├── rag_service.py                   # FastAPI app + RAGService class
+├── requirements.txt                 # Python dependencies
+│
+├── config/
+│   ├── settings.py                  # Environment variables + validation
+│   └── constants.py                 # Task types, statuses, content types
+│
+├── services/
+│   ├── ai_client.py                 # Facade — thin wrapper over AIProvider
+│   ├── api_key_manager.py           # Singleton — dynamic API key from DB
+│   ├── pdf_processor.py             # PDF download + text/table/image extraction
+│   ├── qdrant_client.py             # Qdrant vector DB operations
+│   ├── vectorizer.py                # Content → chunks → vectors pipeline
+│   │
+│   └── ai_providers/                # SOLID provider abstraction layer
+│       ├── __init__.py
+│       ├── base.py                  # ABC — interface for all providers
+│       ├── google_provider.py       # Google GenAI (Gemini)
+│       ├── openai_provider.py       # OpenAI SDK (base_url configurable)
+│       ├── ollama_provider.py       # Ollama (extends OpenAI)
+│       └── provider_factory.py      # Factory — maps provider string → class
+│
+├── utils/
+│   └── text_chunker.py              # Sentence-aware text chunking
+│
+├── worker/
+│   └── consumer.py                  # Redis stream consumer
+│
+└── database/
+    ├── connection.py                # PostgreSQL connection with retry
+    └── repositories.py              # API key + embedding status queries
+```
+
+### File-by-File Explanation
+
+#### `main.py`
+
+Application entry point. It performs two main tasks:
+
+1. Starts `TaskConsumer` in a **Background Thread** to consume vectorization tasks from Redis streams
+2. Runs the `rag_service` FastAPI app with Uvicorn in the **Main Thread**
+
+```
+main() → Thread(worker) + Uvicorn(rag_service)
+```
+
+#### `dev.py`
+
+Used for development mode. Uses `uvicorn --reload` to auto-restart on every code change.
+
+#### `rag_service.py`
+
+A FastAPI application with two responsibilities:
+
+- **HTTP Endpoints**: Accepts chat requests and runs the RAG pipeline
+- **RAGService class**: Performs Qdrant search + LLM streaming generation
+
+Key endpoints:
+
+- `POST /ai-chat/stream` — SSE streaming chat
+- `POST /chat-rooms` — Create chat room
+- `GET /chat-rooms` — List chat rooms
+- `GET /ai-chat/history` — Get chat history
+
+---
+
+### `services/ai_providers/` — SOLID Provider Layer
+
+This package manages AI providers using **Strategy Pattern** + **Factory Pattern**.
+
+#### `base.py` — Abstract Base Class (Interface)
+
+```python
+class AIProvider(ABC):
+    @abstractmethod
+    def embed_text(self, text, task_type) -> List[float]: ...
+
+    @abstractmethod
+    def generate_stream(self, question, context, history, system_prompt) -> Generator[str]: ...
+```
+
+All providers must implement this interface. It defines only two methods: `embed_text()` and `generate_stream()`.
+
+#### `google_provider.py`
+
+Uses Google GenAI SDK for embedding and streaming with Gemini models.
+
+#### `openai_provider.py`
+
+Uses OpenAI SDK with a configurable `base_url`. Works with any OpenAI-compatible API (OpenRouter, OpenAI, etc.).
+
+#### `ollama_provider.py`
+
+Extends `OpenAIProvider` with Ollama-specific defaults. Both LLM and embeddings are served by the Ollama container:
+
+- LLM: e.g. `qwen2.5:7b`
+- Embedding: `bge-m3` (BAAI/bge-m3, dense, 1024 dimensions)
+- `base_url` = `http://localhost:11434/v1` (default)
+
+Pull models into Ollama after startup:
+
+```bash
+docker compose exec ollama ollama pull qwen2.5:7b
+docker compose exec ollama ollama pull bge-m3
+```
+
+#### `provider_factory.py` — Factory Pattern
+
+```python
+class ProviderFactory:
+    PROVIDERS = {
+        "GOOGLE": GoogleProvider,
+        "CUSTOM": OllamaProvider,
+        "OPENAI": OpenAIProvider,
+    }
+
+    @classmethod
+    def create(cls, api_key_data) -> AIProvider:
+        provider_name = api_key_data.get("provider", "GOOGLE")
+        return cls.PROVIDERS[provider_name](api_key_data)
+```
+
+Creates the correct provider class based on the `provider` field from the database.
+
+#### `ai_client.py` — Facade Pattern
+
+```python
+class AIClient:
+    def __init__(self, provider: AIProvider):
+        self._provider = provider
+
+    def embed_text(self, text, task_type):
+        return self._provider.embed_text(text, task_type)
+
+    def generate_stream(self, question, context, history, system_prompt):
+        yield from self._provider.generate_stream(...)
+```
+
+All callers (Vectorizer, RAGService) use `get_ai_client()` and call `.embed_text()` / `.generate_stream()`. The Facade handles provider selection internally.
+
+---
+
+### `services/vectorizer.py`
+
+Orchestrates the Content → Chunks → Vectors pipeline.
+
+```
+Post Text ──→ chunk_text() ──→ vectorize_chunks() ──→ Qdrant Points
+PDF ──→ download_pdf() ──→ extract_content() ──→ chunk_structured_content() ──→ vectorize_chunks()
+```
+
+Key methods:
+| Method | Description |
+|---|---|
+| `vectorize_text(text)` | Single text → embedding vector |
+| `vectorize_chunks(chunks)` | Multiple chunks → vectorized chunks |
+| `process_post(post_data)` | Post content → vectorized chunks |
+| `process_document(doc_data)` | PDF document → vectorized chunks |
+| `process_knowledge_base(kb_data)` | KB PDF → vectorized chunks |
+| `prepare_qdrant_points(chunks, record_id)` | Format for Qdrant insertion |
+
+DRY fix: `process_document()` and `process_knowledge_base()` both call the shared `_process_pdf_content()` method.
+
+Dependency Injection: `ai_client_factory` can be passed via the constructor for testability.
+
+---
+
+### `services/api_key_manager.py`
+
+Uses the Singleton pattern for dynamic API key management.
+
+**Flow:**
+
+1. On startup, loads the active API key from the database
+2. Listens to Redis stream (`api_key_updates`) and auto-switches on key updates
+3. Uses thread-safe locking to handle concurrent access
+4. Fires registered **update callbacks** on every successful key switch — Qdrant uses this to re-provision collections (see below)
+5. Exposes `get_embedding_info()` — the single source of truth for the active provider's `embeddingModelName` + `vectorSize` (used by Vectorizer, RAGService, and Qdrant provisioning)
+
+---
+
+### `services/qdrant_client.py`
+
+Qdrant vector DB operations:
+
+- **Per-model collections**: deterministic naming — every collection is `<base>_<model>_<size>` (`posts_bge-m3_1024`, `documents_gemini-embedding-2_3072`, ...). Each embedding model owns isolated collections; same-dim models never collide
+- **Auto-provisioning**: `ensure_collections()` runs at startup AND via an ApiKeyManager update callback — every provider switch provisions whatever is missing
+- **Name resolver**: `resolve_collection_name(base)` maps logical names (`posts`) to the physical collection for the ACTIVE model; readers (RAG search) and writers (worker upserts) both route through it
+- Point upsert with an early **dimension guard** (rejects wrong-dim points with a clear message instead of a cryptic Qdrant error)
+- Vector search with score threshold
+- Collection info and management
+
+---
+
+### `services/pdf_processor.py`
+
+PDF content extraction pipeline:
+
+```
+Cloudinary URL → Download → Extract Content → [Text, Tables, Images]
+```
+
+Extraction methods:
+
+- **Text**: `pdfplumber` (primary), `pdfminer.six` (fallback)
+- **Tables**: `camelot-py`
+- **Images**: `pdf2image` + `pytesseract` OCR
+
+---
+
+### `utils/text_chunker.py`
+
+Sentence-aware text chunking for optimal embedding:
+
+- Splits text into sentences
+- Groups sentences into chunks (default: 500 chars)
+- Maintains overlap between chunks (default: 50 chars)
+- Handles structured content (text, tables, images) separately
+
+---
+
+### `worker/consumer.py`
+
+Redis stream consumer:
+
+- Reads tasks from `vector_task_stream`
+- Routes to appropriate vectorizer method by task type
+- Updates embedding status (PROCESSING → COMPLETED/FAILED)
+- Auto-reconnects on Redis failures
+
+---
+
+### `database/`
+
+- **`connection.py`**: PostgreSQL connection with retry logic and `check_and_reconnect()`
+- **`repositories.py`**: `ApiKeyRepository` (active key lookup), `EmbeddingStatusRepository` (status updates + record data fetch)
+
+---
 
 ## Project Flow
 
-### 1. Initialization (`main.py`)
-
-1. **Validate Settings** - Checks required environment variables
-2. **Initialize API Key Manager** - Loads active API key from database, starts Redis listener for updates
-3. **Initialize Qdrant Service** - Connects to Qdrant, creates collections if needed
-4. **Start Task Consumer** - Begins consuming tasks from Redis stream
-
-### 2. Task Processing Flow (`worker/consumer.py`)
+### 1. Startup Flow
 
 ```
-Redis Stream → Task Consumer → Process Task → Vectorize → Store in Qdrant → Update Status
+main.py
+  │
+  ├─→ settings.validate()          # Check env vars
+  ├─→ api_key_manager.initialize() # Load active API key + start Redis listener
+  ├─→ qdrant_service.initialize()  # Connect to Qdrant + ensure collections
+  ├─→ register_update_callback(qdrant_service.ensure_collections)
+  │                                # Auto re-provision on provider switch
+  ├─→ [Thread] consumer.start()    # Start consuming vectorization tasks
+  └─→ [Main]   uvicorn.run(app)    # Start RAG HTTP server
 ```
 
-**Step-by-step:**
-1. **Receive Task** - Consumer reads task from Redis stream (`vector_task_stream`)
-2. **Update Status** - Sets embedding status to `PROCESSING`
-3. **Fetch Record** - Retrieves record data from PostgreSQL database
-4. **Process Content** - Routes to appropriate processor based on task type:
-   - `POST` → Process post text content
-   - `DOCUMENT` → Process PDF document
-   - `KNOWLEDGE_BASE` → Process knowledge base PDF
-5. **Vectorize** - Converts content chunks to embeddings
-6. **Store Vectors** - Upserts vectors to Qdrant collection
-7. **Update Status** - Sets embedding status to `COMPLETED` or `FAILED`
-
-### 3. Content Processing (`services/vectorizer.py`)
-
-**For Posts:**
-- Extract text content
-- Chunk into smaller pieces (500 chars with 50 char overlap)
-- Vectorize each chunk using AI model
-- Prepare Qdrant points
-
-**For Documents/Knowledge Base:**
-- Download PDF from Cloudinary URL
-- Extract structured content (text, tables, images)
-- Chunk each content type appropriately
-- Vectorize chunks
-- Prepare Qdrant points
-
-### 4. PDF Processing (`services/pdf_processor.py`)
+### 2. Vectorization Flow (Worker)
 
 ```
-PDF URL → Download → Extract Content → [Text, Tables, Images] → Return Structured Data
+Redis Stream  →  TaskConsumer  →  Vectorizer  →  AI Provider  →  Qdrant
+  (task)          (receive)       (chunk)        (embed)         (store)
 ```
 
-**Extraction methods:**
-- **Text**: pdfplumber (primary), PyPDF2 (fallback)
-- **Tables**: camelot-py
-- **Images**: pdf2image + pytesseract OCR
+Step-by-step:
 
-### 5. Text Chunking (`utils/text_chunker.py`)
+1. **TaskConsumer** reads task from Redis stream
+2. Sets embedding status to `PROCESSING`
+3. Fetches record data from PostgreSQL (post/document/knowledge base)
+4. Routes to vectorizer method:
+   - `POST` → `vectorizer.process_post()`
+   - `DOCUMENT` → `vectorizer.process_document()`
+   - `KNOWLEDGE_BASE` → `vectorizer.process_knowledge_base()`
+5. **Vectorizer** chunks content and calls `ai.embed_text()` for each chunk
+6. **AI Provider** (Google/OpenAI/Ollama) generates embedding vector
+7. Vectors stored in Qdrant with metadata
+8. Status updated to `COMPLETED` or `FAILED`
 
-- Splits text into sentences
-- Groups sentences into chunks (500 chars default)
-- Maintains overlap between chunks (50 chars default)
-- Handles structured content (text, tables, images) separately
+### 3. RAG Chat Flow
 
-### 6. Vectorization (`services/vectorizer.py`)
+```
+User Question → FastAPI → RAGService → Qdrant Search → Context Assembly → LLM Stream → SSE Response
+```
 
-- Uses active API key from database
-- Dynamically selects embedding model from `embeddingModelName` field
-- Currently supports Google Gemini (extensible for other providers)
-- Increments API key usage counter
+Step-by-step:
 
-### 7. Qdrant Storage (`services/qdrant_client.py`)
+1. User sends question via `POST /ai-chat/stream`
+2. **RAGService** loads the active API key and generates the query embedding with the SAME provider's model
+3. Sanity check: query dims must match `ApiKey.vectorSize` (clear config error if not)
+4. Searches Qdrant across all collections (posts, documents, knowledge_base) **filtered to `embedding_model == active model`** — vectors from different models are never mixed
+5. Assembles top results as context
+6. Calls `ai.generate_stream()` with system prompt + context + history
+7. Streams LLM response tokens via SSE
 
-- Creates collections with vector size from active API key
-- Stores vectors with metadata (text, chunk_index, record_id)
-- Supports search, delete, and collection info operations
+### 4. API Key Update Flow
 
-### 8. API Key Management (`services/api_key_manager.py`)
+```
+Node.js API  →  Redis Stream  →  ApiKeyManager  →  Callbacks  →  Qdrant
+  (update)        (publish)        (subscribe)      (notify)     (re-provision)
+```
 
-- Loads active API key from database on startup
-- Listens to Redis stream for API key updates
-- Automatically switches to new active key when updated
-- Thread-safe singleton pattern
+1. Node.js API publishes key update to Redis stream
+2. ApiKeyManager listener receives the update
+3. Fetches new active key from PostgreSQL
+4. Updates in-memory cache (thread-safe)
+5. Fires registered update callbacks → `qdrant_service.ensure_collections()` creates any missing collection for the new provider's `vectorSize`
+6. Next AI call (vectorize or chat) uses the new provider/model automatically
 
-## Components
+---
 
-### Core Services
+## Model-Aware Vector Storage
 
-- **`main.py`** - Entry point, initializes all services
-- **`worker/consumer.py`** - Redis stream consumer, task processing orchestration
-- **`services/vectorizer.py`** - Content vectorization using AI models
-- **`services/qdrant_client.py`** - Qdrant vector database operations
-- **`services/api_key_manager.py`** - Dynamic API key management with Redis updates
-- **`services/pdf_processor.py`** - PDF content extraction
+Every stored point is **self-describing** — the Vectorizer stamps the active provider's embedding info onto each chunk:
 
-### Utilities
+```json
+{
+  "text": "...",
+  "chunk_index": 0,
+  "record_id": "abc-123",
+  "type": "post",
+  "title": "...",
+  "author": "...",
+  "post_id": "...",
+  "embedding_model": "bge-m3",
+  "vector_size": 1024
+}
+```
 
-- **`utils/text_chunker.py`** - Text chunking for vectorization
-- **`config/settings.py`** - Configuration management
-- **`config/constants.py`** - Task types and status constants
+This enables safe multi-provider operation:
 
-### Database
+| Concern | Mechanism |
+|---|---|
+| Writes use the right dimension | Upsert guard rejects points whose dims ≠ collection config |
+| Search never mixes vector spaces | Query filter `embedding_model == active model` |
+| Config drift detected early | Startup + per-key-change size comparison warns loudly |
+| Audit/debug | Inspect any point's payload in the Qdrant UI |
 
-- **`database/connection.py`** - PostgreSQL connection with retry logic
-- **`database/repositories.py`** - Database repositories for API keys and embedding status
+> ⚠️ Points stored before this feature (no `embedding_model` field) are invisible to search until re-vectorized — mixing models is worse than empty results.
+
+### Switching Embedding Models
+
+1. Deactivate old key, activate the new one (`ApiKey.active`) — set matching `embeddingModelName` + `vectorSize`
+2. ApiKeyManager switches instantly; `ensure_collections()` provisions the model-sized collection automatically (`posts_bge-m3_1024`, `posts_gemini-embedding-2_3072`, ...)
+3. Each model keeps its own data — switching back to a previous model makes its collection instantly searchable again
+4. Content is re-vectorized per collection: reset `embeddingStatus = 'PENDING'` for items that should live in the new provider's collection, then re-trigger via `PUT /api/data-vectorization/status`
+
+---
+
+## SOLID Design Patterns
+
+### Applied Patterns
+
+| Pattern             | Where                                    | Purpose                                             |
+| ------------------- | ---------------------------------------- | --------------------------------------------------- |
+| **Strategy**        | `ai_providers/base.py`                   | Each provider implements same interface differently |
+| **Factory**         | `provider_factory.py`                    | Creates correct provider from DB config             |
+| **Facade**          | `ai_client.py`                           | Simplifies provider access for callers              |
+| **Singleton**       | `api_key_manager.py`                     | One global API key manager instance                 |
+| **Observer**        | `register_update_callback()`             | Qdrant re-provisions itself on provider switch      |
+| **Template Method** | `OllamaProvider extends OpenAIProvider`  | Reuses OpenAI logic with different defaults         |
+| **DI**              | `Vectorizer.__init__(ai_client_factory)` | Inject dependency instead of hardcoding             |
+
+### SOLID Principles
+
+| Principle                     | How It's Applied                                                                                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S** — Single Responsibility | Each file has one job. `ai_providers/` handles provider logic. `vectorizer.py` handles chunking pipeline. `rag_service.py` handles HTTP + RAG. |
+| **O** — Open/Closed           | New provider = new file + one line in `PROVIDERS` dict. Zero changes to existing code.                                                         |
+| **L** — Liskov Substitution   | `OllamaProvider` extends `OpenAIProvider` — both work interchangeably wherever `AIProvider` is expected.                                       |
+| **I** — Interface Segregation | `AIProvider` ABC defines only 2 methods: `embed_text()` + `generate_stream()`. No bloated interfaces.                                          |
+| **D** — Dependency Inversion  | `Vectorizer` depends on `AIProvider` abstraction, not concrete Google/OpenAI classes. `ProviderFactory` handles concrete instantiation.        |
+
+---
+
+## Adding New Providers
+
+### Step-by-step
+
+**1. Create provider file** — `services/ai_providers/my_provider.py`
+
+```python
+from services.ai_providers.base import AIProvider
+
+class MyProvider(AIProvider):
+    def embed_text(self, text: str, task_type: str = "retrieval_document") -> list[float]:
+        # Your embedding implementation
+        ...
+
+    def generate_stream(self, question, context, history, system_prompt):
+        # Your streaming implementation
+        ...
+```
+
+**2. Register in factory** — `services/ai_providers/provider_factory.py`
+
+```python
+from services.ai_providers.my_provider import MyProvider
+
+PROVIDERS = {
+    ...
+    "MY_PROVIDER": MyProvider,  # Add this line
+}
+```
+
+**3. Install SDK** — `requirements.txt`
+
+```
+my-provider-sdk==1.0.0
+```
+
+**4. Add to database** — Insert API key record
+
+```sql
+INSERT INTO "ApiKey" (id, provider, "llmModelName", "embeddingModelName", "vectorSize", apiKey, active)
+VALUES ('...', 'MY_PROVIDER', 'model-name', 'embedding-model', 1536, 'your-api-key', true);
+```
+
+**That's it.** No changes to Vectorizer, RAGService, or any other file.
+
+---
 
 ## Configuration
 
@@ -160,152 +500,91 @@ REDIS_URL=rediss://...
 DATABASE_URL=postgresql://...
 QDRANT_URL=https://...
 QDRANT_API_KEY=...
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-### Settings (`config/settings.py`)
+### Database: ApiKey Table
 
-- **Stream Names**: `API_KEY_UPDATES_STREAM`, `VECTOR_TASK_STREAM`
-- **Consumer Group**: `vector_workers`
-- **Collection Names**: `posts`, `documents`, `knowledge_base`
-- **Vector Size**: Dynamically loaded from active API key
+| Field                | Type    | Description                                  |
+| -------------------- | ------- | -------------------------------------------- |
+| `id`                 | UUID    | Primary key                                  |
+| `provider`           | String  | `GOOGLE`, `OPENAI`, `CUSTOM`                 |
+| `llmModelName`       | String  | e.g. `gemini-1.5-flash`, `qwen2.5:7b`        |
+| `embeddingModelName` | String  | e.g. `text-embedding-3-small`, `BAAI/bge-m3` |
+| `vectorSize`         | Int     | Vector dimension (768, 1536, etc.)           |
+| `apiKey`             | String  | API key                                      |
+| `baseUrl`            | String? | Custom endpoint URL                          |
+| `limit`              | Int     | Usage limit (0 = unlimited)                  |
+| `used`               | Int     | Current usage count                          |
+| `active`             | Boolean | Active key flag                              |
 
-### Database Schema
+### Constants (`config/constants.py`)
 
-The system relies on the following database tables:
+```python
+# Task types
+TASK_TYPE_POST = 'POST'
+TASK_TYPE_DOCUMENT = 'DOCUMENT'
+TASK_TYPE_KNOWLEDGE_BASE = 'KNOWLEDGE_BASE'
 
-**ApiKey Table:**
-- `id` - UUID
-- `provider` - AI provider (GOOGLE, OPENAI, etc.)
-- `llmModelName` - LLM model name
-- `embeddingModelName` - Embedding model name
-- `vectorSize` - Vector dimension size
-- `apiKey` - API key
-- `baseUrl` - Custom base URL for custom providers
-- `limit` - Usage limit (0 = unlimited)
-- `used` - Usage counter
-- `active` - Boolean flag for active key
+# Embedding statuses
+STATUS_PENDING = 'PENDING'
+STATUS_PROCESSING = 'PROCESSING'
+STATUS_COMPLETED = 'COMPLETED'
+STATUS_FAILED = 'FAILED'
+```
 
-**Content Tables:**
-- `Post` - Posts with `embeddingStatus` field
-- `Documents` - Documents with `embeddingStatus` field
-- `KnowledgeBase` - Knowledge base entries with `embeddingStatus` field
+---
 
-## Task Types
-
-- **POST** - Social media posts text content
-- **DOCUMENT** - PDF documents (crop docs, machine docs, etc.)
-- **KNOWLEDGE_BASE** - Knowledge base PDF entries
-
-## Embedding Status
-
-- **PENDING** - Waiting to be processed
-- **PROCESSING** - Currently being processed
-- **COMPLETED** - Successfully vectorized and stored
-- **FAILED** - Processing failed
-
-## Dynamic Configuration
-
-The system is designed to be fully dynamic:
-
-1. **API Keys**: Active API key is loaded from database and can be updated via Redis stream
-2. **Embedding Models**: Model name comes from active API key's `embeddingModelName` field
-3. **Vector Size**: Dimension size comes from active API key's `vectorSize` field
-4. **AI Providers**: Provider type comes from active API key's `provider` field
-
-This allows switching between different AI providers and models without code changes.
-
-## Setup
+## Setup & Running
 
 ### Prerequisites
 
 - Python 3.12+
-- PostgreSQL database
-- Redis (for streams and pub/sub)
+- PostgreSQL
+- Redis
 - Qdrant vector database
-- Cloudinary account (for PDF storage)
 
-### Installation
+### Local Development
 
 ```bash
-# Create virtual environment
+cd ai-processor
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
+.venv\Scripts\activate        # Windows
 pip install -r requirements.txt
+cp .env.example .env          # Edit with your config
+python dev.py                 # Hot-reload mode
 ```
 
-### Running
+### Production (Docker)
 
 ```bash
-# Set environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Run the worker
-python main.py
+docker compose build ai-processor
+docker compose up ai-processor
 ```
 
-### Docker
+### Available Commands
 
 ```bash
-# Build and run using Docker
-docker build -f docker/Dockerfile.ai -t ayar-farm-ai-processor .
-docker run -e REDIS_URL=... -e DATABASE_URL=... -e QDRANT_URL=... -e QDRANT_API_KEY=... ayar-farm-ai-processor
+python main.py       # Production mode (no hot-reload)
+python dev.py        # Development mode (hot-reload)
 ```
+
+---
 
 ## Dependencies
 
-Key dependencies include:
-- `google-genai` - Google Gemini AI SDK
-- `qdrant-client` - Qdrant vector database client
-- `redis` - Redis client for streams
-- `psycopg2` - PostgreSQL adapter
-- `pdfplumber` - PDF text extraction
-- `camelot-py` - PDF table extraction
-- `pdf2image` - PDF to image conversion
-- `pytesseract` - OCR for images
-- `requests` - HTTP client for PDF downloads
+| Package               | Purpose                           |
+| --------------------- | --------------------------------- |
+| `google-genai`        | Google Gemini SDK                 |
+| `openai`              | OpenAI + OpenAI-compatible APIs (Ollama LLM + bge-m3 embeddings) |
+| `qdrant-client`       | Vector database                   |
+| `redis`               | Stream processing + pub/sub       |
+| `psycopg2-binary`     | PostgreSQL                        |
+| `fastapi` + `uvicorn` | HTTP server                       |
+| `pdfplumber`          | PDF text extraction               |
+| `camelot-py`          | PDF table extraction              |
+| `pytesseract`         | OCR for images                    |
 
-## Extending the System
+---
 
-### Adding New AI Providers
-
-To add support for new AI providers:
-
-1. Update `_get_client()` in `services/vectorizer.py` to handle the new provider
-2. Install required SDK in `requirements.txt`
-3. Update database with appropriate API key configuration
-
-### Adding New Content Types
-
-1. Add new task type in `config/constants.py`
-2. Add processing method in `services/vectorizer.py`
-3. Update table mapping in `database/repositories.py`
-4. Add collection name in `config/settings.py`
-
-### Custom Chunking Strategy
-
-Modify `utils/text_chunker.py` to implement different chunking strategies based on your use case.
-
-## Error Handling
-
-The system includes comprehensive error handling:
-- Database connection retry logic
-- Redis connection recovery
-- Graceful shutdown on KeyboardInterrupt
-- Status updates to FAILED on errors
-- Detailed error logging
-
-## Monitoring
-
-The worker outputs detailed logs including:
-- Service initialization status
-- Task reception and processing
-- API key updates
-- Vector insertion counts
-- Error messages with context
-
-## License
-
-Part of the Ayar Farm project.
+Part of the Ayeyar Farm project.
