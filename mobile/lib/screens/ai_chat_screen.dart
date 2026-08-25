@@ -6,6 +6,7 @@ import '../services/ai_chat_service.dart';
 import '../services/api_service.dart';
 import '../constants/api_constants.dart';
 import 'pdf_reader_screen.dart';
+import 'post_screen.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -277,6 +278,38 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Future<void> _handleSourceClick(AiChatSource source) async {
+    final sourceType = (source.metadata?['type'] ?? source.collection ?? '')
+        .toString()
+        .toLowerCase();
+    final isPost = sourceType == 'post' || sourceType == 'posts';
+
+    // Posts → full post detail screen
+    if (isPost) {
+      final postId =
+          source.metadata?['post_id']?.toString() ??
+          source.metadata?['record_id']?.toString() ??
+          '';
+
+      if (postId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.aiChatSourceUnavailable)),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PostScreen(postId: postId),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Documents / knowledge base → PDF reader
     final fileUrl = await _resolveSourceFileUrl(source);
     final title = source.metadata?['title']?.toString() ?? AppLocalizations.of(context)!.aiChatSourceDocument;
 
@@ -302,21 +335,40 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final directUrl = _sourceFileUrl(source);
     if (directUrl != null) return directUrl;
 
-    final documentId = source.metadata?['document_id']?.toString();
-    if (documentId == null || documentId.isEmpty) return null;
+    final metadata = source.metadata;
+    final documentId = metadata?['document_id']?.toString();
+    if (documentId != null && documentId.isNotEmpty) {
+      try {
+        final response = await ApiService.get('/document/documents/$documentId');
+        final url = _extractFileUrl(response['document'] ?? response['data']);
+        if (url != null) return url;
+      } catch (error) {
+        debugPrint('Failed to load source document: $error');
+      }
+    }
 
-    try {
-      final response = await ApiService.get('/document/documents/$documentId');
-      final document = response['document'] ?? response['data'];
-      final fileUrls = document is Map ? document['file_urls'] : null;
-      if (fileUrls is List && fileUrls.isNotEmpty) {
-        return _toAbsoluteFileUrl(fileUrls.first.toString());
+    final kbId = metadata?['kb_id']?.toString();
+    if (kbId != null && kbId.isNotEmpty) {
+      try {
+        final response = await ApiService.get('/knowledge-base/$kbId');
+        final url = _extractFileUrl(response['knowledgeBase'] ?? response['data']);
+        if (url != null) return url;
+      } catch (error) {
+        debugPrint('Failed to load source knowledge base: $error');
       }
-      if (fileUrls is String && fileUrls.isNotEmpty) {
-        return _toAbsoluteFileUrl(fileUrls);
-      }
-    } catch (error) {
-      debugPrint('Failed to load source document: $error');
+    }
+
+    return null;
+  }
+
+  String? _extractFileUrl(dynamic record) {
+    if (record is! Map) return null;
+    final fileUrls = record['file_urls'];
+    if (fileUrls is List && fileUrls.isNotEmpty) {
+      return _toAbsoluteFileUrl(fileUrls.first.toString());
+    }
+    if (fileUrls is String && fileUrls.isNotEmpty) {
+      return _toAbsoluteFileUrl(fileUrls);
     }
     return null;
   }
@@ -901,13 +953,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
     AiChatSource source, Color textPrimary, Color textSecondary,
   ) {
     final type = source.metadata?['type'] ?? source.collection ?? AppLocalizations.of(context)!.unknown;
+    final typeStr = type.toString().toLowerCase();
+    final isPostSource = typeStr == 'post' || typeStr == 'posts';
     final score = source.score != null
         ? '${(source.score! * 100).toStringAsFixed(0)}%'
         : '';
     final title = source.metadata?['title'] as String?;
     final hasFile =
         _sourceFileUrl(source) != null ||
-        source.metadata?['document_id'] != null;
+        source.metadata?['document_id'] != null ||
+        source.metadata?['kb_id'] != null;
 
     return GestureDetector(
       onTap: () => _handleSourceClick(source),
@@ -924,7 +979,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              hasFile ? Icons.picture_as_pdf_outlined : Icons.description_outlined,
+              isPostSource
+                  ? Icons.article_outlined
+                  : hasFile
+                      ? Icons.picture_as_pdf_outlined
+                      : Icons.description_outlined,
               size: 13,
               color: textSecondary,
             ),
