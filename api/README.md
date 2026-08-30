@@ -94,15 +94,16 @@ Client Request → Middleware → Routes → Controllers → Services → Databa
 
 ### 5. Data Vectorization Pipeline
 
-The API integrates with the AI Processor worker for content vectorization:
+The API integrates with the AI Processor worker for content vectorization. Status is tracked **per API key** in the `EmbeddingRecord` table (one content item can be vectorized into multiple model-specific Qdrant collections):
 
 **Flow:**
-1. **Content Creation** - Posts, documents, knowledge base entries created with `embeddingStatus: PENDING`
-2. **Status Update** - API updates status to `PROCESSING`
-3. **Redis Stream** - Task published to `vector_task_stream`
-4. **AI Processor** - Python worker consumes task, processes content
-5. **Vector Storage** - Embeddings stored in Qdrant
-6. **Status Completion** - Status updated to `COMPLETED` or `FAILED`
+1. **Content Creation** - Posts, documents, knowledge base entries created
+2. **Admin Trigger** - `PUT /data-vectorization/status` with `status: 'PROCESSING'` and optional `apiKeyId`
+3. **Redis Stream** - Task published to `vector_task_stream` carrying content fields + `api_key_id`
+4. **AI Processor** - Python worker embeds with THAT key's model (falls back to active key if absent)
+5. **Vector Storage** - Embeddings stored in that key's collection (`<base>_<model>_<size>`)
+6. **Record Update** - Worker upserts `EmbeddingRecord`: PROCESSING → COMPLETED (collectionName, vectorCount) or FAILED (attempts, lastError)
+7. **Dashboard** - Per-key progress via `GET /all?apiKeyId=` and `GET /summary`
 
 ### 6. API Key Management
 
@@ -226,24 +227,28 @@ RESEND_API_KEY=...
 - Relations with posts, comments, notifications, conversations
 
 **Post:**
-- Social media posts with embedding status
+- Social media posts
 - Reactions, comments, media attachments
 - Visibility settings (PUBLIC, COMMUNITY, PRIVATE)
 
 **Documents:**
 - Agricultural documents (crop docs, machine docs, etc.)
 - PDF files stored in Cloudinary
-- Embedding status for vectorization
 
 **ApiKey:**
 - AI service configuration
-- Provider types: GOOGLE, OPENAI, ANTHROPIC, CUSTOM
-- Model names, vector sizes, usage limits
+- Provider types: OPENROUTER, OPENAI, ANTHROPIC, GOOGLE, CUSTOM
+- Model names (`llmModelName`, `embeddingModelName`), `vectorSize`, usage limits
 - Active key selection for AI processor
+
+**EmbeddingRecord:**
+- Per-API-key vectorization tracking (`@@unique([apiKeyId, targetType, targetId])`)
+- Status lifecycle: PENDING → PROCESSING → COMPLETED/FAILED
+- Stores physical `collectionName`, `vectorCount`, `attempts`, `lastError`
+- Missing row = content never attempted for that key
 
 **KnowledgeBase:**
 - Knowledge base entries with PDF content
-- Embedding status for semantic search
 
 ## API Endpoints
 
@@ -252,10 +257,11 @@ RESEND_API_KEY=...
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 
-### Data Vectorization
-- `GET /api/data-vectorization/pending` - Get pending items for vectorization
-- `POST /api/data-vectorization/status` - Update embedding status
-- `POST /api/data-vectorization/bulk-status` - Bulk update embedding status
+### Data Vectorization (admin)
+- `GET /api/data-vectorization/all?apiKeyId=...` - All content with per-key status merged (defaults to ACTIVE key; missing record = PENDING)
+- `GET /api/data-vectorization/summary` - Per-API-key vectorization counts
+- `PUT /api/data-vectorization/status` - Queue/update one item (`type`, `id`, `status`, optional `apiKeyId`)
+- `PUT /api/data-vectorization/status/bulk` - Bulk queue/update (optional top-level `apiKeyId`)
 
 ### API Keys
 - `GET /api/api-keys` - Get all API keys
@@ -285,11 +291,11 @@ RESEND_API_KEY=...
 
 ### Prerequisites
 
-- Node.js (version 18 or higher)
+- Node.js 22+
 - npm (Node Package Manager)
-- PostgreSQL database
-- Redis server
-- Cloudinary account
+- PostgreSQL database (Neon in production)
+- Redis server (Upstash in production)
+- Qdrant (Cloud in production)
 
 ### Installation
 
@@ -389,11 +395,11 @@ npm start
 
 The API integrates with the AI Processor worker for semantic search capabilities:
 
-1. **Content Creation** - When posts, documents, or knowledge base entries are created, they start with `embeddingStatus: PENDING`
-2. **Manual Trigger** - Admin can trigger vectorization via API endpoints
-3. **Redis Streaming** - Tasks are published to Redis streams for the Python worker
-4. **Status Tracking** - Embedding status is tracked throughout the process
-5. **Completion** - Once vectorized, content is searchable via Qdrant
+1. **Content Creation** - Posts, documents, and knowledge base entries are created without any vector-specific state
+2. **Manual Trigger** - Admin queues items via the data-vectorization endpoints (optionally targeting a non-active API key)
+3. **Redis Streaming** - Tasks are published to `vector_task_stream` carrying content fields + `api_key_id`
+4. **Per-Key Tracking** - The Python worker upserts `EmbeddingRecord` rows (status, collection, vector count, attempts, errors)
+5. **Completion** - Vectorized content becomes searchable via Qdrant in that model's dedicated collection (`<base>_<model>_<size>`)
 
 ## Error Handling
 

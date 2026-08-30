@@ -6,7 +6,12 @@ from config.constants import (
     TASK_TYPE_POST, TASK_TYPE_DOCUMENT, TASK_TYPE_KNOWLEDGE_BASE,
     STATUS_PROCESSING, STATUS_COMPLETED, STATUS_FAILED
 )
-from database.repositories import EmbeddingStatusRepository
+from database.repositories import (
+    ApiKeyRepository,
+    EmbeddingRecordRepository,
+    EmbeddingStatusRepository,
+)
+from services.api_key_manager import api_key_manager
 from services.vectorizer import vectorizer
 from services.qdrant_client import qdrant_service
 
@@ -109,18 +114,42 @@ class TaskConsumer:
         if not record_id:
             print("❌ Task missing record ID")
             return
-        
+
+        # Phase 3: tasks may target a SPECIFIC api key (enqueued from the
+        # admin dashboard). Embed with that key's model and attribute the
+        # EmbeddingRecord to it; fall back to the ACTIVE key otherwise.
+        task_api_key_id = task_data.get('api_key_id')
+        effective_key = None
+        if task_api_key_id:
+            effective_key = ApiKeyRepository.get_api_key_by_id(task_api_key_id)
+            if not effective_key:
+                print(f"⚠️  Task key {task_api_key_id} not found — using active key")
+        if not effective_key:
+            effective_key = api_key_manager.get_active_api_key_with_recovery()
+        api_key_id = effective_key['id'] if effective_key else None
+
+        def record_embedding(status: str, **kwargs):
+            """Parallel write to EmbeddingRecord (skipped when no active key)."""
+            if api_key_id:
+                EmbeddingRecordRepository.upsert(
+                    api_key_id=api_key_id,
+                    target_type=task_type,
+                    target_id=record_id,
+                    status=status,
+                    **kwargs,
+                )
+
         # Update status to PROCESSING
-        EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_PROCESSING)
+        record_embedding(STATUS_PROCESSING)
         
         try:
             # Get record data from database
             record_data = EmbeddingStatusRepository.get_record_data(task_type, record_id)
             if not record_data:
                 print(f"❌ Record not found: {record_id}")
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+                record_embedding(STATUS_FAILED, error='record not found')
                 return
-            
+
             # Merge task_data with record_data (task_data has file_url from Redis stream)
             merged_data = {**record_data, **task_data}
 
@@ -132,7 +161,9 @@ class TaskConsumer:
                 TASK_TYPE_KNOWLEDGE_BASE: settings.KNOWLEDGE_BASE_COLLECTION,
             }.get(task_type)
             collection_name = (
-                qdrant_service.resolve_collection_name(base_collection)
+                qdrant_service.resolve_collection_name(
+                    base_collection, api_key_data=effective_key
+                )
                 if base_collection
                 else None
             )
@@ -141,7 +172,7 @@ class TaskConsumer:
                     f"❌ No compatible Qdrant collection for '{base_collection}' "
                     f"with the active provider's vector size. Provision first."
                 )
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+                record_embedding(STATUS_FAILED, error='no compatible qdrant collection')
                 return
 
             # Process based on task type
@@ -149,40 +180,44 @@ class TaskConsumer:
 
             if task_type == TASK_TYPE_POST:
                 print(f"📝 Processing POST: {record_id}")
-                vectorized_chunks = vectorizer.process_post(merged_data)
+                vectorized_chunks = vectorizer.process_post(merged_data, api_key_data=effective_key)
 
             elif task_type == TASK_TYPE_DOCUMENT:
                 print(f"📄 Processing DOCUMENT: {record_id}")
-                vectorized_chunks = vectorizer.process_document(merged_data)
+                vectorized_chunks = vectorizer.process_document(merged_data, api_key_data=effective_key)
 
             elif task_type == TASK_TYPE_KNOWLEDGE_BASE:
                 print(f"📚 Processing KNOWLEDGE_BASE: {record_id}")
-                vectorized_chunks = vectorizer.process_knowledge_base(merged_data)
+                vectorized_chunks = vectorizer.process_knowledge_base(merged_data, api_key_data=effective_key)
 
             else:
                 print(f"❌ Unknown task type: {task_type}")
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+                record_embedding(STATUS_FAILED, error=f'unknown task type {task_type}')
                 return
-            
+
             if not vectorized_chunks:
                 print(f"⚠️  No chunks generated for {record_id}")
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+                record_embedding(STATUS_FAILED, error='no chunks generated')
                 return
-            
+
             # Prepare Qdrant points
             points = vectorizer.prepare_qdrant_points(vectorized_chunks, record_id)
-            
+
             # Insert into Qdrant
             if qdrant_service.upsert_points(collection_name, points):
                 print(f"✅ Inserted {len(points)} vectors into {collection_name}")
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_COMPLETED)
+                record_embedding(
+                    STATUS_COMPLETED,
+                    collection_name=collection_name,
+                    vector_count=len(points),
+                )
             else:
                 print(f"❌ Failed to insert vectors into {collection_name}")
-                EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
-        
+                record_embedding(STATUS_FAILED, error='qdrant upsert failed')
+
         except Exception as e:
             print(f"❌ Error processing task: {e}")
-            EmbeddingStatusRepository.update_status(task_type, record_id, STATUS_FAILED)
+            record_embedding(STATUS_FAILED, error=str(e))
     
     def stop(self):
         """Stop the consumer"""

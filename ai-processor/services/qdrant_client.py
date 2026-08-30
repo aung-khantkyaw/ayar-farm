@@ -1,6 +1,6 @@
 import re
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, PayloadSchemaType
 from typing import List, Dict, Any, Optional
 from config.settings import settings
 from services.api_key_manager import api_key_manager
@@ -80,15 +80,19 @@ class QdrantService:
             self._sizes_cache = sizes
         return self._sizes_cache
 
-    def resolve_collection_name(self, base_collection: str) -> Optional[str]:
-        """Resolve the physical collection for the ACTIVE provider:
-        '<base>_<model>_<size>' (e.g. posts_bge-m3_1024). Returns None when
-        it does not exist yet.
+    def resolve_collection_name(
+        self,
+        base_collection: str,
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """Resolve the physical collection for the given (or ACTIVE) provider:
+        '<base>_<model>_<size>' (e.g. posts_bge-m3_1024). Returns None when it
+        does not exist yet.
 
         Readers (RAG search) and writers (worker upserts) both route through
         this so they always hit collections built by the same embedding model.
         """
-        embedding_info = api_key_manager.get_embedding_info()
+        embedding_info = api_key_manager.get_embedding_info(api_key_data)
         expected = embedding_info["vector_size"]
         if not expected or not self._client:
             return None
@@ -105,6 +109,11 @@ class QdrantService:
         self._client.create_collection(
             collection_name=name,
             vectors_config=VectorParams(size=size, distance=Distance.COSINE),
+        )
+        self._client.create_payload_index(
+            collection_name=name,
+            field_name="embedding_model",
+            field_schema=PayloadSchemaType.KEYWORD,
         )
         if self._sizes_cache is not None:
             self._sizes_cache[name] = size

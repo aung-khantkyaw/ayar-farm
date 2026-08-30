@@ -155,9 +155,32 @@ class ApiKeyManager:
         with self._lock:
             return self._active_api_key
 
-    def get_embedding_info(self) -> Dict[str, Any]:
-        """Embedding model name + vector size of the active provider."""
-        data = self.get_active_api_key() or {}
+    def get_active_api_key_with_recovery(self) -> Optional[Dict[str, Any]]:
+        """Get the active API key, re-fetching from the DB when the cache is empty.
+
+        The in-memory cache can be legitimately None right after startup in a
+        process whose initialize() raced a transient DB failure (e.g. the
+        uvicorn reload child). Without this recovery every request in that
+        process would fail until manual restart.
+        """
+        key = self.get_active_api_key()
+        if key:
+            return key
+        try:
+            key = ApiKeyRepository.get_active_api_key()
+        except Exception as e:
+            print(f"❌ Active key re-fetch failed: {e}")
+            return None
+        if key:
+            with self._lock:
+                self._active_api_key = key
+            print(f"♻️  Recovered active API key from DB: {key['id']}")
+        return key
+
+    def get_embedding_info(self, api_key_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Embedding model name + vector size for the given key data.
+        Falls back to the ACTIVE key when none is provided."""
+        data = api_key_data or self.get_active_api_key() or {}
         return {
             "embedding_model": data.get("embeddingModelName", ""),
             "vector_size": int(data.get("vectorSize") or 0),

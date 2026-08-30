@@ -13,6 +13,7 @@ AyeyarFarm Web Dashboard is a React-based admin panel designed for managing the 
 - Reusable UI components with Shadcn
 - Data visualization with Recharts
 - Form handling with React Hook Form
+- AI admin suite: API key management, key-aware vectorization dashboard, knowledge base, RAG playground
 
 ## Getting Started
 
@@ -69,6 +70,11 @@ npm run test
 Page components organized by feature:
 
 - `admin/` - Admin management pages (applications, chat-room, users, videos)
+- `ai/` - AI admin pages:
+  - `api-keys.tsx` - Manage AI provider keys (provider, models, vector size, active toggle)
+  - `data-vectorization.tsx` - Key-aware vectorization dashboard (per-API-key status via `EmbeddingRecord`, bulk queueing)
+  - `knowledge-base.tsx` - Knowledge base CRUD with active-key embedding status
+  - `ai-playground.tsx` - RAG chat playground with streaming responses and source chips
 - `categories/` - Category pages (crops, fisheries, livestock, machines)
 - `auth.tsx` - Authentication page
 - `home.tsx` - Dashboard home
@@ -88,6 +94,7 @@ File-based routing with TanStack Router:
 - `index.tsx` - Home route
 - `login.tsx`, `forgot-password.tsx`, `reset-password.tsx` - Auth routes
 - `admin.*` - Admin routes
+- `ai.*` - AI admin routes (`ai.api-keys`, `ai.data-vectorization`, `ai.knowledge-base`, `ai.ai-playground`)
 - `category.*` - Category routes
 - `dashboard.tsx` - Dashboard route
 
@@ -130,6 +137,15 @@ pnpx shadcn@latest add [component]
 ### Data Fetching
 
 Use TanStack Router loaders or React Query for API calls via `lib/api.ts`
+
+### AI Vectorization Dashboard
+
+`app/ai/data-vectorization.tsx` is **API-key aware**:
+
+- A key selector (defaults to the ★ ACTIVE key) drives `GET /data-vectorization/all?apiKeyId=...`
+- Item statuses come from `EmbeddingRecord` per that key — missing record renders as PENDING
+- "Vectorize Now" queues tasks with the selected key's id; the Python worker embeds with that key's model and stores into its dedicated collection (`<base>_<model>_<size>`)
+- Per-key counts via `GET /data-vectorization/summary`
 
 ### Real-time Features
 

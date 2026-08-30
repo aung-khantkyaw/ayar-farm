@@ -43,6 +43,30 @@ class RAGService:
             print("✅ Qdrant client initialized for RAG")
         except Exception as e:
             print(f"❌ Failed to initialize Qdrant: {e}")
+
+    def _resolve_collection(self, base: str, embedding_info: dict) -> Optional[str]:
+        """Resolve a physical collection name using this instance's own QdrantClient.
+
+        Unlike qdrant_service.resolve_collection_name (which relies on a
+        worker-thread singleton that may be None in the uvicorn child),
+        this uses the RAGService's own QdrantClient for collection listing.
+        """
+        if not self.qdrant_client:
+            return None
+        import re
+        slug = re.sub(r"[^a-zA-Z0-9_-]", "_", (embedding_info["embedding_model"] or "unknown").strip()) or "unknown"
+        target = f"{base}_{slug}_{embedding_info['vector_size']}"
+        try:
+            for c in self.qdrant_client.get_collections().collections:
+                if c.name == target:
+                    info = self.qdrant_client.get_collection(c.name)
+                    vectors = info.config.params.vectors
+                    size = int(vectors.size) if hasattr(vectors, "size") else 0
+                    if size == embedding_info["vector_size"]:
+                        return target
+        except Exception as e:
+            print(f"⚠️  Failed to resolve collection '{target}': {e}")
+        return None
     
     def search_qdrant(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Search Qdrant for relevant documents.
@@ -52,7 +76,7 @@ class RAGService:
         different models are incompatible and would give meaningless scores.
         """
         try:
-            api_key_data = api_key_manager.get_active_api_key()
+            api_key_data = api_key_manager.get_active_api_key_with_recovery()
             if not api_key_data:
                 print("❌ No active API key available")
                 return []
@@ -84,14 +108,14 @@ class RAGService:
                 ])
 
             # Resolve physical collections matching the ACTIVE provider's
-            # vector size (e.g. 'posts' or 'posts_3072'); label stays logical.
+            # vector size (e.g. 'posts_bge-m3_1024'); label stays logical.
             collection_targets = []
             for base in (
                 settings.POSTS_COLLECTION,
                 settings.DOCUMENTS_COLLECTION,
                 settings.KNOWLEDGE_BASE_COLLECTION,
             ):
-                physical = qdrant_service.resolve_collection_name(base)
+                physical = self._resolve_collection(base, embedding_info)
                 if physical:
                     collection_targets.append((base, physical))
                 else:

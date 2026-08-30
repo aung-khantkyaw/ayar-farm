@@ -30,8 +30,10 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
-  res.setTimeout(30000, () => {
-    res.status(408).send('Request timeout');
+  res.setTimeout(300000, () => {
+    if (!res.headersSent) {
+      res.status(408).send('Request timeout');
+    }
   });
   next();
 });

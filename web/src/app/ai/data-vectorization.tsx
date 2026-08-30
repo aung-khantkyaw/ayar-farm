@@ -55,12 +55,33 @@ interface PendingItem {
   file_urls?: string[];
   embeddingStatus: string;
   created_at: string;
+
+  // Per-API-key record fields (merged by GET /all for the selected key)
+  apiKeyId?: string;
+  embeddingModelName?: string;
+  collectionName?: string;
+  vectorCount?: number;
+  attempts?: number;
+  lastError?: string;
+  hasRecord?: boolean;
+}
+
+interface KeySummary {
+  id: string;
+  provider: string;
+  llmModelName: string;
+  embeddingModelName: string;
+  vectorSize: number;
+  active: boolean;
+  counts: { PENDING: number; PROCESSING: number; COMPLETED: number; FAILED: number };
 }
 
 const DataVectorization = () => {
   const { user, isLoading: authLoading } = useAuth();
 
   const [items, setItems] = useState<PendingItem[]>([]);
+  const [keys, setKeys] = useState<KeySummary[]>([]);
+  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,10 +92,26 @@ const DataVectorization = () => {
   const [previewItem, setPreviewItem] = useState<PendingItem | null>(null);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
 
+  const fetchKeys = async () => {
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      const result = await api.get("/data-vectorization/summary", token);
+      if (result.keys) {
+        setKeys(result.keys);
+        // Default to the ACTIVE key
+        const active = result.keys.find((k: KeySummary) => k.active);
+        setSelectedKeyId((prev) => prev || active?.id || result.keys[0]?.id || "");
+      }
+    } catch (error) {
+      toast.error("Failed to fetch API keys");
+    }
+  };
+
   const fetchPendingItems = async () => {
     try {
       const token = localStorage.getItem("token") || undefined;
-      const result = await api.get("/data-vectorization/all", token);
+      const query = selectedKeyId ? `?apiKeyId=${selectedKeyId}` : "";
+      const result = await api.get(`/data-vectorization/all${query}`, token);
       if (result.items) {
         setItems(result.items);
       }
@@ -86,8 +123,12 @@ const DataVectorization = () => {
   };
 
   useEffect(() => {
-    if (user) fetchPendingItems();
+    if (user) fetchKeys();
   }, [user]);
+
+  useEffect(() => {
+    if (user && selectedKeyId) fetchPendingItems();
+  }, [user, selectedKeyId]);
 
   const handleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -189,10 +230,15 @@ const DataVectorization = () => {
         };
       });
 
-      await api.put("/data-vectorization/status/bulk", { updates }, token);
-      toast.success(`Items marked as ${status}`);
+      await api.put(
+        "/data-vectorization/status/bulk",
+        { updates, apiKeyId: selectedKeyId || undefined },
+        token,
+      );
+      toast.success(`Items queued for vectorization (${status})`);
       setSelectedItems([]);
       fetchPendingItems();
+      fetchKeys();
     } catch (error) {
       toast.error("Failed to update status");
     } finally {
@@ -208,11 +254,17 @@ const DataVectorization = () => {
       const token = localStorage.getItem("token") || undefined;
       await api.put(
         "/data-vectorization/status",
-        { type: item.type, id: item.id, status },
+        {
+          type: item.type,
+          id: item.id,
+          status,
+          apiKeyId: selectedKeyId || undefined,
+        },
         token,
       );
-      toast.success(`Item marked as ${status}`);
+      toast.success(`Queued for ${selectedKeyId ? "selected" : "active"} key (${status})`);
       fetchPendingItems();
+      fetchKeys();
     } catch (error) {
       toast.error("Failed to update status");
     }
@@ -272,17 +324,43 @@ const DataVectorization = () => {
                 </h2>
                 <p className="text-muted-foreground">
                   Manage embedding status for Posts, Documents, and Knowledge
-                  Base
+                  Base — per API key
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={fetchPendingItems}
-                  variant="outline"
-                  size="icon"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex gap-2">
+                  <select
+                    value={selectedKeyId}
+                    onChange={(e) => setSelectedKeyId(e.target.value)}
+                    className="h-9 rounded-md border bg-background px-3 text-sm shadow-sm focus:outline-none"
+                    aria-label="Select API key"
+                  >
+                    {keys.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {k.active ? "★ " : ""}
+                        {k.provider} · {k.embeddingModelName} ({k.vectorSize})
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    onClick={fetchPendingItems}
+                    variant="outline"
+                    size="icon"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+                {selectedKeyId &&
+                  (() => {
+                    const sel = keys.find((k) => k.id === selectedKeyId);
+                    return sel ? (
+                      <span className="text-xs text-muted-foreground">
+                        LLM: {sel.llmModelName} · Embedding:{" "}
+                        {sel.embeddingModelName} · dim {sel.vectorSize}
+                        {sel.active ? " · ACTIVE" : ""}
+                      </span>
+                    ) : null;
+                  })()}
               </div>
             </div>
             <Separator className="my-4" />
@@ -594,11 +672,30 @@ const DataVectorization = () => {
                               {item.author || "—"}
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                variant={getStatusColor(item.embeddingStatus) as any}
+                              <div
+                                className="flex flex-col gap-0.5"
+                                title={
+                                  item.lastError ||
+                                  item.collectionName ||
+                                  undefined
+                                }
                               >
-                                {item.embeddingStatus}
-                              </Badge>
+                                <Badge
+                                  variant={getStatusColor(item.embeddingStatus) as any}
+                                >
+                                  {item.embeddingStatus}
+                                </Badge>
+                                {(item.attempts ?? 0) > 1 && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {item.attempts} attempts
+                                  </span>
+                                )}
+                                {item.lastError && (
+                                  <span className="max-w-[180px] truncate text-[10px] text-destructive">
+                                    {item.lastError}
+                                  </span>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {new Date(item.created_at).toLocaleDateString()}
@@ -660,9 +757,33 @@ const DataVectorization = () => {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">Embedding Status</Label>
-                    <Badge variant="outline">
-                      {previewItem.embeddingStatus}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {previewItem.embeddingStatus}
+                      </Badge>
+                      {previewItem.embeddingModelName && (
+                        <span className="text-xs text-muted-foreground">
+                          {previewItem.embeddingModelName}
+                        </span>
+                      )}
+                    </div>
+                    {(previewItem.attempts ?? 0) > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Attempts: {previewItem.attempts}
+                        {previewItem.vectorCount != null &&
+                          ` · Vectors: ${previewItem.vectorCount}`}
+                      </p>
+                    )}
+                    {previewItem.collectionName && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        Collection: {previewItem.collectionName}
+                      </p>
+                    )}
+                    {previewItem.lastError && (
+                      <p className="rounded bg-destructive/10 p-2 text-xs text-destructive">
+                        {previewItem.lastError}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">Created At</Label>

@@ -56,6 +56,11 @@ const KnowledgeBaseManagement = () => {
   const { user, isLoading: authLoading } = useAuth();
 
   const [knowledgeBase, setKnowledgeBase] = useState<any[]>([]);
+  // Per-key embedding status for the ACTIVE api key
+  // (source: EmbeddingRecord via /data-vectorization/all)
+  const [embeddingStatusMap, setEmbeddingStatusMap] = useState<
+    Map<string, { status: string; attempts?: number; lastError?: string }>
+  >(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -77,6 +82,27 @@ const KnowledgeBaseManagement = () => {
       const result = await api.get("/knowledge-base", token);
       if (result.knowledgeBase) {
         setKnowledgeBase(result.knowledgeBase);
+      }
+
+      // Merge per-key embedding status for the ACTIVE key
+      // (missing record = never attempted for this key -> PENDING)
+      try {
+        const dv = await api.get("/data-vectorization/all", token);
+        const map = new Map<
+          string,
+          { status: string; attempts?: number; lastError?: string }
+        >();
+        for (const item of dv.items ?? []) {
+          if (item.type !== "knowledgeBase") continue;
+          map.set(item.id, {
+            status: item.embeddingStatus,
+            attempts: item.attempts,
+            lastError: item.lastError,
+          });
+        }
+        setEmbeddingStatusMap(map);
+      } catch {
+        // dashboard endpoint unavailable — leave statuses blank
       }
     } catch (error) {
       toast.error("Failed to fetch knowledge base");
@@ -207,8 +233,10 @@ const KnowledgeBaseManagement = () => {
         aValue = a.size || 0;
         bValue = b.size || 0;
       } else if (sortBy === "embeddingStatus") {
-        aValue = a.embeddingStatus || "";
-        bValue = b.embeddingStatus || "";
+        aValue =
+          embeddingStatusMap.get(a.id)?.status || "PENDING";
+        bValue =
+          embeddingStatusMap.get(b.id)?.status || "PENDING";
       } else if (sortBy === "created_at") {
         aValue = new Date(a.created_at).getTime();
         bValue = new Date(b.created_at).getTime();
@@ -222,14 +250,16 @@ const KnowledgeBaseManagement = () => {
     });
 
   const totalItems = knowledgeBase.length;
+  const statusOf = (id: string) =>
+    embeddingStatusMap.get(id)?.status || "PENDING";
   const pendingCount = knowledgeBase.filter(
-    (item) => item.embeddingStatus === "PENDING",
+    (item) => statusOf(item.id) === "PENDING",
   ).length;
   const processingCount = knowledgeBase.filter(
-    (item) => item.embeddingStatus === "PROCESSING",
+    (item) => statusOf(item.id) === "PROCESSING",
   ).length;
   const completedCount = knowledgeBase.filter(
-    (item) => item.embeddingStatus === "COMPLETED",
+    (item) => statusOf(item.id) === "COMPLETED",
   ).length;
 
   if (authLoading) return <LoadingSpinner />;
@@ -556,9 +586,23 @@ const KnowledgeBaseManagement = () => {
                           {item.size ? `${(item.size / 1024).toFixed(2)} KB` : "—"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
-                            {item.embeddingStatus || "Pending"}
-                          </Badge>
+                          <div
+                            className="flex flex-col gap-0.5"
+                            title={embeddingStatusMap.get(item.id)?.lastError}
+                          >
+                            <Badge variant="outline">
+                              {statusOf(item.id)}
+                            </Badge>
+                            {(embeddingStatusMap.get(item.id)?.attempts ?? 0) >
+                              1 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {
+                                  embeddingStatusMap.get(item.id)?.attempts
+                                }{" "}
+                                attempts
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(item.created_at).toLocaleDateString()}

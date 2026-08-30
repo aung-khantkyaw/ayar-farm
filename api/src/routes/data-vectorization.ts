@@ -5,9 +5,10 @@ import { authenticate, isAdmin } from "../middlewares";
 const dataVectorization = Router();
 const dataVectorizationController = new DataVectorizationController();
 
-dataVectorization.get("/pending", (req, res) => dataVectorizationController.getPendingItems(req, res));
-
 dataVectorization.get("/all", (req, res) => dataVectorizationController.getAllItems(req, res));
+
+// Per-API-key vectorization progress (counts grouped by status)
+dataVectorization.get("/summary", (req, res) => dataVectorizationController.getEmbeddingSummary(req, res));
 
 dataVectorization.put('/status', authenticate, isAdmin, (req, res) => dataVectorizationController.updateEmbeddingStatus(req, res));
 

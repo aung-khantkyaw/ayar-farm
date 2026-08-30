@@ -99,8 +99,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "1"
+          memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('net').connect(5173, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
       interval: 30s
@@ -241,3 +241,9 @@ networks:
   # Not internal — api and ai-processor need outbound HTTPS/TLS access to
   # Neon DB, Upstash Redis, and Qdrant Cloud over the public internet.
   backend:
+    # Lower MTU avoids dropped TLS-handshake packets on WSL2/Docker Desktop
+    # when the host path has a smaller effective MTU (VPN/PPPoE) — symptoms
+    # are random 'SSL: UNEXPECTED_EOF_WHILE_READING' / P1001 timeouts that
+    # never occur from the host itself.
+    driver_opts:
+      com.docker.network.driver.mtu: "1400"

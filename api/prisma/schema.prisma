@@ -129,7 +129,6 @@ model Documents {
   loan             Boolean       @default(false)
   agromet_bulletin Boolean       @default(false)
   size             Int?
-  embeddingStatus  EmbeddingStatus @default(PENDING)
   Crops            Crops?        @relation("CropToDocuments", fields: [crop_id], references: [id])
   CropTypes        CropTypes?    @relation("CropTypeToDocuments", fields: [crop_type_id], references: [id])
   Fishs            Fishs?        @relation("FishToDocuments", fields: [fish_id], references: [id])
@@ -235,7 +234,6 @@ model Post {
   commentCount  Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  embeddingStatus EmbeddingStatus @default(PENDING)
   author        Users          @relation("UserPosts", fields: [authorId], references: [id])
   comments      PostComment[]
   media         PostMedia[]
@@ -466,8 +464,40 @@ model ApiKey {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
+  embeddingRecords    EmbeddingRecord[]
+
   @@index([provider])
   @@index([active])
+}
+
+enum EmbedTargetType {
+  POST
+  DOCUMENT
+  KNOWLEDGE_BASE
+}
+
+// Tracks vectorization progress PER API KEY — one content item can be
+// vectorized into multiple model-specific Qdrant collections
+// (e.g. posts_BAAI_bge-m3_1024 AND posts_gemini-embedding-2_3072).
+// Missing row for (key, target) = never attempted for that key.
+model EmbeddingRecord {
+  id             String          @id @default(uuid())
+  apiKeyId       String
+  apiKey         ApiKey          @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  targetType     EmbedTargetType
+  targetId       String
+  status         EmbeddingStatus @default(PENDING)
+  collectionName String?         // physical Qdrant collection, e.g. posts_BAAI_bge-m3_1024
+  vectorCount    Int?            // number of chunk vectors stored
+  attempts       Int             @default(0)
+  lastError      String?
+  completedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([apiKeyId, targetType, targetId])
+  @@index([status])
+  @@index([targetType, targetId])
 }
 
 model KnowledgeBase {
@@ -476,7 +506,6 @@ model KnowledgeBase {
   author          String
   file_urls       String[]
   size            Int?
-  embeddingStatus EmbeddingStatus @default(PENDING)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 }

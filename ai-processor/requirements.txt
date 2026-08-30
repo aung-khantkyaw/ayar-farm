@@ -59,6 +59,7 @@ ipython_pygments_lexers==1.1.1
 itsdangerous==2.2.0
 jedi==0.20.0
 Jinja2==3.1.6
+jiter==0.16.0
 joblib==1.5.3
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
@@ -106,6 +107,7 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 pydeck==0.9.2
 Pygments==2.20.0
+pymupdf==1.28.2
 pyparsing==3.3.2
 pypdfium2==5.12.1
 pytesseract==0.3.13

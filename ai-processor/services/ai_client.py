@@ -35,7 +35,7 @@ def get_ai_client(api_key_data: Dict[str, Any] | None = None) -> AIClient:
     This preserves backward compatibility with all existing callers.
     """
     if api_key_data is None:
-        api_key_data = api_key_manager.get_active_api_key()
+        api_key_data = api_key_manager.get_active_api_key_with_recovery()
     if not api_key_data:
         raise Exception("No active API key available")
     provider = ProviderFactory.create(api_key_data)

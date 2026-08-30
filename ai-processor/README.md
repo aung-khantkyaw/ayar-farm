@@ -98,11 +98,11 @@ ai-processor/
 │   └── text_chunker.py              # Sentence-aware text chunking
 │
 ├── worker/
-│   └── consumer.py                  # Redis stream consumer
+│   └── consumer.py                  # Redis stream consumer (per-key tasks)
 │
 └── database/
     ├── connection.py                # PostgreSQL connection with retry
-    └── repositories.py              # API key + embedding status queries
+    └── repositories.py              # ApiKey lookup + EmbeddingRecord tracking
 ```
 
 ### File-by-File Explanation
@@ -223,19 +223,20 @@ Post Text ──→ chunk_text() ──→ vectorize_chunks() ──→ Qdrant P
 PDF ──→ download_pdf() ──→ extract_content() ──→ chunk_structured_content() ──→ vectorize_chunks()
 ```
 
-Key methods:
+Key methods (all accept an optional `api_key_data` — when provided, embedding
+uses THAT key's model instead of the active one; used for per-key tasks):
+
 | Method | Description |
 |---|---|
-| `vectorize_text(text)` | Single text → embedding vector |
-| `vectorize_chunks(chunks)` | Multiple chunks → vectorized chunks |
-| `process_post(post_data)` | Post content → vectorized chunks |
-| `process_document(doc_data)` | PDF document → vectorized chunks |
-| `process_knowledge_base(kb_data)` | KB PDF → vectorized chunks |
+| `vectorize_text(text, api_key_data?)` | Single text → embedding vector |
+| `vectorize_chunks(chunks, api_key_data?)` | Multiple chunks → vectorized chunks |
+| `process_post(post_data, api_key_data?)` | Post content → vectorized chunks |
+| `process_document(doc_data, api_key_data?)` | PDF document → vectorized chunks |
+| `process_knowledge_base(kb_data, api_key_data?)` | KB PDF → vectorized chunks |
 | `prepare_qdrant_points(chunks, record_id)` | Format for Qdrant insertion |
 
-DRY fix: `process_document()` and `process_knowledge_base()` both call the shared `_process_pdf_content()` method.
-
-Dependency Injection: `ai_client_factory` can be passed via the constructor for testability.
+Each stored point's payload is stamped with `embedding_model` + `vector_size`
+of the key that produced it — points are self-describing.
 
 ---
 
@@ -297,9 +298,10 @@ Sentence-aware text chunking for optimal embedding:
 
 Redis stream consumer:
 
-- Reads tasks from `vector_task_stream`
-- Routes to appropriate vectorizer method by task type
-- Updates embedding status (PROCESSING → COMPLETED/FAILED)
+- Reads tasks from `vector_task_stream` (payload carries optional `api_key_id`)
+- Loads the target key's credentials — embeds with THAT key's model even if it is not currently active
+- Resolves the physical Qdrant collection via the task's key
+- Writes per-key lifecycle to `EmbeddingRecord`: PROCESSING → COMPLETED (with collectionName + vectorCount) or FAILED (+ attempts, lastError)
 - Auto-reconnects on Redis failures
 
 ---
@@ -307,7 +309,10 @@ Redis stream consumer:
 ### `database/`
 
 - **`connection.py`**: PostgreSQL connection with retry logic and `check_and_reconnect()`
-- **`repositories.py`**: `ApiKeyRepository` (active key lookup), `EmbeddingStatusRepository` (status updates + record data fetch)
+- **`repositories.py`**:
+  - `ApiKeyRepository` — active key lookup + by-id lookup (for targeted tasks)
+  - `EmbeddingStatusRepository.get_record_data` — fetches content rows for processing
+  - `EmbeddingRecordRepository.upsert` — idempotent per-key status tracking (`ON CONFLICT DO UPDATE`, attempts counter, error capture)
 
 ---
 
@@ -336,17 +341,14 @@ Redis Stream  →  TaskConsumer  →  Vectorizer  →  AI Provider  →  Qdrant
 
 Step-by-step:
 
-1. **TaskConsumer** reads task from Redis stream
-2. Sets embedding status to `PROCESSING`
+1. **TaskConsumer** reads task from Redis stream (payload: `id`, `type`, content/file fields, optional `api_key_id`)
+2. Loads the task's target key (falls back to ACTIVE key) and writes `EmbeddingRecord = PROCESSING`
 3. Fetches record data from PostgreSQL (post/document/knowledge base)
-4. Routes to vectorizer method:
-   - `POST` → `vectorizer.process_post()`
-   - `DOCUMENT` → `vectorizer.process_document()`
-   - `KNOWLEDGE_BASE` → `vectorizer.process_knowledge_base()`
-5. **Vectorizer** chunks content and calls `ai.embed_text()` for each chunk
-6. **AI Provider** (Google/OpenAI/Ollama) generates embedding vector
-7. Vectors stored in Qdrant with metadata
-8. Status updated to `COMPLETED` or `FAILED`
+4. Resolves the physical Qdrant collection for that key (`posts_bge-m3_1024` style) — fails fast if missing
+5. Routes to vectorizer method (`POST`/`DOCUMENT`/`KNOWLEDGE_BASE`)
+6. **Vectorizer** chunks content; **AI Provider** embeds each chunk with the task's model
+7. Vectors stored in the resolved collection with self-describing metadata
+8. `EmbeddingRecord` updated to `COMPLETED` (+collectionName, vectorCount) or `FAILED` (+attempts, lastError)
 
 ### 3. RAG Chat Flow
 
@@ -359,7 +361,7 @@ Step-by-step:
 1. User sends question via `POST /ai-chat/stream`
 2. **RAGService** loads the active API key and generates the query embedding with the SAME provider's model
 3. Sanity check: query dims must match `ApiKey.vectorSize` (clear config error if not)
-4. Searches Qdrant across all collections (posts, documents, knowledge_base) **filtered to `embedding_model == active model`** — vectors from different models are never mixed
+4. Searches the resolved per-model collections (`posts_bge-m3_1024` style) **filtered to `embedding_model == active model`** — vectors from different models are never mixed
 5. Assembles top results as context
 6. Calls `ai.generate_stream()` with system prompt + context + history
 7. Streams LLM response tokens via SSE
@@ -414,7 +416,7 @@ This enables safe multi-provider operation:
 1. Deactivate old key, activate the new one (`ApiKey.active`) — set matching `embeddingModelName` + `vectorSize`
 2. ApiKeyManager switches instantly; `ensure_collections()` provisions the model-sized collection automatically (`posts_bge-m3_1024`, `posts_gemini-embedding-2_3072`, ...)
 3. Each model keeps its own data — switching back to a previous model makes its collection instantly searchable again
-4. Content is re-vectorized per collection: reset `embeddingStatus = 'PENDING'` for items that should live in the new provider's collection, then re-trigger via `PUT /api/data-vectorization/status`
+4. Content is tracked per key in `EmbeddingRecord`: queue items for the new key via `PUT /api/data-vectorization/status` with `status: 'PROCESSING'` + `apiKeyId` (admin dashboard "Vectorize Now" does this)
 
 ---
 
@@ -587,4 +589,4 @@ python dev.py        # Development mode (hot-reload)
 
 ---
 
-Part of the Ayeyar Farm project.
+Part of the Ayar Farm project.

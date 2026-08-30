@@ -13,32 +13,40 @@ class Vectorizer:
 
     def __init__(self, ai_client_factory=None):
         self.pdf_processor = PDFProcessor()
-        self.text_chunker = TextChunker(chunk_size=500, chunk_overlap=50)
+        self.text_chunker = TextChunker(chunk_size=400, chunk_overlap=50)
         self._ai_client_factory = ai_client_factory or get_ai_client
 
-    def _active_embedding_info(self) -> Dict[str, Any]:
-        """Embedding info of the active provider, stored with each vector so
-        points are self-describing and searchable per-model."""
-        return api_key_manager.get_embedding_info()
+    def _embedding_info(self, api_key_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Embedding info for the given (or ACTIVE) key, stamped onto each
+        vector so points are self-describing and searchable per-model."""
+        return api_key_manager.get_embedding_info(api_key_data)
 
-    def vectorize_text(self, text: str) -> Optional[List[float]]:
-        """Vectorize a single text string."""
+    def vectorize_text(
+        self,
+        text: str,
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> Optional[List[float]]:
+        """Vectorize a single text string using the given (or ACTIVE) key."""
         try:
-            api_key_data = api_key_manager.get_active_api_key()
-            if not api_key_data:
+            key_data = api_key_data or api_key_manager.get_active_api_key_with_recovery()
+            if not key_data:
                 print("❌ No active API key available")
                 return None
 
-            ai = self._ai_client_factory(api_key_data)
+            ai = self._ai_client_factory(key_data)
             vector = ai.embed_text(text, task_type="retrieval_document")
-            api_key_manager.increment_usage(api_key_data["id"])
+            api_key_manager.increment_usage(key_data["id"])
 
             return vector
         except Exception as e:
             print(f"❌ Failed to vectorize text: {e}")
             return None
 
-    def vectorize_chunks(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def vectorize_chunks(
+        self,
+        chunks: List[Dict[str, Any]],
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Vectorize multiple text chunks."""
         vectorized_chunks = []
 
@@ -47,7 +55,7 @@ class Vectorizer:
             if not text:
                 continue
 
-            vector = self.vectorize_text(text)
+            vector = self.vectorize_text(text, api_key_data)
             if vector:
                 vectorized_chunks.append({
                     **chunk,
@@ -56,7 +64,11 @@ class Vectorizer:
 
         return vectorized_chunks
 
-    def process_post(self, post_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def process_post(
+        self,
+        post_data: Dict[str, Any],
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Process a post for vectorization."""
         text = post_data.get("content", "") or post_data.get("description", "")
         if not text:
@@ -71,15 +83,16 @@ class Vectorizer:
             "title": title_preview,
             "author": author_name,
             "post_id": post_data.get("id"),
-            **self._active_embedding_info(),
+            **self._embedding_info(api_key_data),
         })
 
-        return self.vectorize_chunks(chunks)
+        return self.vectorize_chunks(chunks, api_key_data)
 
     def _process_pdf_content(
         self,
         pdf_data: Dict[str, Any],
         source_type: str,
+        api_key_data: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Shared logic for processing PDF-based content (documents + knowledge base)."""
         pdf_urls = (
@@ -112,18 +125,26 @@ class Vectorizer:
             "title": pdf_data.get("title", ""),
             "author": pdf_data.get("author", ""),
             f"{source_type}_id": pdf_data.get("id"),
-            **self._active_embedding_info(),
+            **self._embedding_info(api_key_data),
         })
 
-        return self.vectorize_chunks(chunks)
+        return self.vectorize_chunks(chunks, api_key_data)
 
-    def process_document(self, document_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def process_document(
+        self,
+        document_data: Dict[str, Any],
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Process a document (PDF) for vectorization."""
-        return self._process_pdf_content(document_data, "document")
+        return self._process_pdf_content(document_data, "document", api_key_data)
 
-    def process_knowledge_base(self, kb_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def process_knowledge_base(
+        self,
+        kb_data: Dict[str, Any],
+        api_key_data: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """Process a knowledge base entry for vectorization."""
-        return self._process_pdf_content(kb_data, "knowledge_base")
+        return self._process_pdf_content(kb_data, "knowledge_base", api_key_data)
 
     def prepare_qdrant_points(
         self,

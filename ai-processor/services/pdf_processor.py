@@ -3,12 +3,51 @@ import io
 from typing import List, Dict, Any, Optional
 import tempfile
 import os
+import pymupdf
 
 class PDFProcessor:
     """Process PDF files from Cloudinary URLs"""
     
     def __init__(self):
-        self.temp_dir = tempfile.gettempdir()
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Create temp directory in ai-processor folder
+        self.temp_dir = os.path.join(script_dir, '..', 'temp')
+        # Ensure the directory exists
+        os.makedirs(self.temp_dir, exist_ok=True)
+    
+    def cleanup_temp_files(self, max_age_hours: int = 1) -> int:
+        """Clean up old temp files in the temp directory
+        Returns the number of files deleted
+        """
+        import time
+        import gc
+        
+        deleted_count = 0
+        current_time = time.time()
+        max_age_seconds = max_age_hours * 3600
+        
+        try:
+            for filename in os.listdir(self.temp_dir):
+                if filename.startswith('temp_') or filename.startswith('temp_') and '.stale.' in filename:
+                    file_path = os.path.join(self.temp_dir, filename)
+                    try:
+                        file_age = current_time - os.path.getmtime(file_path)
+                        if file_age > max_age_seconds:
+                            # Force GC before attempting deletion
+                            gc.collect()
+                            os.unlink(file_path)
+                            deleted_count += 1
+                            print(f"🗑️  Cleaned up old temp file: {filename}")
+                    except PermissionError:
+                        # Skip files that are still in use
+                        continue
+                    except Exception as e:
+                        print(f"⚠️  Could not clean up {filename}: {e}")
+        except Exception as e:
+            print(f"❌ Error during temp cleanup: {e}")
+        
+        return deleted_count
     
     def download_pdf(self, pdf_url: str) -> Optional[bytes]:
         """Download PDF from Cloudinary URL"""
@@ -26,11 +65,19 @@ class PDFProcessor:
         if not pdf_content:
             return []
         
-        # Save to temp file
-        temp_path = os.path.join(self.temp_dir, f'temp_{os.urandom(8).hex()}.pdf')
+        # Create temp file
+        temp_file = None
+        temp_path = None
         try:
-            with open(temp_path, 'wb') as f:
-                f.write(pdf_content)
+            temp_file = tempfile.NamedTemporaryFile(
+                dir=self.temp_dir,
+                suffix='.pdf',
+                prefix='temp_',
+                delete=False
+            )
+            temp_path = temp_file.name
+            temp_file.write(pdf_content)
+            temp_file.close()
             
             # Extract content
             content = []
@@ -76,35 +123,50 @@ class PDFProcessor:
             return content
 
         finally:
-            # Clean up temp file with retry mechanism for Windows file locking
-            if os.path.exists(temp_path):
+            # Clean up temp file with robust retry mechanism
+            if temp_path and os.path.exists(temp_path):
                 import time
-                max_retries = 5
+                import gc
+                
+                # Force garbage collection to release file handles
+                gc.collect()
+                
+                max_retries = 10
                 for attempt in range(max_retries):
                     try:
-                        os.remove(temp_path)
+                        os.unlink(temp_path)
                         break
                     except PermissionError:
                         if attempt < max_retries - 1:
                             time.sleep(0.5)  # Wait 500ms before retry
+                            gc.collect()  # Force GC again on each retry
                         else:
-                            print(f"⚠️  Could not delete temp file after {max_retries} attempts: {temp_path}")
+                            # Final fallback: rename to .stale for later cleanup
+                            try:
+                                stale_path = temp_path.replace('.pdf', '.stale.pdf')
+                                os.rename(temp_path, stale_path)
+                                print(f"⚠️  Renamed locked file for later cleanup: {stale_path}")
+                            except Exception as rename_error:
+                                print(f"⚠️  Could not delete or rename temp file: {temp_path}, error: {e}")
+                    except Exception as e:
+                        print(f"⚠️  Could not delete temp file: {temp_path}, error: {e}")
+                        break
     
     def _extract_text(self, pdf_path: str) -> str:
-        """Extract text from PDF using pdfplumber"""
+        """Extract text from PDF using PyMuPDF - cross-platform compatible"""
         try:
-            import pdfplumber
+            doc = pymupdf.open(pdf_path)
             text_parts = []
             
-            with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text_parts.append(page_text)
+            for page in doc:
+                page_text = page.get_text()
+                if page_text.strip():
+                    text_parts.append(page_text)
             
+            doc.close()
             return '\n\n'.join(text_parts)
         except ImportError:
-            print("⚠️  pdfplumber not available, using basic text extraction")
+            print("⚠️  PyMuPDF not available, using basic text extraction")
             return self._extract_text_basic(pdf_path)
         except Exception as e:
             print(f"❌ Text extraction failed: {e}")
